@@ -47,7 +47,7 @@
     {
       "id": "operator-ui",
       "status": "in_progress",
-      "completedSlice": "verified read-only owner briefing, isometric department map, project readiness, gate inspection, persisted task snapshots; live provider and write controls pending"
+      "completedSlice": "full-viewport SVG office with five interactive desks, ticker, finance safe and briefing; separate Three.js QA prototype; live model/financial telemetry not connected"
     },
     {
       "id": "real-repair-loop",
@@ -69,9 +69,9 @@
   "verification": {
     "node": "22.22.1",
     "typecheck": "pass",
-    "testsPassed": 95,
+    "testsPassed": 96,
     "publicSourceCheck": "pass",
-    "observedAt": "2026-09-19T09:29:42.940368Z",
-    "browserQa": "desktop 1440px, mobile 390px, gate inspection, stale/reconnect verified"
+    "observedAt": "2026-09-19T09:50:05.545683Z",
+    "browserQa": "five desk dialogs, local logo, desktop/mobile, demo/live distinction; Three.js scripted rejection/correction and reduced-motion controls"
   }
 }

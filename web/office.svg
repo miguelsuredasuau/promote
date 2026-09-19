@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 850" fill="none" aria-labelledby="office-title office-description">
+<title id="office-title">The Xarts Office</title>
+<desc id="office-description">An isometric studio with five interactive work stations: a backlog whiteboard, engineering desk, strategy wall, QA conveyor and finance vault.</desc>
+<defs>
+<linearGradient id="floor-tone" x1="700" y1="300" x2="700" y2="830" gradientUnits="userSpaceOnUse"><stop stop-color="#ece8df"/><stop offset="1" stop-color="#d8d5cb"/></linearGradient>
+<linearGradient id="safe-tone" x1="640" y1="330" x2="757" y2="463" gradientUnits="userSpaceOnUse"><stop stop-color="#59757a"/><stop offset="1" stop-color="#354e54"/></linearGradient>
+<pattern id="floor-grid" width="108" height="54" patternUnits="userSpaceOnUse"><path d="M0 27 54 0 108 27 54 54Z" stroke="#bcbcae" stroke-opacity=".23" stroke-width="1"/></pattern>
+<symbol id="leaf" viewBox="0 0 30 60"><path d="M15 58C-13 33 0 1 12 0 29 7 36 37 15 58Z" fill="#2f674b"/><path d="M15 56 12 7" stroke="#1f5a3d" stroke-width="2"/></symbol>
+<symbol id="coin" viewBox="0 0 40 24"><path d="M2 8v7c0 10 36 10 36 0V8" fill="#ac7a2a" stroke="#765a2c" stroke-width="2"/><ellipse cx="20" cy="8" rx="18" ry="7" fill="#efc563" stroke="#765a2c" stroke-width="2"/><path d="m16 7 4-2 5 3-4 2Z" fill="#ac7a2a"/></symbol>
+<symbol id="parcel" viewBox="0 0 90 80"><path d="m5 25 43-20 38 18-43 21Z" fill="#e0b473" stroke="#5a5143" stroke-width="2"/><path d="m5 25 38 19v31L5 56Z" fill="#c59453" stroke="#5a5143" stroke-width="2"/><path d="m43 44 43-21v32L43 75Z" fill="#ad7f44" stroke="#5a5143" stroke-width="2"/><path d="m23 16 38 19v15l-10 5V39L14 21Z" fill="#eee0bb"/><path d="m54 56 21-10v8L54 65Z" fill="#f3eee3"/></symbol>
+</defs>
+<!-- Architectural shell -->
+<ellipse cx="728" cy="759" rx="540" ry="60" fill="#183c40" opacity=".08"/>
+<path d="m78 505 602-228 651 242v31L740 832 78 537Z" fill="#9dafa6" stroke="#354d4a" stroke-width="2"/>
+<path d="m78 505 602-228 651 242-591 286Z" fill="url(#floor-tone)" stroke="#354d4a" stroke-width="2"/>
+<path d="m78 505 602-228 651 242-591 286Z" fill="url(#floor-grid)"/>
+<path d="M78 176 680 35v242L78 505Z" fill="#e0e3db" stroke="#354d4a" stroke-width="2"/>
+<path d="m680 35 651 159v325L680 277Z" fill="#cbd6cc" stroke="#354d4a" stroke-width="2"/>
+<path d="m78 176 602-141 651 159v17L680 53 78 194Z" fill="#f9f7ef" stroke="#354d4a" stroke-width="2"/>
+<path d="M94 490 680 269l633 234" stroke="#6a8172" stroke-width="10"/>
+<path d="M680 57v208" stroke="#9caf9d" stroke-width="3"/>
+<!-- Clerestory and subtle room details -->
+<path d="m102 212 71-17v201l-71 25Z" fill="#6f9898" stroke="#496b6a" stroke-width="3"/>
+<path d="m109 219 57-14v181l-57 19Z" fill="#bbd4cc"/>
+<path d="m136 212 1 184m-29-90 58-17" stroke="#e9ece2" stroke-width="7"/>
+<path d="m111 223 48-12-47 101Z" fill="#f3f6e7" opacity=".5"/>
+<path d="m1209 231 85 21v182l-85-31Z" fill="#6f9898" stroke="#496b6a" stroke-width="3"/>
+<path d="m1216 241 71 17v163l-71-26Z" fill="#bbd4cc"/>
+<path d="m1251 250 1 160m-35-93 69 21" stroke="#e9ece2" stroke-width="7"/>
+<path d="m105 454 477-158 44 16-470 178Z" fill="#faf5d8" opacity=".32"/>
+<g fill="#536e61" font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3"><text x="699" y="94" transform="rotate(14 699 94)">XARTS / STUDIO 01</text></g>
+<!-- BACKLOG -->
+<g class="scene-station" data-station="backlog" role="button" tabindex="0" aria-label="Open backlog whiteboard">
+<path class="station-hit" d="m183 171 353-82 40 261-380 137Z" fill="transparent"/>
+<path d="m193 183 335-80 0 219-335 120Z" fill="#7b8c7b" opacity=".2" transform="translate(9 10)"/>
+<path d="m188 176 337-80v223L188 440Z" fill="#476358" stroke="#354d4a" stroke-width="3"/>
+<path d="m200 188 313-75v194L200 421Z" fill="#f8f7ef" stroke="#d0d3c5" stroke-width="2"/>
+<path d="m213 235 286-77m-199 36v177m97-201v170" stroke="#c5cfc1" stroke-width="2"/>
+<g fill="#456152" font-family="Arial, sans-serif" font-size="10" font-weight="700"><text x="217" y="220" transform="rotate(-14 217 220)">INBOX</text><text x="316" y="194" transform="rotate(-14 316 194)">NEXT</text><text x="414" y="168" transform="rotate(-14 414 168)">SHIPPED</text></g>
+<path d="m215 253 65-19v45l-65 22Z" fill="#edc66a"/><path d="m220 264 43-13m-43 22 31-10" stroke="#987128" stroke-width="3"/>
+<path d="m224 319 61-20v45l-61 22Z" fill="#db947a"/><path d="m230 330 42-14m-42 24 28-10" stroke="#9c5241" stroke-width="3"/>
+<path d="m314 228 67-19v48l-67 23Z" fill="#a9c4b8"/><path d="m322 241 45-13m-45 24 33-10" stroke="#597c6b" stroke-width="3"/>
+<path d="m325 290 63-20v44l-63 23Z" fill="#edc66a"/><path d="m332 304 41-13m-41 23 30-10" stroke="#987128" stroke-width="3"/>
+<path d="m414 199 64-18v44l-64 22Z" fill="#9dbcb2"/><path d="m432 216 7 6 17-20" stroke="#1f5a3d" stroke-width="4"/>
+<path d="m419 262 66-21v47l-66 23Z" fill="#a9c4b8"/><path d="m438 280 6 5 19-22" stroke="#1f5a3d" stroke-width="4"/>
+<path d="m190 442 337-121 13 7-340 125Z" fill="#879c8b" stroke="#354d4a" stroke-width="2"/><path d="m299 407 34-12" stroke="#9c1f1a" stroke-width="5"/>
+<g transform="translate(213 447)"><rect width="214" height="57" rx="8" fill="#f7f5ed" stroke="#9cafa1"/><circle cx="21" cy="20" r="5" fill="#ac7a2a"/><text x="35" y="25" fill="#233e35" font-family="Arial, sans-serif" font-size="17" font-weight="700">The backlog</text><text id="scene-backlog-status" x="19" y="44" fill="#5c7166" font-family="Arial, sans-serif" font-size="12">Ideas start here</text></g>
+</g>
+<!-- Wall shelf and finance vault -->
+<g aria-label="Operations monitor">
+<path d="m548 119 112-28v75l-112 31Z" fill="#243b35" stroke="#536957" stroke-width="4"/>
+<text x="557" y="133" transform="rotate(-14 557 133)" fill="#c4d2ba" font-family="Arial, sans-serif" font-size="7" font-weight="700" letter-spacing=".5">XARTS / OPERATIONS</text>
+<path d="m559 170 0-19m12 16v-10m12 7v-25m12 22v-16m12 13v-29m12 26v-20m12 17v-34m12 31v-24" stroke="#7e9988" stroke-width="6"/>
+<path d="m556 183 94-26" stroke="#476454" stroke-width="2"/>
+</g>
+<path d="m557 200 101-27 94 25-96 30Z" fill="#d6bd89" stroke="#536957" stroke-width="2"/><path d="m557 200 99 28v10l-99-28Zm99 28 96-30v10l-96 30Z" fill="#ab986f" stroke="#536957" stroke-width="2"/>
+<path d="m575 187 16-4v-45l-16 4Z" fill="#ac7a2a"/><path d="m594 184 12-4v-54l-12 4Z" fill="#1b4a6b"/><path d="m610 180 16-5v-46l-16 5Z" fill="#9c1f1a"/>
+<path d="m697 190 24-7v-25l-24 6Z" fill="#f2eee1"/><use href="#leaf" x="690" y="117" width="30" height="60"/><use href="#leaf" x="704" y="122" width="25" height="50" transform="rotate(26 716 168)"/>
+<g class="scene-station" data-station="finance" role="button" tabindex="0" aria-label="Open finance vault">
+<path class="station-hit" d="m565 295 175-56 102 60v237H565Z" fill="transparent"/>
+<ellipse cx="701" cy="472" rx="118" ry="40" fill="#314e42" opacity=".14"/>
+<path d="m620 309 86-33 102 40-91 39Z" fill="#8d9d97" stroke="#344d4b" stroke-width="3"/>
+<path d="m620 309 97 46v129l-97-50Z" fill="#617c79" stroke="#344d4b" stroke-width="3"/>
+<path d="m717 355 91-39v124l-91 44Z" fill="url(#safe-tone)" stroke="#344d4b" stroke-width="3"/>
+<path d="m730 365 64-28v92l-64 32Z" fill="#354f51" stroke="#a0b0a2" stroke-width="3"/>
+<path d="m738 370 47-21v73l-47 23Z" fill="#6d8680" stroke="#293f40" stroke-width="2"/>
+<ellipse cx="760" cy="397" rx="14" ry="20" transform="rotate(14 760 397)" fill="#a9b6a5" stroke="#314c48" stroke-width="3"/>
+<path d="m760 383 0 27m-9-7 20-11" stroke="#425e58" stroke-width="4"/><ellipse cx="760" cy="397" rx="4" ry="6" fill="#d8ddc8"/>
+<path d="m787 352 10-4v14l-10 4m0 47 10-4v14l-10 4" fill="#bac4b4" stroke="#344d4b" stroke-width="2"/>
+<path d="m630 323 8 4v93l-8-4" fill="#adc0b1" opacity=".45"/>
+<use href="#coin" x="645" y="283" width="40" height="24"/><use href="#coin" x="645" y="277" width="40" height="24"/><use href="#coin" x="645" y="271" width="40" height="24"/><use href="#coin" x="682" y="299" width="40" height="24"/>
+<use href="#coin" x="786" y="452" width="40" height="24"/><use href="#coin" x="786" y="446" width="40" height="24"/><use href="#coin" x="812" y="467" width="34" height="21"/>
+<g transform="translate(605 503)"><rect width="212" height="57" rx="8" fill="#f7f5ed" stroke="#9cafa1"/><circle cx="21" cy="20" r="5" fill="#ac7a2a"/><text x="35" y="25" fill="#233e35" font-family="Arial, sans-serif" font-size="17" font-weight="700">Finance vault</text><text id="scene-finance-status" x="19" y="44" fill="#5c7166" font-family="Arial, sans-serif" font-size="12">Tokens &amp; runway</text></g>
+</g>
+<!-- STRATEGY WALL -->
+<g class="scene-station" data-station="strategy" role="button" tabindex="0" aria-label="Open marketing strategy wall">
+<path class="station-hit" d="m853 99 330 82v331H847Z" fill="transparent"/>
+<path d="m858 119 306 74v221l-306-109Z" fill="#566953" opacity=".17" transform="translate(10 11)"/>
+<path d="m852 110 306 75v221L852 297Z" fill="#6c6950" stroke="#354d4a" stroke-width="3"/>
+<path d="m863 123 284 69v198L863 288Z" fill="#c6aa76"/>
+<path d="m877 145 87 23v60l-87-25Z" fill="#f4eee0"/><path d="m888 160 63 17m-63-6 45 12m-45 0 54 15" stroke="#7c8473" stroke-width="3"/>
+<path d="m997 181 59 15v53l-59-18Z" fill="#e6bd57"/><path d="m1009 197 34 9m-34 2 24 7" stroke="#a47a2d" stroke-width="3"/>
+<path d="m1080 212 50 13v55l-50-17Z" fill="#b7c9bd"/><path d="m1090 229 27 7m-27 4 20 6" stroke="#658473" stroke-width="3"/>
+<path d="m887 230 69 22v50l-69-24Z" fill="#df957c"/><path d="m899 247 40 13m-40-1 30 10" stroke="#a05843" stroke-width="3"/>
+<path d="m981 264 79 25v69l-79-28Z" fill="#f1eee0"/><path d="m994 309 9-17 11 15 13-14 18 12" stroke="#1f5a3d" stroke-width="3"/><path d="m995 282 49 16" stroke="#9ba593" stroke-width="3"/>
+<path d="m1080 296 46 14v51l-46-16Z" fill="#e6bd57"/>
+<path d="m965 210 25 8m64 15 23 8m-89 11 28 14m-58-4 18 11" stroke="#9c1f1a" stroke-width="2"/>
+<g fill="#9c1f1a"><circle cx="919" cy="162" r="4"/><circle cx="1025" cy="194" r="4"/><circle cx="1103" cy="224" r="4"/><circle cx="918" cy="243" r="4"/><circle cx="1020" cy="281" r="4"/><circle cx="1101" cy="308" r="4"/></g>
+<g transform="translate(925 418)"><rect width="222" height="57" rx="8" fill="#f7f5ed" stroke="#9cafa1"/><circle cx="21" cy="20" r="5" fill="#1b4a6b"/><text x="35" y="25" fill="#233e35" font-family="Arial, sans-serif" font-size="17" font-weight="700">Strategy wall</text><text id="scene-strategy-status" x="19" y="44" fill="#5c7166" font-family="Arial, sans-serif" font-size="12">Make the next move</text></g>
+</g>
+<!-- ENGINEERING DESK -->
+<g class="scene-station" data-station="engineering" role="button" tabindex="0" aria-label="Open engineering terminal">
+<path class="station-hit" d="m153 510 250-102 208 111v244H194Z" fill="transparent"/>
+<ellipse cx="383" cy="678" rx="184" ry="51" fill="#314e42" opacity=".13"/>
+<path d="m211 557 16 7v110l-16-8Zm303 5 15-5v103l-15 7Zm-96-105 14 6v111l-14-7Z" fill="#3e584f" stroke="#2f453c" stroke-width="2"/>
+<path d="m181 534 221-89 164 72-222 103Z" fill="#d3b078" stroke="#4d5843" stroke-width="3"/>
+<path d="m181 534 163 86v15l-163-86Z" fill="#b28a54" stroke="#4d5843" stroke-width="2"/><path d="m344 620 222-103v15L344 635Z" fill="#9d7b4f" stroke="#4d5843" stroke-width="2"/>
+<path d="m350 514 41-17 32 15-41 18Z" fill="#61766c" stroke="#354d4a" stroke-width="2"/><path d="m374 476 16 7v31l-16-8Z" fill="#456358"/>
+<path d="m294 397 140 57v81l-140-65Z" fill="#263e39" stroke="#263e39" stroke-width="7" stroke-linejoin="round"/>
+<path d="m303 410 121 50v58l-121-54Z" fill="#152d2b"/>
+<g stroke="#86b99a" stroke-width="3"><path d="m314 424 10 4m7 3 55 23m-72-20 35 15m9 4 39 17m-83-25 13 6m8 3 29 13m-50-13 48 22"/></g>
+<circle cx="421" cy="526" r="2" fill="#b8d7a9"/>
+<path d="m296 534 70-27 49 23-71 31Z" fill="#536d61" stroke="#354d4a" stroke-width="2"/><path d="m308 533 47-18m-34 25 47-20m-30 27 46-20" stroke="#afbeb0" stroke-width="4"/>
+<path d="m441 536 19-8 15 7-19 9Z" fill="#47665a"/>
+<path d="m474 475 23 10v25l-23-10Z" fill="#f4eee0" stroke="#708374" stroke-width="2"/><path d="m497 490 8 3v12l-8-3" stroke="#708374" stroke-width="3"/>
+<path d="m246 516 24-10 25 11-24 10Z" fill="#efe9da"/><path d="m252 516 13-5m-4 9 13-6" stroke="#8b9885" stroke-width="2"/>
+<!-- Seated engineer -->
+<g class="character">
+<path d="m393 686 28 12m-28-12-21 14m21-14 1-35" stroke="#3a514a" stroke-width="7" stroke-linecap="round"/><ellipse cx="370" cy="700" rx="9" ry="5" fill="#293c36"/><ellipse cx="424" cy="699" rx="9" ry="5" fill="#293c36"/>
+<path d="m368 624 66 7v31l-25 11-41-15Z" fill="#1b4a6b" stroke="#2f453c" stroke-width="2"/>
+<path d="m382 630-25 20-19-14m66 7-21 24-21-7" stroke="#344e53" stroke-width="16" stroke-linecap="round"/><path d="m330 636 17 9m5 19 18 6" stroke="#252f2c" stroke-width="10" stroke-linecap="round"/>
+<path d="m366 575 37-17 29 29-4 55-45 2-26-29Z" fill="#b05d3e" stroke="#674c3d" stroke-width="2"/>
+<path d="m419 587 13 19-34 3" stroke="#c7815a" stroke-width="14" stroke-linecap="round"/>
+<g class="demo-motion"><path d="m366 585-18-20-19-3" stroke="#cf966e" stroke-width="13" stroke-linecap="round"/><path d="m329 562-12-7" stroke="#cf966e" stroke-width="9" stroke-linecap="round"/></g>
+<path d="m379 548 1 18 18 6 4-20Z" fill="#bc8058"/>
+<path d="m365 521 39-3 14 18-6 26-25 5-22-16Z" fill="#d5a078" stroke="#8c664b" stroke-width="2"/>
+<path d="m365 541-7-17 10-15 29-5 23 15-2 19-12 2-8-18-29 11-1 14Z" fill="#333b31"/>
+<circle cx="373" cy="547" r="4" fill="#d5a078"/>
+<path d="m391 603 42 16v29l-42-12Z" fill="#214f65" stroke="#2f453c" stroke-width="3"/>
+</g>
+<g transform="translate(174 716)"><rect width="238" height="57" rx="8" fill="#f7f5ed" stroke="#9cafa1"/><circle cx="21" cy="20" r="5" fill="#1f5a3d"/><text x="35" y="25" fill="#233e35" font-family="Arial, sans-serif" font-size="17" font-weight="700">Engineering</text><text id="scene-engineering-status" x="19" y="44" fill="#5c7166" font-family="Arial, sans-serif" font-size="12">Ready for a brief</text></g>
+<g transform="translate(386 380)"><path d="M0 0h200a9 9 0 0 1 9 9v28a9 9 0 0 1-9 9H47L33 61V46H0a9 9 0 0 1-9-9V9a9 9 0 0 1 9-9Z" fill="#fffdf4" stroke="#9cafa1" stroke-width="2"/><text id="bubble-engineering" x="10" y="28" fill="#425b4e" font-family="Arial, sans-serif" font-size="13">Ready for a brief</text></g>
+</g>
+<!-- QA PRODUCTION LINE -->
+<g class="scene-station" data-station="qa" role="button" tabindex="0" aria-label="Open QA production conveyor">
+<path class="station-hit" d="m849 470 343 4 87 169-168 144-276-98Z" fill="transparent"/>
+<ellipse cx="1051" cy="691" rx="198" ry="48" fill="#314e42" opacity=".13"/>
+<path d="m922 604 13 7v80l-13-7Zm265-56 12-4v83l-12 6Zm-97 150 13-5v52l-13 6Z" fill="#3e584f" stroke="#2f453c" stroke-width="2"/>
+<path d="m862 567 233-106 154 65-234 120Z" fill="#799386" stroke="#354d4a" stroke-width="3"/>
+<path d="m862 567 153 79v24l-153-77Z" fill="#587769" stroke="#354d4a" stroke-width="3"/><path d="m1015 646 234-120v25l-234 119Z" fill="#345748" stroke="#354d4a" stroke-width="3"/>
+<path d="m878 565 216-96 137 58-217 109Z" fill="#4c6055" stroke="#293f36" stroke-width="2"/>
+<g stroke="#94a797" stroke-width="6"><path d="m898 558 136 67m-111-78 135 66m-110-77 135 65m-110-76 135 64m-110-75 134 63m-109-74 132 62m-107-73 130 61m-104-72 129 59"/></g>
+<path d="m880 565 134 68 216-107" stroke="#c3cabb" stroke-width="4"/>
+<g class="demo-motion"><use href="#parcel" x="897" y="515" width="80" height="72"/><use href="#parcel" x="993" y="471" width="80" height="72"/><use href="#parcel" x="1090" y="515" width="80" height="72"/></g>
+<!-- Three review signals -->
+<g stroke="#344d40" stroke-width="3"><path d="M921 533v-51m97 10v-53m99 82v-55"/><path d="m908 459 26 10v28l-26-11Z" fill="#493e35"/><path d="m1005 416 26 10v28l-26-11Z" fill="#493e35"/><path d="m1104 443 26 10v28l-26-11Z" fill="#493e35"/></g>
+<ellipse class="qa-lamp" cx="921" cy="478" rx="7" ry="9" transform="rotate(-18 921 478)" fill="#bd5142"/><ellipse class="qa-lamp" cx="1018" cy="435" rx="7" ry="9" transform="rotate(-18 1018 435)" fill="#e4b95a"/><ellipse class="qa-lamp" cx="1117" cy="462" rx="7" ry="9" transform="rotate(-18 1117 462)" fill="#84b397"/>
+<!-- QA operator -->
+<g class="character">
+<ellipse cx="903" cy="710" rx="41" ry="15" fill="#314e42" opacity=".13"/>
+<path d="m889 655 0 39-11 11m32-45 5 39 12 4" stroke="#354951" stroke-width="15" stroke-linecap="round"/><path d="m874 708 17-3m30 3 16-1" stroke="#29372e" stroke-width="10" stroke-linecap="round"/>
+<path d="m880 591 36-5 21 26-17 54-41-6-11-33Z" fill="#e1be65" stroke="#857346" stroke-width="2"/>
+<path d="m883 597 5 51 30 5 7-51" stroke="#8e7443" stroke-width="4"/>
+<path d="m878 611-16 21 25 12" stroke="#ab775a" stroke-width="12" stroke-linecap="round"/>
+<g class="demo-motion"><path d="m926 611 16 10 16-25" stroke="#ab775a" stroke-width="13" stroke-linecap="round"/><path d="m958 596 5-10" stroke="#ab775a" stroke-width="9" stroke-linecap="round"/></g>
+<path d="m890 572 1 19 17 6 2-21Z" fill="#986447"/>
+<path d="m877 548 33-4 15 16-9 28-21 2-20-15Z" fill="#b58665" stroke="#75583e" stroke-width="2"/>
+<path d="m875 567-7-15 11-15 25-3 18 13 4 15-10 2-8-14-25 10-2 13Z" fill="#354034"/>
+<path d="m874 544 41-8 14 16-50 11-13-7Z" fill="#1b4a6b" stroke="#344d40" stroke-width="2"/>
+<path d="m889 629 29 11-6 28-30-12Z" fill="#eff0db" stroke="#667a66" stroke-width="2"/><path d="m888 640 20 8m-23 0 17 7" stroke="#879d80" stroke-width="2"/>
+</g>
+<g transform="translate(973 716)"><rect width="238" height="57" rx="8" fill="#f7f5ed" stroke="#9cafa1"/><circle cx="21" cy="20" r="5" fill="#ac7a2a"/><text x="35" y="25" fill="#233e35" font-family="Arial, sans-serif" font-size="17" font-weight="700">QA production</text><text id="scene-qa-status" x="19" y="44" fill="#5c7166" font-family="Arial, sans-serif" font-size="12">Awaiting a candidate</text></g>
+<g transform="translate(822 350)"><path d="M0 0h208a9 9 0 0 1 9 9v28a9 9 0 0 1-9 9H49L35 61V46H0a9 9 0 0 1-9-9V9a9 9 0 0 1 9-9Z" fill="#fffdf4" stroke="#9cafa1" stroke-width="2"/><text id="bubble-qa" x="10" y="28" fill="#425b4e" font-family="Arial, sans-serif" font-size="13">Awaiting a candidate</text></g>
+</g>
+<!-- Foreground studio furniture -->
+<g aria-hidden="true">
+<ellipse cx="607" cy="716" rx="48" ry="18" fill="#314e42" opacity=".12"/>
+<path d="m580 658 49 8-8 48-27 5-15-13Z" fill="#ac7a2a" stroke="#5c6045" stroke-width="2"/><ellipse cx="604" cy="661" rx="25" ry="11" fill="#dcc090" stroke="#5c6045" stroke-width="2"/><ellipse cx="604" cy="662" rx="19" ry="7" fill="#606647"/>
+<path d="m603 664-9-88m10 88 22-65m-23 65-30-43" stroke="#456e49" stroke-width="5"/>
+<use href="#leaf" x="574" y="552" width="35" height="75" transform="rotate(-24 595 606)"/><use href="#leaf" x="605" y="575" width="34" height="69" transform="rotate(25 620 633)"/><use href="#leaf" x="557" y="597" width="34" height="62" transform="rotate(-43 582 641)"/>
+<path d="m685 713 65-30 56 26-66 32Z" fill="#d0b484" stroke="#536957" stroke-width="2"/><path d="m685 713 55 28v19l-55-28Zm55 28 66-32v19l-66 32Z" fill="#a8926a" stroke="#536957" stroke-width="2"/>
+<path d="m713 710 31-14 23 11-30 14Z" fill="#f2eee0"/><path d="m718 707 22-9 17 8-21 10Z" fill="#1b4a6b"/><path d="m725 722 20-9 18 8-21 10Z" fill="#df9c71"/>
+</g>
+</svg>

@@ -9,7 +9,7 @@ import { request, type Server } from 'node:http';
 
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => { for (const cleanup of cleanups.splice(0)) await cleanup(); });
-async function setup() {
+async function setup(withLogo = false) {
   const root = mkdtempSync(join(tmpdir(), 'promote-operator-'));
   mkdirSync(join(root, 'docs'));
   mkdirSync(join(root, 'adapters/xarts'), { recursive: true });
@@ -19,7 +19,8 @@ async function setup() {
   writeFileSync(join(root, 'web/index.html'), '<!doctype html><title>Promoted</title>');
   writeFileSync(join(root, '.env'), 'PRIVATE_MARKER=must-never-be-served');
   const store = new ControllerStore(join(root, 'store.sqlite'));
-  const server: Server = createOperatorServer({ root, store });
+  if (withLogo) writeFileSync(join(root, 'xarts.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><text>Test logo</text></svg>');
+  const server: Server = createOperatorServer({ root, store, checkout: withLogo ? root : undefined });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('No port');
@@ -89,4 +90,16 @@ it('does not expose server paths or errors if snapshot data is unavailable', asy
   const response = await fetch(`${base}/api/overview`);
   expect(response.status).toBe(503);
   expect(await response.json()).toEqual({ error: 'snapshot_unavailable' });
+});
+
+it('serves only the configured local project logo with an isolated SVG policy', async () => {
+  const unconfigured = await setup();
+  expect((await fetch(`${unconfigured.base}/api/project/logo`)).status).toBe(404);
+  const configured = await setup(true);
+  const logo = await fetch(`${configured.base}/api/project/logo`);
+  expect(logo.status).toBe(200);
+  expect(logo.headers.get('Content-Type')).toBe('image/svg+xml');
+  expect(logo.headers.get('Content-Security-Policy')).toContain('sandbox');
+  expect(await logo.text()).toContain('Test logo');
+  expect((await fetch(`${configured.base}/api/project/.env`)).status).toBe(404);
 });

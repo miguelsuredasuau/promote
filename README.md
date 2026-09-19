@@ -6,7 +6,7 @@ Learns from user feedback, finds issues and opportunities, and ships verified im
 
 A standalone foundation for an engineering control layer: receive an external request, dispatch an engineering agent, verify its candidate independently, return failures, and release only accepted artifacts.
 
-**Status:** early implementation. Contracts, durable controller storage, a read-only owner briefing, and an audited Xarts gate catalog are implemented. Typecheck and 95 tests pass on Node 22.22.1. Autonomous scheduling, Devin execution, feedback ingestion, financial reconciliation, decisions and releases remain unconnected. Fixtures are not real autonomous runs.
+**Status:** early implementation. Contracts, durable controller storage, a read-only owner briefing, and an audited Xarts gate catalog are implemented. Typecheck and 96 tests pass on Node 22.22.1. Autonomous scheduling, Devin execution, feedback ingestion, financial reconciliation, decisions and releases remain unconnected. Fixtures are not real autonomous runs.
 
 ## Development
 
@@ -18,7 +18,7 @@ pnpm check
 pnpm dev
 ```
 
-Open `http://127.0.0.1:4310`. To inspect an external checkout, use `PROMOTE_PROJECT_PATH=/path/to/xarts pnpm dev`. The checkout stays separate and is read only. See the [owner console](docs/operator-console.md) and [CEO mandate](docs/ceo-mandate.md).
+Open `http://127.0.0.1:4310` for the full-screen Xarts Office. Its five desks, finance safe, ticker and CEO briefing are read-only; Explore demo is explicitly illustrative. A separate `http://127.0.0.1:4310/qa-prototype` tests the Three.js renderer before full-office conversion. To inspect an external checkout, use `PROMOTE_PROJECT_PATH=/path/to/xarts pnpm dev`. The checkout stays separate and is read only. See the [owner console](docs/operator-console.md) and [CEO mandate](docs/ceo-mandate.md).
 
 This repository has its own dependency manifest, lockfile, tests, and Git history. It does not require Xarts, its node_modules, fonts, source code, or credentials. Dependencies come from the package registry.
 
@@ -34,6 +34,6 @@ Xarts is the first external project integration; its catalog is audited and its 
 
 ## Sharing
 
-The public repository contains the reusable foundation. Package publication remains disabled. An open-source license has not yet been selected; public visibility alone does not grant an open-source license. No Xarts source, brand assets, account identifiers, real run evidence, or credentials are included.
+The public repository contains the reusable foundation. Package publication remains disabled. An open-source license has not yet been selected; public visibility alone does not grant an open-source license. The public integration intentionally includes the Xarts name, an Anlak-inspired palette, and an audited catalog of command names and source-path references. It does not include Xarts implementation source, proprietary font files, logos, customer data, provider transcripts or credentials. Office illustrations are newly authored for Promoted.
 
 See [controller storage](docs/controller-storage.md) for the implemented interface and its boundaries. `pnpm check` includes a tracked-source credential-pattern and excluded-file check; it complements source review rather than guaranteeing secret detection.

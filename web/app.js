@@ -1,99 +1,84 @@
 'use strict';
-const $ = (id) => document.getElementById(id);
-let snapshot = null;
-let selection = null;
-const list = (value) => Array.isArray(value) ? value : [];
-const human = (value) => String(value ?? 'unknown').replace(/[_-]/g, ' ');
-const asText = (value) => typeof value === 'string' ? value : value == null ? '' : JSON.stringify(value);
-const evidenceText = value => Array.isArray(value) ? value.map(evidenceText).join('; ') : value && typeof value === 'object' ? Object.entries(value).map(([key, item]) => `${human(key)}: ${evidenceText(item)}`).join(' · ') : asText(value);
-function el(tag, className, value) { const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; }
-function badge(value) { const label = human(value); const good = /^(completed?|passed|done|accepted|success|succeeded|verified)$/i.test(String(value)); const bad = /fail|error|blocked/i.test(String(value)); const warn = /partial|pending|running|in.progress|awaiting/i.test(String(value)); return el('span', `badge${good ? ' success' : bad ? ' danger' : warn ? ' warning' : ''}`, label); }
-function empty(container, message) { container.replaceChildren(el('p', 'empty', message)); }
-function time(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? 'Timestamp unavailable' : date.toLocaleString([], { month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit' }); }
-function showSelection(kind, record) {
-  selection = { kind, id: record.id };
-  $('inspector-empty').hidden = true; $('inspector-content').hidden = false;
-  $('inspector-kind').textContent = `${kind} / recorded detail`;
-  $('inspector-title').textContent = record.label || record.name || record.requestedOutcome?.summary || record.id || kind;
-  $('inspector-data').textContent = JSON.stringify(record, null, 2);
-  document.querySelectorAll('.gate-button').forEach(button => button.setAttribute('aria-pressed', String(kind === 'Gate' && button.dataset.id === String(record.id))));
+const $=id=>document.getElementById(id);
+let snapshot=null, mode='live', desk=null, opener=null;
+const logo=$('xarts-logo');
+function logoReady(){if(logo.naturalWidth){logo.hidden=false;$('xarts-wordmark').hidden=true}}
+logo.addEventListener('load',logoReady);logoReady();
+const list=x=>Array.isArray(x)?x:[];
+const human=x=>String(x??'unknown').replace(/[_-]/g,' ');
+function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
+function tag(text,tone=''){return node('span',human(text),`badge ${tone}`)}
+function record(title,body,status){const n=node('article',undefined,'record');n.append(node('h3',title));if(status)n.append(tag(status));if(body)n.append(node('p',body));return n;}
+const demo={backlog:[['Fix','Preserve negative values in waterfall totals','Engineering'],['Feature','Add reconciliation annotations','Ready to scope'],['Fix','Keep long labels inside narrow cards','Queued'],['Feature','Export a presentation-ready chart deck','Owner review']],ideas:[['A chart that explains itself','Turn customer questions into annotated financial narratives. Proposal only.'],['Presentation export','Give teams a ready-to-share slide, not another screenshot. Requires investment review.'],['A stronger geometry oracle','Explore independent checks for clipped labels. Separate gate adoption required.']],terminal:['$ reproduce --case negative-opening','Baseline reproduced: expected -40, received 0','→ inspecting the financial bridge resolver','→ candidate patch prepared in isolated checkout','$ verify --profile financial-repair','PASS  schema + type compatibility','FAIL  signed reconciliation on held-out input','→ returning counterexample to engineering'],prs:[{title:'PR #24 · Financial bridge repair',states:['green','green','red','amber'],labels:['Pass','Pass','Failed','Held']},{title:'PR #23 · Label spacing',states:['green','green','green','amber'],labels:['Pass','Pass','Pass','Pending']}]};
+function isDemo(){return mode==='demo'}
+function currentBacklog(){return list(snapshot?.incidents).filter(i=>!['completed','cancelled','refused','budget_exhausted'].includes(i.status))}
+function setText(id,text){const n=$(id);if(n)n.textContent=text}
+function renderOffice(){
+ const backlog=currentBacklog(),ops=list(snapshot?.operations),gates=list(snapshot?.project?.catalog?.entries);
+ const results=list(snapshot?.events).filter(e=>e.type==='gate.finished').map(e=>e.payload?.result).filter(Boolean);
+ const passed=results.filter(r=>r.outcome==='pass').length;
+ const ticker=isDemo()?[['USAGE','1,248'],['ERRORS','3'],['BACKLOG','4'],['PRs','2'],['QA PASS','91.7%'],['SPEND','€26.40']]:[['USAGE','—'],['ERRORS','—'],['BACKLOG',String(backlog.length)],['PRs','—'],['QA PASS',results.length?`${Math.round(passed/results.length*100)}%`:'—'],['SPEND','—']];
+ $('ticker-values').replaceChildren(...ticker.map(([key,value])=>{const item=node('span',undefined,'ticker-item');item.append(node('small',key),node('b',value));return item}));
+ setText('ticker-source',isDemo()?'ILLUSTRATIVE DEMO':results.length?'VISIBLE SNAPSHOT · PARTIAL TELEMETRY':'TELEMETRY NOT CONNECTED');
+
+ const counts=isDemo()?['4','1','3','2','€']: [String(backlog.length),String(ops.length),String(list(snapshot?.ownerReport?.decisions).length),String(gates.length),'—'];
+ ['backlog','engineering','strategy','qa','finance'].forEach((key,i)=>setText(`count-${key}`,counts[i]));
+ const labels=isDemo()?['4 priorities · demo','Repairing financial bridge · demo','3 proposals · demo','2 candidates · demo','€26.40 spent · demo']: [`${backlog.length} recorded priorities`,ops.length?`${ops.length} dispatch records`:'Ready for a brief','Awaiting proposals',`${gates.length} checks · not run`,'Budget not configured'];
+ ['backlog','engineering','strategy','qa','finance'].forEach((key,i)=>setText(`scene-${key}-status`,labels[i]));
+ setText('bubble-engineering',isDemo()?'Fixing signed totals…':ops.length?'Inspect my recorded progress':'Ready for my first brief');
+ setText('bubble-qa',isDemo()?'One check needs a retry':'Waiting for a candidate');
+ setText('briefing-summary',isDemo()?'A repair, a proposal, and one decision · demo':snapshot?.ownerReport?.mandate?.status==='not_configured'?'Set the mandate. Then delegate.':'Open priorities, evidence and decisions');
+ $('demo-banner').hidden=!isDemo();document.body.dataset.mode=mode;
+ $('live-mode').setAttribute('aria-pressed',String(!isDemo()));$('demo-mode').setAttribute('aria-pressed',String(isDemo()));
 }
-function render(data) {
-  const activeId = document.activeElement?.dataset?.id;
-  const activeKind = document.activeElement?.classList.contains('gate-button') ? 'gate-button' : 'incident-button';
-  const project = data.project || {}; const implementation = data.implementation || {};
-  const milestones = list(implementation.milestones); const gates = list(project.catalog?.entries);
-  const incidents = list(data.incidents); const operations = list(data.operations); const events = list(data.events);
-  const owner = data.ownerReport || {}; const economics = owner.economics || {}; const backlog = owner.backlog || {}; const feedback = owner.feedback || {}; const decisions = list(owner.decisions);
-  $('mandate-state').textContent = owner.mandate ? `${human(owner.mandate.status)} · ${owner.mandate.routineWork || 'Routine work policy not recorded'}` : 'Operating mandate not recorded';
-  $('backlog-total').textContent = typeof backlog.total === 'number' ? `${backlog.total} items` : 'Not reported';
-  $('backlog-detail').textContent = owner.backlog ? `${backlog.repairs ?? 0} repairs · ${backlog.features ?? 0} features · ${backlog.gateImprovements ?? 0} gate improvements${backlog.scope === 'latest_100_incidents' ? ' · latest 100 incidents' : ''}` : 'No backlog snapshot available.';
-  const money = value => value == null ? 'Not reported' : `${value}${economics.currency ? ` ${economics.currency}` : ' (currency unknown)'}`;
-  $('spend-value').textContent = money(economics.reportedSpend);
-  $('economics-detail').textContent = `Budget: ${money(economics.approvedBudget)} · Reserved: ${money(economics.reserved)} · Revenue: ${money(economics.revenue)} · ROI: ${economics.roi == null ? 'not reported' : asText(economics.roi)}`;
-  $('feedback-state').textContent = human(feedback.status || 'not_connected');
-  $('feedback-detail').textContent = `${list(feedback.items).length} recorded feedback items. Customer signals require a connected source.`;
-  $('decision-count').textContent = `${decisions.length} pending`;
-  $('decision-detail').textContent = decisions.length ? 'Recorded decisions awaiting owner review.' : owner.mandate?.status === 'not_configured' ? 'No pending decisions. Mandate setup and the decision workflow are not yet implemented.' : 'No pending decisions recorded.';
-  $('decision-list').replaceChildren();
-  decisions.forEach(decision => { const row = el('div', 'record'); row.append(el('strong', '', decision.summary || decision.title || decision.id || 'Owner decision'), el('p', '', asText(decision))); $('decision-list').append(row); });
-  $('project-name').textContent = project.name || project.id || 'Project';
-  $('repo-state').textContent = project.repositoryAvailable ? 'Available locally' : 'Unavailable';
-  $('head-state').textContent = project.head ? String(project.head).slice(0, 10) : 'No commit observed';
-  $('head-state').title = project.head || '';
-  $('catalog-match-state').textContent = !project.repositoryAvailable ? 'Checkout unavailable' : project.revisionMatchesCatalog ? 'Matches audited commit' : 'Re-audit required';
-  $('adapter-state').textContent = human(project.adapterStatus);
-  $('provider-state').textContent = human(project.providerStatus);
-  $('dispatch-state').textContent = implementation.paidDispatchEnabled === true ? 'Enabled' : 'Disabled';
-  const verification = implementation.verification || {};
-  $('test-count').textContent = typeof verification.testsPassed === 'number' ? `${verification.testsPassed} passed` : 'Not reported';
-  $('test-detail').textContent = `Typecheck: ${human(verification.typecheck)} · Node: ${asText(verification.node) || 'not reported'}. Recorded implementation verification.`;
-  $('intake-state').textContent = `${incidents.length} recorded incident${incidents.length === 1 ? '' : 's'}`;
-  $('engineering-state').textContent = operations.length ? `${operations.length} dispatch record${operations.length === 1 ? '' : 's'}` : 'No sessions dispatched';
-  const executed = gates.filter(g => g.executionStatus && !['not_run', 'not_started', 'unknown'].includes(g.executionStatus)).length;
-  $('verification-state').textContent = `${gates.length} catalogued · ${executed ? `${executed} with recorded execution` : 'no gate runs recorded'}`;
-  $('release-state').textContent = 'Release not connected';
-  const body = $('milestone-body'); body.replaceChildren();
-  if (!milestones.length) { const row = el('tr'); const cell = el('td', 'empty', 'No implementation milestones recorded.'); cell.colSpan = 3; row.append(cell); body.append(row); }
-  milestones.forEach(m => { const row = el('tr'); row.append(el('td', '', m.label || m.title || human(m.id))); const status = el('td'); status.append(badge(m.status)); row.append(status); const evidence = el('td'); const parts = [m.completedSlice, m.acceptance, m.evidence].filter(v => v != null && v !== ''); evidence.textContent = parts.map(evidenceText).join(' · ') || 'No supporting evidence recorded.'; row.append(evidence); body.append(row); });
-  $('gate-count').textContent = `${gates.length} entries`;
-  const gateList = $('gate-list'); gateList.replaceChildren();
-  if (!gates.length) empty(gateList, 'No gates in the project catalog.');
-  gates.forEach((gate, index) => { const button = el('button', 'gate-button'); button.type = 'button'; button.dataset.id = String(gate.id); button.setAttribute('aria-pressed', String(selection?.kind === 'Gate' && selection.id === gate.id)); const name = el('span'); name.append(el('span', 'gate-name', gate.label || gate.name || gate.id || `Gate ${index + 1}`), el('span', 'gate-meta', `Catalogued · ${human(gate.classification)}${list(gate.autonomyGateIds).length ? ` · ${list(gate.autonomyGateIds).join(', ')}` : ''}`)); const right = el('span', 'gate-right'); right.append(badge(gate.executionStatus || 'not_run'), el('span', 'gate-arrow', '↗')); button.append(name, right); button.addEventListener('click', () => showSelection('Gate', gate)); gateList.append(button); });
-  $('operation-count').textContent = String(operations.length);
-  const operationList = $('operation-list'); operationList.replaceChildren();
-  if (!operations.length) empty(operationList, 'No engineering sessions dispatched. Model attempts and outcomes will appear here when recorded by the controller.');
-  operations.forEach(operation => { const item = el('div', 'record'); const title = el('div', 'record-title'); title.append(el('strong', '', operation.harnessId || operation.id || 'Engineering session'), badge(operation.status)); item.append(title); item.append(el('p', '', `Attempt: ${operation.attempt ?? operation.attemptNumber ?? 'not recorded'} · Incident: ${operation.incidentId || 'not recorded'}`)); if (operation.outcome) item.append(el('p', '', `Outcome: ${asText(operation.outcome)}`)); operationList.append(item); });
-  const incidentList = $('incident-list'); incidentList.replaceChildren();
-  if (!incidents.length) empty(incidentList, 'No incidents recorded.');
-  incidents.forEach(incident => { const item = el('div', 'record'); const title = el('div', 'record-title'); const button = el('button', 'incident-button', incident.requestedOutcome?.summary || incident.id || 'Incident'); button.type = 'button'; button.dataset.id = String(incident.id); button.addEventListener('click', () => showSelection('Incident', incident)); title.append(button, badge(incident.status)); item.append(title); incidentList.append(item); });
-  const eventList = $('event-list'); eventList.replaceChildren();
-  if (!events.length) empty(eventList, 'No controller events recorded.');
-  events.slice(-20).reverse().forEach(event => { const item = el('div', 'event'); item.append(el('strong', '', `${event.sequence != null ? `#${event.sequence} · ` : ''}${human(event.type)}`)); if (event.incidentId) item.append(el('span', '', ` · ${event.incidentId}`)); const date = el('time', '', time(event.occurredAt)); if (event.occurredAt) date.dateTime = event.occurredAt; item.append(date); eventList.append(item); });
-  if (selection) { const record = (selection.kind === 'Gate' ? gates : incidents).find(record => record.id === selection.id); if (record) showSelection(selection.kind, record); else { selection = null; $('inspector-empty').hidden = false; $('inspector-content').hidden = true; } }
-  if (activeId) {
-    const replacement = [...document.querySelectorAll(`.${activeKind}`)].find(node => node.dataset.id === activeId);
-    replacement?.focus({preventScroll:true});
-  }
+function empty(text){return node('p',text,'empty')}
+function title(text){return node('h3',text,'mini-heading')}
+function openDesk(which,source){desk=which;opener=source??document.activeElement;renderDesk();if(!$('desk').open)$('desk').showModal()}
+function renderDesk(){
+ const names={backlog:['THE WHITEBOARD','Work worth doing.','Fixes, features, and priorities—the queue your CEO is managing.'],engineering:['THE ENGINEER’S COMPUTER','Inside the work.','Inspect the agent’s recorded progress, attempts and output.'],strategy:['THE MARKETING & STRATEGY WALL','The next big thing.','Customer signals, feature ideas, and changes that need your judgment.'],qa:['THE PRODUCTION LINE','Every change earns its green.','Schema → build → semantics → release. A stopped line is a useful signal.'],finance:['THE FINANCE SAFE','Keep ambition funded.','Budgets, commitments, expenses and burn. Every number needs a source.'],briefing:['YOUR CEO’S BRIEFING','You make the big calls.','The state of your office, with the evidence behind it.']};
+ const [eyebrow,heading,sub]=names[desk];setText('desk-eyebrow',eyebrow);setText('desk-title',heading);setText('desk-subtitle',sub);
+ const content=$('desk-content');content.replaceChildren();if(isDemo())content.append(node('p','ILLUSTRATIVE DEMO · These tasks, checks and costs are examples. No live work or spending.','demo-note'));
+ if(desk==='backlog'){
+  if(isDemo())demo.backlog.forEach(([kind,name,state])=>content.append(record(`${kind} · ${name}`,'Illustrative priority. No task has been dispatched.',state)));
+  else {const rows=currentBacklog();if(!rows.length)content.append(empty('The whiteboard is clear. No fixes or features have been recorded yet. Connecting feedback and the engineering intake will populate this board.'));rows.forEach(i=>content.append(record(i.requestedOutcome?.summary??i.id,`${human(i.requestedOutcome?.kind)} · ${i.id}`,i.status)));}
+ }
+ if(desk==='engineering'){
+  const terminal=node('div',undefined,'terminal');terminal.append(node('div',isDemo()?'DEVIN / ILLUSTRATIVE TERMINAL':'ENGINEERING / RECORDED EVENT STREAM','terminal-label'));
+  if(isDemo())terminal.append(node('div',demo.terminal.join('\n')));
+  else {const events=list(snapshot?.events);terminal.append(node('div',events.length?events.slice(-30).map(e=>`${e.occurredAt}  ${e.type}\n  ${e.incidentId}`).join('\n'):'$ waiting for engineering connection\n\nNo sessions dispatched.\nNo terminal output has been recorded.\n\nAgent logs will appear here when connected.'));}
+  content.append(terminal);list(snapshot?.operations).forEach(o=>{if(!isDemo())content.append(record(o.harnessId,`Operation ${o.id} · ${o.incidentId}`,o.status))});
+ }
+ if(desk==='strategy'){
+  if(isDemo())demo.ideas.forEach(([name,body])=>{const n=node('article',undefined,'sticky');n.append(node('h3',name),node('p',body),tag('Proposal · not approved'));content.append(n)});
+  else {const decisions=list(snapshot?.ownerReport?.decisions);content.append(empty('Your strategy wall is ready. Customer feedback and feature proposals are not connected yet. Major investments, pivots and technology changes will come here for your decision.'));decisions.forEach(d=>content.append(record(d.summary??d.id,d.reason??'Owner decision requested',d.result)));}
+ }
+ if(desk==='qa'){
+  const prototype=node('a','Explore the 3D QA prototype ↗','prototype-link');prototype.href='/qa-prototype';content.append(prototype);
+  if(isDemo())demo.prs.forEach(pr=>{const n=record(pr.title,'Illustrative pipeline; not a real pull request.');const stages=node('div',undefined,'pipeline');['Schema','Build','Semantics','Release'].forEach((name,i)=>{const s=node('div',undefined,`stage ${pr.states[i]}`);s.append(node('b',pr.states[i]==='green'?'✓':pr.states[i]==='red'?'×':'•'),node('span',name),node('p',pr.labels[i]));stages.append(s)});n.append(stages);content.append(n)});
+  else content.append(empty('No pull requests are on the production line. The checks below are catalogued capabilities, not recorded passes. Red means failed, amber means pending/held, green means passed. Unrun stages stay neutral.'));
+  content.append(title('Protected check inventory'));
+  list(snapshot?.project?.catalog?.entries).forEach(g=>{const d=node('details');d.append(node('summary',`${g.label} · ${human(g.executionStatus)}`),node('p',g.limitations,'facts'),node('pre',JSON.stringify({command:g.argv,prerequisites:g.prerequisites,independence:g.oracleIndependence,mapping:g.autonomyGateIds},null,2),'detail'));content.append(d)});
+ }
+ if(desk==='finance'){
+  const e=snapshot?.ownerReport?.economics??{};const money=v=>v==null?'Not reported':`${v} ${e.currency??'(currency unknown)'}`;
+  const box=node('div',undefined,'ledger');box.append(node('span',isDemo()?'ILLUSTRATIVE PERIOD EXPENSES':'REPORTED EXPENSES','eyebrow'),node('div',isDemo()?'€26.40':money(e.reportedSpend),'amount'));
+  const dl=node('dl');const rows=isDemo()?[['Approved budget','€100.00'],['Reserved for tasks','€18.00'],['Uncommitted budget','€55.60'],['Tokens used','182,000 · illustrative'],['Burn rate','€3.30/hour · illustrative'],['Period','8 hours · illustrative']]:[['Approved budget',money(e.approvedBudget)],['Reserved for tasks',money(e.reserved)],['Available budget','Unknown'],['Token / credit usage','Not connected'],['Burn rate','Insufficient cost history'],['Reporting period','Not configured']];
+  rows.forEach(([k,v])=>{const row=node('div');row.append(node('dt',k),node('dd',v));dl.append(row)});box.append(dl);content.append(box);
+  if(isDemo()){content.append(title('Example cost attribution'));[['Engineering · repair','€19.20'],['QA · verification','€5.40'],['Strategy · scoping','€1.80']].forEach(([k,v])=>content.append(record(k,v)));}
+  content.append(node('p','Budget increases require an owner decision. Reservations are not expenses. Provider-reported amounts, estimates and unknowns stay separate; no token-to-money conversion is assumed.','facts'));
+ }
+ if(desk==='briefing'){
+  const project=snapshot?.project??{};content.append(record('Xarts Office',project.repositoryAvailable?`Checkout observed at ${project.head?.slice(0,10)}. ${project.revisionMatchesCatalog?'Catalog matches the audited commit.':'Catalog requires a new audit.'}`:'Checkout is not available to the local controller.'));
+  content.append(record('Your operating mandate','Routine work stays within the agreed scope and budget. Larger spending, pivots, new technology and protected-gate changes require a versioned decision.',snapshot?.ownerReport?.mandate?.status??'not configured'));
+  content.append(title('Implementation progress'));list(snapshot?.implementation?.milestones).forEach(m=>content.append(record(human(m.id),m.completedSlice??'No delivered slice recorded.',m.status)));
+  const v=snapshot?.implementation?.verification??{};content.append(record('Recorded verification',`${v.testsPassed??'Unknown'} tests · typecheck ${v.typecheck??'unknown'}. This verifies Promoted, not Xarts candidates.`));
+ }
+ setText('desk-footer',isDemo()?'Demo mode is isolated to this browser. No tasks, decisions, budgets or provider calls are created.':'Live controller records · read-only · unknown data remains unknown. Closing this desk does not stop work.');
 }
-async function refresh() {
-  const abort = new AbortController(); const timeout = setTimeout(() => abort.abort(), 8000);
-  try {
-    const response = await fetch('/api/overview', { cache:'no-store', signal:abort.signal, headers:{Accept:'application/json'} });
-    if (!response.ok) throw new Error(`Controller returned HTTP ${response.status}`);
-    const data = await response.json();
-    if (!data || !data.project || !data.implementation || !data.observedAt) throw new Error('Controller snapshot is incomplete');
-    const changed = !snapshot || JSON.stringify({...snapshot, observedAt:null}) !== JSON.stringify({...data, observedAt:null});
-    snapshot = data; if (changed) render(data);
-    $('connection-status').textContent = 'Local controller connected'; $('connection-dot').className = 'status-dot connected';
-    $('observed').textContent = `Snapshot observed ${time(data.observedAt)}`;
-    $('error-banner').hidden = true;
-  } catch (error) {
-    $('connection-status').textContent = snapshot ? 'Controller disconnected · stale snapshot' : 'Controller unavailable';
-    $('connection-dot').className = 'status-dot error';
-    $('observed').textContent = snapshot ? `Last snapshot ${time(snapshot.observedAt)}` : 'No local controller snapshot received.';
-    $('error-banner').textContent = `${snapshot ? 'Showing the last received snapshot. ' : 'Waiting for controller data. '}${error.name === 'AbortError' ? 'The request timed out.' : error.message} Retrying automatically.`;
-    $('error-banner').hidden = false;
-  } finally { clearTimeout(timeout); setTimeout(refresh, 5000); }
-}
-refresh();
+document.addEventListener('click',e=>{const target=e.target.closest('[data-station],[data-open]');if(target)openDesk(target.dataset.station??target.dataset.open,target)});
+document.addEventListener('keydown',e=>{const target=e.target.closest('[data-station]');if(target&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openDesk(target.dataset.station,target)}});
+$('close-desk').onclick=()=>$('desk').close();$('desk').addEventListener('click',e=>{if(e.target===$('desk')){const r=$('desk').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('desk').close()}});
+$('desk').addEventListener('close',()=>{desk=null;opener?.focus?.()});
+for(const m of ['live','demo'])$(`${m}-mode`).onclick=()=>{mode=m;renderOffice();if(desk)renderDesk()};
+async function refresh(){const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),8000);try{const r=await fetch('/api/overview',{signal:abort.signal,cache:'no-store'});if(!r.ok)throw Error('Controller unavailable');const data=await r.json();if(!data.project||!data.implementation)throw Error('Incomplete snapshot');const changed=JSON.stringify({...snapshot,observedAt:null})!==JSON.stringify({...data,observedAt:null});snapshot=data;renderOffice();if(changed&&desk)renderDesk();setText('connection-status','Local office connected');$('connection-light').classList.add('ready');setText('observed',`Provider ${human(data.project.providerStatus)} · updated ${new Date(data.observedAt).toLocaleTimeString()}`);$('error-banner').hidden=true}catch{setText('connection-status',snapshot?'Office disconnected · last snapshot':'Controller unavailable');$('connection-light').classList.remove('ready');setText('error-banner',snapshot?'Showing the last received snapshot. Reconnecting…':'Waiting for the local controller. Reconnecting…');$('error-banner').hidden=false}finally{clearTimeout(timeout);setTimeout(refresh,5000)}}
+renderOffice();refresh();

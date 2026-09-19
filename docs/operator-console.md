@@ -17,3 +17,11 @@ The browser keeps the last snapshot with a stale warning when disconnected, and 
 ## What the owner will eventually delegate
 
 See [CEO mandate](ceo-mandate.md) for routine-work authority, investment decisions, customer feedback and engineering spend accounting. The current read-only report does not grant budgets, approve proposals, or authorize a failed gate. Those workflows need versioned policy and durable reservation/decision records before controls become active.
+
+## Full-viewport office upgrade
+
+The main route is now the interactive Xarts Office. Five keyboard-accessible scene objects and equivalent dock buttons open the backlog, engineering event terminal, strategy wall, QA inspector and finance safe. A separate CEO briefing retains milestones and verification evidence. A broker-style ticker shows known counters and leaves unconnected usage/error/PR/cost telemetry unknown.
+
+Live is the default. Explore demo supplies clearly labeled browser-only illustrative tasks, output, QA states and expenses; switching modes never changes controller data. The finance example is not an approved spend limit. Characters and conveyor decoration animate only in demo and honor reduced motion.
+
+An optional logo is fetched from `/api/project/logo`, which serves only `xarts.svg` from the configured checkout under a sandboxed SVG policy. The logo is absent from public Git history. The separate [3D QA prototype](/qa-prototype) evaluates the renderer decision described in [office renderer review](office-renderer-review.md).
