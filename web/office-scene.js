@@ -391,7 +391,7 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     activityBubble(engBubble,`Engineering · ${model.engineering?.status||'idle'}`,engineeringActive?(model.engineering?.task||'Task in progress'):'',model.engineering?.status==='stopped'?'attention':'working');
     const currentStage=q.stages?.[q.stageIndex];
     const copy=currentStage?qaStageCopy(currentStage,model.mode):null;
-    activityBubble(qaBubble,q.status==='failed'?'QA · Needs attention':q.status==='running'?'QA · Checking':q.status==='completed'?'QA · Complete':'QA',q.candidateId?(copy?.headline||'Waiting for verification'):'',q.status==='failed'?'attention':q.status==='running'?'working':'complete');
+    activityBubble(qaBubble,q.status==='failed'?'QA · Needs attention':q.status==='running'?'QA · Checking':q.status==='completed'?'QA · Complete':'QA',q.candidateId?(q.status==='failed'&&model.operations?.heading?model.operations.heading:copy?.headline||'Waiting for verification'):'',q.status==='failed'?'attention':q.status==='running'?'working':'complete');
     const proposals=(model.strategy?.ideas||[]).filter(i=>!['completed','done','cancelled','refused'].includes(i.status)).length;
     activityBubble(ceoBubble,'CEO · Decision queue',proposals?`${proposals} proposal${proposals===1?'':'s'} awaiting review`:'','neutral');
     requestRender();
@@ -485,6 +485,7 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
       point.getWorldPosition(v);v.project(camera);let x=(v.x+1)*.5*width,y=(-v.y+1)*.5*height;
       const isActivity=node.classList.contains('office-bubble');if(isActivity)node.style.transform='translate(-50%,-100%)';
       node.hidden=!!selected||v.z< -1||v.z>1||(isActivity?node.dataset.active!=='true':!hovered||node.dataset.station!==hovered||node.classList.contains('office-stage-label'));
+      if(isActivity&&width<650){const lead=qaBubble.dataset.active==='true'?qaBubble:engBubble.dataset.active==='true'?engBubble:ceoBubble;if(node!==lead)node.hidden=true;}
       if(isActivity&&!node.hidden){
         const bw=Math.min(214,width*.43),bh=76;x=Math.max(bw/2+18,Math.min(width-bw/2-18,x));y=Math.max(95,Math.min(height-120,y));
         for(const rect of bubbleRects)if(Math.abs(x-rect.x)<bw+16&&Math.abs(y-rect.y)<bh+12)y=rect.y-bh-14;

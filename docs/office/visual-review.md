@@ -21,3 +21,7 @@ Browser checks cover opening and closing the generated safe, conveyor movement d
 Generated meshes still contain reconstruction noise, especially upholstery and fine hardware. Character gait is procedural, not a motion-captured walk with foot IK. These assets remain visual-review previews. Final acceptance requires watching a full circulation loop and inspecting the actual scene, not just its room concept or asset thumbnail.
 
 Do not convert an absent cost, unreported usage, idle machine or failed gate into fictional success for visual effect. The labelled demo exists to show active motion without modifying controller records.
+
+## Activity layer
+
+Engineering, QA and the CEO decision queue now have concise bubbles attached to the generated characters. Their copy comes from the office model. Bubble placement avoids other bubbles; all hide during component inspection. Small viewports show only the highest-priority active bubble to preserve the room silhouette. Browser checks verify movement tracking, inspection hiding, viewport containment and absence of runtime errors.
