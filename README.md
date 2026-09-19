@@ -146,6 +146,23 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 </details>
 
+## Live quality review · Norma
+
+We ran [Norma MCP](https://github.com/qualityclouds/norma-mcp) against **three critical files** at commit [`464acab`](https://github.com/miguelsuredasuau/promote/tree/464acab3ba54b17c0622203aed8c5051b98e90df), on September 19, 2026.
+
+| Reviewed component | High | Medium | Findings |
+| --- | ---: | ---: | ---: |
+| Chat evidence intake | 10 | 8 | **18** |
+| Devin adapter | 3 | 5 | **8** |
+| Release registry | 0 | 0 | **0** |
+| **Total · 242 lines** | **13** | **13** | **26** |
+
+**Coverage was reduced in all three checks:** one Semgrep rule could not be evaluated. The findings concern async error handling, nested conditionals and sequential awaits. They need contextual triage; some error handling is already centralized, and several findings overlap the same expression.
+
+This is a real, bounded review—not a full repository scan or a passing release gate. No application fixes were made in this run. No complete Norma repository scan exists yet, and provider cost was not reported.
+
+[**Read the findings, coverage limits and next steps →**](docs/reviews/norma-pilot-2026-09-19.md) · [Structured results](docs/reviews/norma-pilot-2026-09-19.json)
+
 ## What comes next
 
 The next milestones turn a concrete integration into a reusable product:
