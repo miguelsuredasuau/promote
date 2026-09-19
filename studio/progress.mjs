@@ -35,11 +35,11 @@ export async function progress(){
  {name:'Repository review',state:review?'complete':'pending',detail:review?'Claude brief recorded':'Claude review not recorded yet'},
  {name:'Room concept',state:current?.status==='ready'?'complete':'next',detail:current?`Revision ${current.id} · ${current.status}`:'Written brief + large reference image'},
  {name:'Approve direction',state:roomApproved?'complete':current?.status==='ready'?'next':'locked',detail:roomApproved?'Current image approved':'Review all mandatory components'},
- {name:'Design every item',state:roomApproved?'next':'locked',detail:`${images.jobs.filter(j=>j.status==='ready').length} item images ready · ${assets.length} items mapped`},
+ {name:'Design every item',state:images.jobs.some(j=>j.status==='ready')?'complete':roomApproved?'next':'locked',detail:`${images.jobs.filter(j=>j.status==='ready').length} item images ready · ${assets.length} items mapped`},
  {name:'Approve item images',state:images.jobs.some(j=>j.status==='ready')?'next':'locked',detail:'Approve or revise each design'},
  {name:'3D generation queue',state:activeModels?'next':ready?'complete':'locked',detail:`${ready} items have models · ${activeModels} generating`},
  {name:'Review every model',state:ready?'next':'locked',detail:'Structural checks passed separately; final visual approval pending'},
- {name:'Assemble the room',state:'locked',detail:'Requires all selected models and layout checks'}],updatedAt:new Date().toISOString()};
+ {name:'Assemble the room',state:ready?'next':'locked',badge:ready?'Preview':'Pending',detail:ready?`${ready} generated models in the office preview · final layout review pending`:'Requires selected models and layout checks'}],updatedAt:new Date().toISOString()};
 }
 let writing=Promise.resolve();
 export function decide(command){const next=writing.then(async()=>{const state=await progress();if(command.revision!==state.revision)throw Error('The board changed. Refresh and try again.');const asset=state.assets.find(a=>a.id===command.id);if(!asset)throw Error('Unknown item');if(command.version!==asset.version)throw Error('This item revision is stale');const decisions=await optional('decisions.json',{revision:0,items:{},events:[]});const item=decisions.items[asset.id]??{};

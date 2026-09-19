@@ -97,9 +97,9 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
   const work=store.claimWork();if(!work)break;
   try{
    if(work.kind==='proposal_assessment'){
-    const proposal=store.proposals().find(p=>p.id===work.payload.proposalId);
+    const proposal=work.payload.ownerDecision ? work.payload.approvedProposal : store.proposals().find(p=>p.id===work.payload.proposalId);
     if(!proposal)throw Error('proposal_missing');
-    store.finishWork(work.id,work.token,'completed',{proposalId:proposal.id,category:proposal.category,confidence:'needs_validation',evidenceCount:proposal.sources.length,nextAction:proposal.nextAction,implementationAuthorized:false,executionMode:'local_rules'});
+    store.finishWork(work.id,work.token,'completed',{proposalId:proposal.id,category:proposal.category,confidence:'needs_validation',evidenceCount:proposal.sources.length,nextAction:proposal.nextAction,implementationAuthorized:false,executionMode:'local_rules',...(work.payload.ownerDecision?{planningBrief:{title:proposal.title,objective:proposal.nextAction,evidence:proposal.sources,steps:['Review the cited customer evidence','Define a reproducible acceptance example','Propose affected files and independent checks','Return an implementation estimate for separate approval'],costEstimate:null,requiresOwnerApproval:['Implementation scope','Paid session limit','Any release'],ownerFeedback:store.ownerDecisions().find(d=>d.revision===work.payload.ownerDecision)?.feedback??''}}:{})});
    }else if(work.kind==='candidate_review'){
     const review=work.payload.deliveryTask?await runXartsDelivery(store,root,work.payload.deliveryTask):await inspectCandidate(store,String(work.payload.incidentId),checkout);
     store.finishWork(work.id,work.token,review.state,review.result);

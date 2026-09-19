@@ -54,3 +54,16 @@ it('delivery progress replaces historical blockers and only an activated release
  expect(done.heading).toBe('Verified release is active');expect(done.stages.at(-1)?.state).toBe('done');
  expect(done.ticker).not.toContain('No release yet');
 });
+
+it('turns an owner commission into a durable planning brief without granting engineering authority',async()=>{
+ const s=setup();const record={schema:'xarts-chat/feedback@1',kind:'rating',value:'down',note:'Please add support for labels',subject:{chartId:'bar'}};
+ s.store.ingest('owner-evidence',hashCanonical(record),record,null);await runOrchestrator(s.store,s.root);
+ const proposal=s.store.proposals()[0];
+ const decision=s.store.decideProposal({proposalId:proposal.id,revision:hashCanonical(proposal),action:'approve_plan',feedback:'Keep the current palette'});
+ const reopened=new ControllerStore(s.path);stores.push(reopened);
+ expect(reopened.ownerDecisions()[0].feedback).toBe('Keep the current palette');
+ await runOrchestrator(reopened,s.root);
+ const work=reopened.workQueue().find(w=>w.id===decision.workId);
+ expect(work).toMatchObject({state:'completed',result:{implementationAuthorized:false,planningBrief:{ownerFeedback:'Keep the current palette',evidence:['owner-evidence'],costEstimate:null}}});
+ expect(reopened.engineeringReservations()).toHaveLength(0);
+});

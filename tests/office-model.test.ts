@@ -110,3 +110,13 @@ describe('shared office projection', () => {
   });
 
 });
+
+it('projects owner decisions into the backlog without presenting planning as a shipped feature',()=>{
+ const proposals=['plan','change','decline'].map(id=>({id,title:id,category:'feature',status:'proposed'}));
+ const model=createOfficeModel({operationsOverview:{proposals},ownerReport:{decisions:[{id:'plan',resolution:{action:'approve_plan',workId:'work'}},{id:'change',resolution:{action:'request_changes'}},{id:'decline',resolution:{action:'reject'}}],decisionWork:[{id:'work',state:'completed'}]}},'live',createDemoState());
+ const cards=model.kanban.columns.flatMap(c=>c.cards);
+ expect(cards.find(c=>c.id==='plan')).toMatchObject({status:'planning_completed'});
+ expect(cards.find(c=>c.id==='change')).toMatchObject({status:'changes_requested'});
+ expect(cards.find(c=>c.id==='decline')).toBeUndefined();
+ expect(model.kanban.columns.find(c=>c.id==='review')?.cards.map((c:{id:string})=>c.id)).toEqual(['plan','change']);
+});

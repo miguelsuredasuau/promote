@@ -47,7 +47,7 @@ export function addOfficeFurniture(THREE, scene, materials = {}) {
   lathe(ottoman,[[0,0],[.43,0],[.52,.08],[.55,.55],[.5,.72],[.25,.76],[0,.76]],mustard);
   for(let i=0;i<6;i++){const a=i*Math.PI/3;curve(ottoman,[[Math.cos(a)*.44,.04,Math.sin(a)*.44],[Math.cos(a)*.548,.33,Math.sin(a)*.548],[Math.cos(a)*.5,.68,Math.sin(a)*.5],[Math.cos(a)*.3,.75,Math.sin(a)*.3]],.009,mustard,12);}
   // Ergonomic task chair: five-star metal base, casters, contoured mesh back and armrests.
-  const chair=new THREE.Group();chair.position.set(-5.25,0,4.1);group.add(chair);
+  const chair=new THREE.Group();chair.name='authored-task-chair';chair.position.set(-5.25,0,4.1);group.add(chair);
   add(chair,new THREE.CylinderGeometry(.075,.09,.64,16),chrome,0,.44,0);
   for(let i=0;i<5;i++){const a=i*Math.PI*2/5,dx=Math.cos(a),dz=Math.sin(a);curve(chair,[[0,.27,0],[dx*.36,.18,dz*.36],[dx*.69,.14,dz*.69]],.048,chrome,12);const wheel=add(chair,new THREE.CylinderGeometry(.105,.105,.105,16),black,dx*.7,.105,dz*.7);wheel.rotation.z=Math.PI/2;wheel.rotation.y=-a;}
   const seat=add(chair,new THREE.SphereGeometry(1,32,16),charcoal,0,.89,0);seat.scale.set(.67,.15,.59);
@@ -79,4 +79,61 @@ export function addOfficeFurniture(THREE, scene, materials = {}) {
   }
   plant(-9,-5.5,1.15);plant(9,-5.5,1.06,1);plant(9,5.5,.9,2);plant(-9,4.4,.85,.5);
   return { group, materials: owned };
+}
+
+/** Articulation belongs to the presentation layer; it cannot advance controller state. */
+export function articulateVault(THREE, placed, display, ledger) {
+  placed.updateWorldMatrix(true,true);
+  const inverse=placed.matrixWorld.clone().invert(), bounds=new THREE.Box3();
+  const sources=[];
+  placed.traverse(mesh=>{if(!mesh.isMesh||mesh.isSkinnedMesh)return;const geometry=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();geometry.applyMatrix4(inverse.clone().multiply(mesh.matrixWorld));geometry.computeBoundingBox();bounds.union(geometry.boundingBox);sources.push({mesh,geometry});});
+  const size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
+  const pivot=new THREE.Vector3(bounds.max.x-size.x*.065,0,bounds.max.z-.32);
+  const door=new THREE.Group();door.name='articulated-vault-door';door.position.copy(pivot);placed.add(door);
+  const enamel=new THREE.MeshPhysicalMaterial({color:0x194eac,metalness:.28,roughness:.3,clearcoat:.55}),steel=new THREE.MeshStandardMaterial({color:0xc1ccd2,metalness:.75,roughness:.3});let doorTriangles=0;
+  for(const {mesh,geometry} of sources){
+    const p=geometry.attributes.position, buckets=[[],[]];
+    for(let i=0;i<p.count;i+=3){const x=(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3,y=(p.getY(i)+p.getY(i+1)+p.getY(i+2))/3,z=(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3;
+      const front=x>bounds.min.x+size.x*.065&&x<bounds.max.x-size.x*.065&&y>bounds.min.y+size.y*.05&&y<bounds.max.y-size.y*.07&&z>pivot.z;
+      buckets[front?1:0].push(i,i+1,i+2);if(front)doorTriangles++;
+    }
+    buckets.forEach((indices,isDoor)=>{if(!isDoor||!indices.length)return;const g=new THREE.BufferGeometry();for(const [name,attribute] of Object.entries(geometry.attributes)){const values=new attribute.array.constructor(indices.length*attribute.itemSize);indices.forEach((source,target)=>{for(let n=0;n<attribute.itemSize;n++)values[target*attribute.itemSize+n]=attribute.array[source*attribute.itemSize+n];});g.setAttribute(name,new THREE.BufferAttribute(values,attribute.itemSize,attribute.normalized));}
+      if(isDoor)g.translate(-pivot.x,-pivot.y,-pivot.z);g.computeBoundingSphere();const part=new THREE.Mesh(g,isDoor?steel:enamel);part.castShadow=true;part.receiveShadow=true;(isDoor?door:placed).add(part);
+    });mesh.visible=false;geometry.dispose();
+  }
+  if(!doorTriangles)return null;
+  // Reparent the live LCD onto the actual moving door without changing its registration.
+  door.attach(display.face);
+  ledger.face.visible=true;placed.attach(ledger.face);ledger.face.position.set(center.x,size.y*.5,pivot.z-.09);
+  const dark=new THREE.MeshStandardMaterial({color:0x102a39,roughness:.45,metalness:.35});
+  const lining=new THREE.Mesh(new THREE.BoxGeometry(size.x*.88,size.y*.9,.12),dark);lining.position.set(center.x,size.y*.5,pivot.z-.18);placed.add(lining);
+  // Repair the generated shell's ragged planar boundary with an exact, bevelled housing.
+  const outline=new THREE.Shape();outline.moveTo(-size.x/2,0);outline.lineTo(size.x/2,0);outline.lineTo(size.x/2,size.y);outline.lineTo(-size.x/2,size.y);outline.closePath();
+  const opening=new THREE.Path();opening.moveTo(-size.x*.435,size.y*.05);opening.lineTo(-size.x*.435,size.y*.93);opening.lineTo(size.x*.435,size.y*.93);opening.lineTo(size.x*.435,size.y*.05);opening.closePath();outline.holes.push(opening);
+  const housing=new THREE.Mesh(new THREE.ExtrudeGeometry(outline,{depth:pivot.z-bounds.min.z+.06,bevelEnabled:true,bevelSize:.028,bevelThickness:.028,bevelSegments:3,steps:1}),enamel);housing.position.set(center.x,0,bounds.min.z);housing.castShadow=true;housing.receiveShadow=true;placed.add(housing);
+  const backing=new THREE.Mesh(new THREE.BoxGeometry(size.x*.87,size.y*.88,.16),steel);backing.position.set(-size.x*.435,size.y*.49,.09);door.add(backing);
+  for(const [w,h,x,y] of [[size.x*.91,.055,center.x,size.y*.94],[size.x*.91,.055,center.x,size.y*.055],[.055,size.y*.9,bounds.min.x+size.x*.05,size.y*.5],[.055,size.y*.9,bounds.max.x-size.x*.05,size.y*.5]]){const rim=new THREE.Mesh(new THREE.BoxGeometry(w,h,.11),steel);rim.position.set(x,y,pivot.z+.005);placed.add(rim);}
+  return {door,triangles:doorTriangles,width:size.x,height:size.y,center:new THREE.Vector3(center.x,size.y*.5,pivot.z),surface:ledger};
+}
+
+/** Rotate in the rig's parent-space; generated bones do not share Blender's local axes. */
+export function applyWalkingPose(THREE, staff, distance, dt, walking) {
+  staff.stride=(staff.stride??0)+distance*2*Math.PI/.9;
+  staff.gaitWeight=THREE.MathUtils.damp(staff.gaitWeight??0,walking?1:0,7,dt);
+  for(const {bone,rotation,position} of staff.bones){bone.quaternion.copy(rotation);bone.position.copy(position);}
+  const w=staff.gaitWeight, phase=staff.stride, axis=new THREE.Vector3(), parentQ=new THREE.Quaternion(), rotation=new THREE.Quaternion();
+  staff.placed.updateWorldMatrix(true,true);
+  for(const {bone,position} of staff.bones){
+    if(/^(Left|Right)Arm$/.test(bone.name)){
+      const child=bone.children.find(n=>n.isBone);if(child){const origin=bone.getWorldPosition(new THREE.Vector3()),direction=child.getWorldPosition(new THREE.Vector3()).sub(origin).normalize();const desired=new THREE.Vector3(bone.name.startsWith('Left')?.14:-.14,-.985,.035).normalize().applyQuaternion(staff.placed.quaternion);const delta=new THREE.Quaternion().setFromUnitVectors(direction,desired);bone.parent.getWorldQuaternion(parentQ);bone.quaternion.premultiply(parentQ.clone().invert().multiply(delta).multiply(parentQ));bone.updateWorldMatrix(false,true);}
+    }
+    const side=bone.name.startsWith('Left')?1:-1, cycle=Math.sin(phase+(side===1?0:Math.PI));let angle=0;
+    if(/UpLeg$/.test(bone.name))angle=cycle*.30*w;
+    else if(/^(Left|Right)Leg$/.test(bone.name))angle=-Math.max(0,-cycle)*.48*w;
+    else if(/^(Left|Right)Foot$/.test(bone.name))angle=-cycle*.12*w;
+    else if(/^(Left|Right)Arm$/.test(bone.name))angle=-cycle*.16*w;
+    if(!angle)continue;
+    // World right of the person, converted into the bone parent's coordinates.
+    axis.set(1,0,0).applyQuaternion(staff.placed.quaternion);bone.parent.getWorldQuaternion(parentQ);axis.applyQuaternion(parentQ.invert()).normalize();rotation.setFromAxisAngle(axis,angle);bone.quaternion.premultiply(rotation);bone.updateWorldMatrix(false,true);
+  }
 }

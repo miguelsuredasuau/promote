@@ -84,7 +84,7 @@ const heartbeatTimer = setInterval(heartbeat, 30000);
 const engineeringTimer = setInterval(() => { void pollEngineering().catch(() => console.error('Engineering observation failed')); }, 15000);
 const inboxTimer = outbox ? setInterval(importFeedback, 3000) : null;
 const server = createOperatorServer({ root, store, checkout: process.env.PROMOTE_PROJECT_PATH });
-server.listen(port, '127.0.0.1', () => console.log(`Promoted operator: http://127.0.0.1:${port} (read-only)`));
+server.listen(port, '127.0.0.1', () => console.log(`Promoted operator: http://127.0.0.1:${port} (owner planning decisions enabled)`));
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => { clearInterval(heartbeatTimer); clearInterval(engineeringTimer); if (inboxTimer) clearInterval(inboxTimer); server.close(() => { process.exit(0); }); });
 }

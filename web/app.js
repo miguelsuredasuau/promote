@@ -1,3 +1,4 @@
+import { createDecisionDesk } from '/decision-desk.js';
 import { createOfficeScene } from '/office-scene.js';
 import { createDemoState, advanceDemo, moveDemoCard, createOfficeModel, qaStageCopy } from '/office-model.js';
 const $=id=>document.getElementById(id);
@@ -12,11 +13,13 @@ function empty(text){return node('p',text,'empty')}
 function heading(text){return node('h3',text,'mini-heading')}
 const nativeSurfaces={};
 for(const key of ['backlog','engineering','strategy','qa','finance','ticker']){const surface=node('section',undefined,'world-surface native-office-surface');surface.dataset.station=key;surface.setAttribute('aria-label',key+' workspace');surface.innerHTML=$('desk').innerHTML;surface.querySelectorAll('[id]').forEach(n=>{n.dataset.field=n.id;n.removeAttribute('id');});surface.querySelector('[data-field="close-desk"]').onclick=()=>closeOfficeDesk();surface.inert=true;$('scene-stage').append(surface);nativeSurfaces[key]=surface;}
+const decisions=createDecisionDesk({onSaved:async()=>{const r=await fetch('/api/overview');if(r.ok){snapshot=await r.json();update(true);}}});
 let scene;
 try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detailElement:$('desk'),nativeSurfaces})}catch(error){ console.error('Office initialization failed',error); $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}
 function update(force=false){
  model=createOfficeModel(snapshot,mode,demoState);
+ model.ownerDecisions=mode==='live'?list(snapshot?.ownerReport?.decisions).filter(d=>!d.resolution).length:0;
  const stamp=JSON.stringify(model);const changed=stamp!==lastModel;lastModel=stamp;
  if(changed||force)scene?.update(model);
  const count=[allCards().filter(c=>c.status!=='completed'&&c.status!=='done').length,list(snapshot?.operations).length,model.strategy.ideas.length,model.qa.candidateId?1:0,model.finance.currency??'—'];
@@ -30,8 +33,8 @@ function update(force=false){
  $('live-mode').setAttribute('aria-pressed',String(mode==='live'));$('demo-mode').setAttribute('aria-pressed',String(mode==='demo'));
  setText('demo-step',`Step ${demoState.phase+1}/7 · ${model.qa.status==='idle'?'Ready to begin':human(model.qa.status)} · No real work or spending.`);
  $('advance-demo').disabled=demoState.phase>=6;setText('play-demo',playTimer?'Pause story':'Play story');
- setText('briefing-summary',mode==='demo'?`Demo · ${model.engineering.task}`:'Scope, evidence, spend and your big decisions');
- if(changed||force){for(const [key,surface] of Object.entries(nativeSurfaces))renderDesk(key,surface);if(desk==='briefing')renderDesk();}
+ setText('briefing-summary',mode==='demo'?`Demo · ${model.engineering.task}`:`${model.ownerDecisions} proposals for your decision`);
+ if(changed||force){for(const [key,surface] of Object.entries(nativeSurfaces))renderDesk(key,surface);if(desk==='briefing')decisions.update(snapshot,mode);}
 }
 function stopStory(){clearInterval(playTimer);playTimer=null;setText('play-demo','Play story')}
 function nextStep(){demoState=advanceDemo(demoState);if(demoState.phase>=6)stopStory();update()}
@@ -39,9 +42,9 @@ $('advance-demo').onclick=nextStep;
 $('play-demo').onclick=()=>{if(playTimer){stopStory();return}if(demoState.phase>=6)demoState=createDemoState();nextStep();playTimer=setInterval(nextStep,4200);update()};
 $('reset-demo').onclick=()=>{stopStory();demoState=createDemoState();update()};
 for(const m of ['live','demo'])$(`${m}-mode`).onclick=()=>{stopStory();mode=m;update(true)};
-function openDesk(key,source){if(!['backlog','engineering','strategy','qa','finance','ticker','briefing'].includes(key))return;desk=key;opener=source??document.activeElement;scene?.focus(key==='briefing'?null:key);document.body.dataset.station=key;if(nativeSurfaces[key]){if($('desk').open)$('desk').close();$('main').inert=false;nativeSurfaces[key].inert=false;requestAnimationFrame(()=>document.querySelector('.office-return')?.focus({preventScroll:true}));return;}$('main').inert=true;$('desk').dataset.station=key;renderDesk();if(!$('desk').open)$('desk').show();$('close-desk').focus({preventScroll:true});}
+function openDesk(key,source){if(!['backlog','engineering','strategy','qa','finance','ticker','briefing'].includes(key))return;desk=key;opener=source??document.activeElement;scene?.focus(key);document.body.dataset.station=key;if(nativeSurfaces[key]){if($('desk').open)$('desk').close();$('main').inert=false;nativeSurfaces[key].inert=false;requestAnimationFrame(()=>document.querySelector('.office-return')?.focus({preventScroll:true}));return;}$('main').inert=true;$('desk').dataset.station=key;renderDesk();if(!$('desk').open)$('desk').show();$('close-desk').focus({preventScroll:true});}
 function closeOfficeDesk(){desk=null;$('main').inert=false;for(const s of Object.values(nativeSurfaces))s.inert=true;delete document.body.dataset.station;scene?.focus(null);opener?.focus?.();}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&desk&&desk!=='briefing'){e.preventDefault();closeOfficeDesk();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&desk){e.preventDefault();if($('desk').open)$('desk').close();else closeOfficeDesk();}});
 
 function moveCard(id,columnId){demoState=moveDemoCard(demoState,id,columnId);update()}
 function kanban(){
@@ -100,16 +103,8 @@ function renderDesk(key=desk,shell=document.getElementById('desk')){
   const values=[['Usage',model.usage??'Not connected'],['Errors',model.errors??'Not connected'],['Backlog',allCards().filter(c=>!['completed','done'].includes(c.status)).length],['QA',human(model.qa.status)],['Spend',model.finance.spent==null?'Not reported':`${model.finance.currency??'?'} ${model.finance.spent.toFixed(2)}`],['Source',mode==='demo'?'Demo':'Live snapshot']];
   for(const [label,value] of values){const tile=node('section');tile.append(node('small',label),node('strong',String(value)));metrics.append(tile)}content.append(metrics);
  }
- if(desk==='briefing'){
-  const project=snapshot?.project??{};content.append(record('Xarts Office',project.repositoryAvailable?`Checkout ${project.head?.slice(0,10)} · ${project.revisionMatchesCatalog?'audit matches':'re-audit required'}`:'Checkout not available'));
-  content.append(record('Mandate',snapshot?.ownerReport?.mandate?.routineWork??'No operating mandate configured.',snapshot?.ownerReport?.mandate?.status));
-  const feedbackItems=list(snapshot?.inbox);
-  const pending=feedbackItems.filter(item=>item.disposition==='awaiting_triage').length;
-  content.append(record(mode==='demo'?'Demo feedback':'Chat feedback', `${feedbackItems.length} recent records received · ${pending?`${pending} awaiting triage`:'all triaged'}`));
-  feedbackItems.slice(0,12).forEach(item=>content.append(record(`${human(item.kind)} · ${human(item.outcome)}`,item.summary||item.runId||item.sourceKey,item.disposition)));
-  list(snapshot?.implementation?.milestones).forEach(m=>content.append(record(human(m.id),m.completedSlice??'Not yet delivered.',m.status)));
-  content.append(record('Implementation verification',`${snapshot?.implementation?.verification?.testsPassed??'Unknown'} tests recorded. These verify Promoted, not a candidate Xarts release.`));
- }
+ if(desk==='briefing'){setText('desk-eyebrow','OWNER / DECISION DESK');setText('desk-title','The next move is yours.');setText('desk-subtitle','');decisions.mount(content,snapshot,mode);}
+
  setText('desk-footer',mode==='demo'?'Demo state is local to this page. Reset or reload clears it. No live approval or spending.':'Live records · read-only');
 }
 document.addEventListener('click',e=>{const target=e.target.closest('[data-open]');if(target)openDesk(target.dataset.open,target)});
