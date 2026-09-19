@@ -16,7 +16,8 @@ export const XARTS_NODE_IMAGE = 'node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667a
 const ARCHIVE_BASE = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'LICENSE', 'LICENSE-COMMERCIAL.md'];
 
 /** The SDK build snapshots every path the candidate's package.json publishes (`files`
- * and `exports` targets), so the archive must carry them too; committed paths only. */
+ * and `exports` targets) plus the top-level docs/*.md it bundles as READMEs, so the
+ * archive must carry them too; committed paths only. */
 export async function archivePaths(git: (args: string[]) => Promise<string>, sha: string) {
   const pkg = JSON.parse(await git(['show', `${sha}:package.json`])) as { files?: unknown; exports?: unknown };
   const declared = new Set<string>();
@@ -25,6 +26,7 @@ export async function archivePaths(git: (args: string[]) => Promise<string>, sha
   const tracked = new Set<string>();
   for (const file of (await git(['ls-tree', '-r', '--name-only', sha])).split('\n')) {
     if (!file) continue;
+    if (/^docs\/[^/]+\.md$/.test(file)) declared.add(file);
     tracked.add(file);
     for (let i = file.indexOf('/'); i !== -1; i = file.indexOf('/', i + 1)) tracked.add(file.slice(0, i));
   }

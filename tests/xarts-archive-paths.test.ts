@@ -17,13 +17,15 @@ describe('archivePaths', () => {
       files: ['core', 'docs/catalogo-ficha.json', 'docs/primitivas-muestras', 'specs/demo', '!**/*.test.ts', 'docs/missing.json'],
       exports: { '.': './core/index.ts', './mandos.json': './docs/mandos.json', './package.json': './package.json', './x': { import: './x.mjs' } },
     };
-    const tree = ['core/index.ts', 'docs/catalogo-ficha.json', 'docs/mandos.json', 'docs/primitivas-muestras/a.svg', 'specs/demo/bar.json', 'package.json'];
+    const tree = ['core/index.ts', 'docs/catalogo-ficha.json', 'docs/mandos.json', 'docs/primitivas-muestras/a.svg', 'specs/demo/bar.json', 'package.json', 'docs/SPREADSHEETS.md', 'docs/analysis/notes.md'];
     const paths = await archivePaths(fakeGit(pkg, tree), sha);
     expect(paths).toContain('docs/catalogo-ficha.json');
     expect(paths).toContain('docs/mandos.json');
     expect(paths).toContain('docs/primitivas-muestras');
     expect(paths).toContain('specs/demo');
     expect(paths).not.toContain('docs/missing.json');
+    expect(paths).toContain('docs/SPREADSHEETS.md');
+    expect(paths).not.toContain('docs/analysis/notes.md');
     expect(paths.filter((p) => p === 'core')).toHaveLength(1);
     expect(paths.filter((p) => p === 'package.json')).toHaveLength(1);
     expect(paths.some((p) => p.includes('*'))).toBe(false);
