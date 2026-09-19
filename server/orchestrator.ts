@@ -9,6 +9,7 @@ import { rolePrompt } from './role-prompts';
 import { loadDevin } from './devin-config';
 import { dispatchEngineering } from './engineering';
 import { DeliveryTask, runXartsDelivery } from './xarts-delivery';
+import { originMatchesRepo } from './repo-identity';
 const exec=promisify(execFile);
 
 /** Versioned local rules. No model inference or paid calls are claimed by classification. */
@@ -45,8 +46,7 @@ export async function inspectCandidate(store:ControllerStore,incidentId:string,c
  if(!checkout||!reservation?.candidateSha||reservation.state!=='stopped')return {state:'blocked' as const,result:{reason:'candidate_or_checkout_not_ready'}};
  const task=reservation.task,sha=reservation.candidateSha;
  const git=async(args:string[]) => (await exec('git',args,{cwd:checkout,timeout:30000,killSignal:'SIGKILL',maxBuffer:1024*1024})).stdout.trim();
- const origin=await git(['remote','get-url','origin']);
- if(![ `https://github.com/${task.repo}.git`,`https://github.com/${task.repo}`,`git@github.com:${task.repo}.git`].includes(origin))return {state:'blocked' as const,result:{reason:'repository_identity_mismatch'}};
+ if(!await originMatchesRepo(git,task.repo))return {state:'blocked' as const,result:{reason:'repository_identity_mismatch'}};
  if(!/^[a-f0-9]{40}$/.test(sha)||!/^promote\/[A-Za-z0-9._-]+$/.test(task.providerExtension.branch))throw Error('invalid_candidate_identity');
  await git(['fetch','--no-tags','origin',task.providerExtension.branch]);
  if(await git(['rev-parse','FETCH_HEAD'])!==sha)return{state:'blocked' as const,result:{reason:'candidate_branch_mismatch',candidateSha:sha}};
@@ -63,8 +63,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
   let deliveryTask=DeliveryTask.parse(JSON.parse(readFileSync(deliveryPath,'utf8')));
   if(deliveryTask.sourceBranch){
    const git=async(args:string[])=>(await exec('git',args,{cwd:deliveryTask.checkout,timeout:30000,killSignal:'SIGKILL',maxBuffer:1024*1024})).stdout.trim();
-   const origin=await git(['remote','get-url','origin']);
-   if(![`https://github.com/${deliveryTask.repo}`,`https://github.com/${deliveryTask.repo}.git`,`git@github.com:${deliveryTask.repo}.git`].includes(origin))throw Error('repository_identity_mismatch');
+   if(!await originMatchesRepo(git,deliveryTask.repo))throw Error('repository_identity_mismatch');
    await git(['fetch','--no-tags','origin',deliveryTask.sourceBranch]);
    deliveryTask=DeliveryTask.parse({...deliveryTask,candidateSha:await git(['rev-parse','FETCH_HEAD'])});
   }
