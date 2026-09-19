@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="410" viewBox="0 0 1280 410" role="img" aria-labelledby="title desc">
+<title id="title">Three layers, one maintenance loop</title>
+<desc id="desc">Observe application errors and feedback. Improve the repository with scoped Devin tasks. Independently verify and deliver accepted releases. Project activity feeds the next cycle. General SDK and deployment integrations are planned.</desc>
+<rect width="1280" height="410" rx="16" fill="#eeeae3"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<path d="M435 57V303M847 57V303" stroke="#c4cdc3"/>
+<g fill="#213c35">
+<text x="40" y="68" font-size="14" letter-spacing="2">01 / YOUR APPLICATION</text>
+<text x="40" y="121" font-size="39" font-weight="700">Observe</text>
+<text x="40" y="165" font-size="19">Errors, feedback, execution context.</text>
+<text x="40" y="207" font-size="17">Preserve what happened.</text>
+<text x="40" y="232" font-size="17">Give every issue a starting point.</text>
+<text x="40" y="283" font-size="14" fill="#576c60">Xarts intake live · General SDK planned</text>
+<text x="465" y="68" font-size="14" letter-spacing="2">02 / YOUR ENGINEERING TEAM</text>
+<text x="465" y="121" font-size="39" font-weight="700">Improve</text>
+<text x="465" y="165" font-size="19">Promote coordinates. Devin builds.</text>
+<text x="465" y="207" font-size="17">Prioritize and scope the work.</text>
+<text x="465" y="232" font-size="17">Return a candidate commit.</text>
+<text x="465" y="283" font-size="14" fill="#576c60">Scoped dispatch live · Discovery planned</text>
+<text x="878" y="68" font-size="14" letter-spacing="2">03 / YOUR RELEASE PIPELINE</text>
+<text x="878" y="121" font-size="39" font-weight="700">Verify &amp; deliver</text>
+<text x="878" y="165" font-size="19">Check the change independently.</text>
+<text x="878" y="207" font-size="17">Build. Test. Replay the failure.</text>
+<text x="878" y="232" font-size="17">Activate an accepted release.</text>
+<text x="878" y="283" font-size="14" fill="#576c60">Xarts pipeline wired · Full cycle pending</text>
+</g>
+<rect x="24" y="326" width="1232" height="60" rx="8" fill="#213c35"/>
+<text x="640" y="363" text-anchor="middle" fill="#fffdf7" font-size="18" letter-spacing=".5">Application evidence → Scoped engineering → Independent checks → Release → New evidence</text>
+</g>
+</svg>

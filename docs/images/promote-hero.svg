@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="520" viewBox="0 0 1280 520" role="img" aria-labelledby="title desc">
+  <title id="title">Promote. You build it. Give it a team.</title>
+  <desc id="desc">An engineering team for the solo developer. Observe, improve, verify and deliver.</desc>
+  <rect width="1280" height="520" rx="20" fill="#eeeae3"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#213c35">
+    <text x="64" y="83" font-size="42" font-weight="800" letter-spacing="-2">promote.</text>
+    <text x="1216" y="74" text-anchor="end" font-size="13" letter-spacing="2">BUILT FOR THE SOLO DEVELOPER</text>
+    <path d="M64 111H1216" stroke="#c5cec5"/>
+    <text x="60" y="222" font-size="84" font-weight="800" letter-spacing="-4">You build it.</text>
+    <text x="60" y="315" font-size="84" font-weight="800" letter-spacing="-4">Give it a team.</text>
+    <text x="64" y="371" font-size="23" fill="#53675f">From user feedback to verified improvements.</text>
+    <rect x="64" y="429" width="435" height="41" rx="20" fill="#213c35"/>
+    <text x="86" y="455" font-size="14" fill="#fffdf7" letter-spacing="1">OBSERVE  →  IMPROVE  →  VERIFY  →  DELIVER</text>
+  </g>
+  <g stroke="#213c35" stroke-width="2" stroke-linejoin="round">
+    <path d="M884 344L1000 278L1116 344L1000 410Z" fill="#ced7c8"/>
+    <path d="M884 344V375L1000 441V410Z" fill="#abbba9"/>
+    <path d="M1116 344V375L1000 441V410Z" fill="#819b88"/>
+    <path d="M924 278L1000 234L1076 278L1000 322Z" fill="#ebbd67"/>
+    <path d="M924 278V308L1000 352V322Z" fill="#d7a54b"/>
+    <path d="M1076 278V308L1000 352V322Z" fill="#ba893a"/>
+    <path d="M960 213L1000 190L1040 213L1000 236Z" fill="#f8f5ef"/>
+    <path d="M960 213V241L1000 264V236Z" fill="#d5e0d7"/>
+    <path d="M1040 213V241L1000 264V236Z" fill="#a7bfae"/>
+    <path d="M1000 166V130M985 145L1000 130L1015 145" fill="none" stroke-width="3"/>
+  </g>
+</svg>
