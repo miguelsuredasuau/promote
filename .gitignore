@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.local/
+out/
+*.log
+.DS_Store
+scratchpad/
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*

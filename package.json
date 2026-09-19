@@ -1,0 +1,24 @@
+{
+  "name": "promote",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Independent, adapter-driven engineering orchestration and verification.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test"
+  },
+  "dependencies": {
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}

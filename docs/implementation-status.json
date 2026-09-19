@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "product": "Promoted",
+  "repository": "promote",
+  "milestones": [
+    {
+      "id": "contracts",
+      "status": "done",
+      "evidence": {
+        "node": "22.22.1",
+        "typecheck": "pass",
+        "testsPassed": 70
+      }
+    },
+    {
+      "id": "controller",
+      "status": "next",
+      "acceptance": [
+        "durable incident intake with idempotency",
+        "transactional event sequence",
+        "worker lease prevents duplicate dispatch",
+        "ambiguous provider creation persists and blocks redispatch",
+        "restart preserves operation identity"
+      ]
+    },
+    {
+      "id": "devin-adapter",
+      "status": "planned"
+    },
+    {
+      "id": "runner",
+      "status": "planned"
+    },
+    {
+      "id": "external-project-adapter",
+      "status": "planned"
+    },
+    {
+      "id": "operator-ui",
+      "status": "planned"
+    },
+    {
+      "id": "real-repair-loop",
+      "status": "planned"
+    }
+  ],
+  "paidDispatchEnabled": false
+}
