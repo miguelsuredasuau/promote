@@ -24,6 +24,8 @@ createServer(async(req,res)=>{
  if(/^\/model-[0-9a-f-]{36}\.glb$/.test(url.pathname)){res.setHeader('Content-Type','model/gltf-binary');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}
  if(/^\/(?:item|render)-[0-9a-f-]{36}\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}
  if(/^\/room-v[1-9][0-9]*\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}
+ if(url.pathname==='/project-logo.svg'){res.setHeader('Content-Type','image/svg+xml');res.end(await readFile(join(process.env.PROMOTE_PROJECT_PATH??join(root,'..','xarts by anlak'),'xarts.svg')));return;}
+ if(/^\/native-(room|ticker)\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}
  if(url.pathname==='/brand-reference.png'){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,'references','logo.png')));return;}
  if(url.pathname==='/progress'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({...await progress(),token}));return;}
  if(/^\/previews\/(chair|engineer)\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.split('/').at(-1).replace('.png','-provider-preview.png'))));return;}

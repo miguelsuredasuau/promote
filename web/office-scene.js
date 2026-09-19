@@ -2,7 +2,7 @@ import * as THREE from '/vendor/three.module.js';
 import { GLTFLoader } from '/vendor/GLTFLoader.js';
 import { HDRLoader } from '/vendor/HDRLoader.js';
 import { createOfficeMaterials } from './office-materials.js';
-import { addOfficeFurniture } from './office-furniture.js';
+import { addOfficeFurniture, articulateVault, applyWalkingPose } from './office-furniture.js';
 import { qaStageCopy } from './office-model.js';
 
 /** The scene is a view of the application model; it never advances a workflow. */
@@ -19,32 +19,31 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
   };
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
   catch { const message = fallback(); return { update() {}, focus() {}, dispose() { message.remove(); } }; }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.VSMShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .98;
   renderer.setClearColor(P.cream, 0);
   renderer.domElement.setAttribute('role', 'img');
   renderer.domElement.setAttribute('aria-label', 'Isometric office with backlog, engineering, strategy, QA and finance stations. Use the station controls to inspect them.');
   renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:pan-y';
   host.append(renderer.domElement);
   const scene = new THREE.Scene();
-  const generatedMixers=[];
   const generatedStaff=[];
   const assetNotice=document.createElement('a');assetNotice.className='generated-preview-notice';assetNotice.href='http://127.0.0.1:4311/#collection';assetNotice.textContent='Loading generated asset previews…';host.append(assetNotice);
-  const generatedStatus={};
+  const generatedStatus={};let vaultRig=null, conveyor=null;
   const camera = new THREE.OrthographicCamera(-13, 13, 10, -10, .1, 100);
   const baseCamera = new THREE.Vector3(19, 22, 27);
   camera.position.copy(baseCamera); camera.lookAt(0, 1, 0);
-  scene.add(new THREE.HemisphereLight(0xfff9ee, 0x9dafa7, 1.15));
-  const sun = new THREE.DirectionalLight(0xffedd5, 2.0);
+  scene.add(new THREE.HemisphereLight(0xfff9ee, 0x8ba5bd, .65));
+  const sun = new THREE.DirectionalLight(0xfff2df, 2.6);
   sun.position.set(-8, 20, 12); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 60 });
   sun.shadow.radius = 4; sun.shadow.blurSamples = 8;
   sun.shadow.normalBias = .04; sun.shadow.bias = -.0001;
-  scene.add(sun);
+  scene.add(sun);const rimLight=new THREE.DirectionalLight(0xc1dcff,.65);rimLight.position.set(9,9,-5);scene.add(rimLight);
   const mats = Object.fromEntries(Object.entries(P).map(([k, color]) => [k, new THREE.MeshStandardMaterial({ color, roughness: .8 })]));
   const textures = [], labels = [], pickable = [], stations = {};
   const finish = createOfficeMaterials(THREE); textures.push(...finish.textures);
@@ -103,20 +102,22 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     for (const word of words) { const next = line ? `${line} ${word}` : word; if (c.measureText(next).width > maxWidth && line) { c.fillText(line, x, y + row * (size + 8)); row++; line = word; if (row >= maxLines) return; } else line = next; }
     if (row < maxLines) c.fillText(line, x, y + row * (size + 8));
   }
-  new HDRLoader().load('/assets/studio/studio-small-09.hdr', environment => { if (disposed) { environment.dispose(); return; } environment.mapping = THREE.EquirectangularReflectionMapping; scene.environment = environment; scene.environmentIntensity = .4; textures.push(environment); requestRender(); }, undefined, () => {});
+  new HDRLoader().load('/assets/studio/studio-small-09.hdr', environment => { if (disposed) { environment.dispose(); return; } environment.mapping = THREE.EquirectangularReflectionMapping; scene.environment = environment; scene.environmentIntensity = .65; textures.push(environment); requestRender(); }, undefined, () => {});
   // Open daylight studio: a floating plinth, full-height glazing and slim frames.
   const shellWhite = new THREE.MeshStandardMaterial({ color: 0xfafbf8, roughness: .68 });
   const accentCoral = new THREE.MeshStandardMaterial({ color: 0xf17836, roughness: .65 });
   const accentLilac = new THREE.MeshStandardMaterial({ color: 0xb6a2e0, roughness: .65 });
   const accentBlue = new THREE.MeshStandardMaterial({ color: 0x4d8fda, roughness: .48 });
   const brushed = new THREE.MeshStandardMaterial({ color: 0x9db5be, metalness: .65, roughness: .32 });
-  rounded(scene, 21, .42, 14.7, [0, -.34, 0], finish.woodEdge, .15);
+  rounded(scene, 21, .26, 14.7, [0, -.22, 0], new THREE.MeshStandardMaterial({color:0x183c54,metalness:.45,roughness:.35}), .08);
   rounded(scene, 20.6, .12, 14.3, [0, -.08, 0], finish.woodEdge, .035);
   const floorFace = new THREE.Mesh(new THREE.PlaneGeometry(20.55,14.25), finish.terrazzo); floorFace.rotation.x=-Math.PI/2; floorFace.position.y=-.015; floorFace.receiveShadow=true; scene.add(floorFace);
   box(scene, [20.2, .035, .025], [0, -.11, 7.22], mats.green);
+  const groundShadow=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({color:0x193c50,opacity:.2}));groundShadow.name='office-ground-shadow';groundShadow.rotation.x=-Math.PI/2;groundShadow.position.y=-.37;groundShadow.receiveShadow=true;scene.add(groundShadow);
   const glass = new THREE.MeshStandardMaterial({ color: 0xaadfe7, transparent: true, opacity: .22, roughness: .12, metalness: .08, depthWrite: false, side: THREE.DoubleSide });
   // The central brand/strategy wall stays solid; wide glass bays flank it.
-  box(scene, [7.1, 5.3, .17], [.1, 2.6, -7.12], shellWhite);
+  box(scene, [7.1, 5.3, .17], [.1, 2.6, -7.12], new THREE.MeshStandardMaterial({color:0x154aaa,roughness:.58}));
+  box(scene,[7.1,1.62,.18],[.1,4.42,-7.08],shellWhite);
   for (const bay of [{ x: -6.95, w: 6.35 }, { x: 7.03, w: 6.3 }]) {
     const pane = box(scene, [bay.w, 5.12, .045], [bay.x, 2.58, -7.1], glass); pane.castShadow = false;
     for (const x of [bay.x - bay.w / 2, bay.x, bay.x + bay.w / 2]) box(scene, [.055, 5.3, .09], [x, 2.6, -7.1], brushed);
@@ -197,17 +198,24 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
   label('Finance', anchor(finance, 0, 3.7, 0), 'office-label', 'finance');
   const tickerStation = station('ticker',5.9,-6.92);
   const tickerFrame = rounded(tickerStation, 5.2, .68, .13, [0,4.18,0], mats.petrol, .055);
-  const ticker = surface(tickerStation,4.95,.47,[0,4.18,.08],4096,160);
+  const ticker = surface(tickerStation,4.95,.47,[0,4.18,.08],4096,256);
   ticker.texture.wrapS=THREE.RepeatWrapping; ticker.texture.repeat.x=.5;
   label('Operations ticker',anchor(tickerStation,0,4.9,0),'office-label','ticker');
   let tickerExpansion=0;
   // Actual inspectable surfaces: DOM controls project onto these same mesh faces.
-  rounded(qa, 5.67, 2.67, .07, [0, 4.4, -1.05], finish.chrome);
+  const qaConsoleFrame=rounded(qa, 5.67, 2.67, .07, [0, 4.4, -1.05], finish.chrome);
   const qaConsole = surface(qa, 5.55, 2.55, [0, 4.4, -.95], 1100, 510);
   paint(qaConsole, '#eef5f4', c => { text(c, 'QUALITY CONTROL', 40, 45, 48, '#fffcf0'); text(c, 'Inspect the candidate · follow the evidence', 40, 125, 28, '#b5c6a0'); });
   const safeLedger = surface(finance, 2.12, 2.2, [0, 1.55, 1.165], 840, 870);
   paint(safeLedger, '#e7ece1', c => text(c, 'TREASURY', 50, 50, 45));
   const surfaces = { backlog: board, engineering: terminal, strategy: ideas, qa: qaConsole, finance: safeLedger, ticker };
+  const fixtureParts={
+    workstation:eng.children.filter(o=>o.isMesh&&o!==terminal.face),
+    backlog:backlog.children.filter(o=>o.isMesh&&o!==board.face),
+    ideas:strat.children.filter(o=>o.isMesh&&o!==ideas.face),
+    safe:finance.children.filter(o=>o!==safeDisplay.face),
+    'qa-line':qa.children.filter(o=>o.isMesh&&!gateLabels.some(s=>s.face===o)&&!gates.includes(o)&&!slats.includes(o)&&o!==qaConsole.face&&o.position.y<3.6)
+  };
   // Keep the original textured mesh at every camera distance. HTML is retained
   // only as an accessible record representation, never substituted over the object.
   for(const element of Object.values(nativeSurfaces))element.classList.add('semantic-surface');
@@ -347,6 +355,7 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
   const engBubble = label('', anchor(engineer.g, 0, 2.65, 0), 'office-bubble');
   const qaBubble = label('', anchor(tester.g, 0, 2.65, 0), 'office-bubble');
   const ceoBubble = label('', anchor(ceo.g, 0, 2.65, 0), 'office-bubble');
+  function activityBubble(node,title,detail,tone='neutral'){node.replaceChildren();const heading=document.createElement('strong'),copy=document.createElement('span');heading.textContent=title;copy.textContent=detail;node.append(heading,copy);node.dataset.tone=tone;node.dataset.active=detail?'true':'false';}
   function currency(value) { if (value === null || value === undefined || value === '') return '—'; const n = Number(value); return Number.isFinite(n) ? `${model.finance?.currency || '$'} ${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '—'; }
   function update(next) {
     if (disposed) return;
@@ -356,13 +365,13 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
       text(c, 'WORK QUEUE', 32, 22, 37);text(c,'Scroll to browse · click a note to inspect',530,30,23,'#697a6c'); const cols = model.kanban?.columns || []; const cw = (w - 50) / Math.max(cols.length, 1);
       cols.forEach((col, i) => { const x = 25 + i * cw; c.fillStyle = '#e9eadb'; c.fillRect(x, 91, cw - 15, 535); text(c, `${col.label} · ${col.cards.length}`, x + 14, 109, 27, '#244f4a', cw - 43); (col.cards || []).slice(pageOffsets.backlog, pageOffsets.backlog+4).forEach((card, j) => { const y = 160 + j * 112; c.fillStyle = j % 2 ? '#dde7d3' : '#f6e8bc'; c.fillRect(x + 12, y, cw - 39, 98); text(c, String(card.kind||'Task').replaceAll('_',' '), x + 24, y + 9, 16, '#64756a', cw-66); c.save();c.beginPath();c.rect(x+12,y,cw-39,98);c.clip();lines(c, card.title, x + 24, y + 36, cw - 66, 23, 2);c.restore(); }); });
     });
-    paint(terminal, '#153a37', (c, w) => { text(c, `ENGINEERING · ${model.engineering?.status || 'idle'}`, 30, 24, 29, '#b5c6a0', w - 60); lines(c, model.engineering?.task || 'No active task', 30, 78, w - 60, 29, 2, '#fffcf0'); (model.engineering?.lines || []).slice(-8).forEach((line, i) => { text(c, typeof line === 'string' ? line : line.text || line.message || JSON.stringify(line), 30, 177 + i * 46, 25, '#d6e3ce', w - 60); }); });
+    paint(terminal, '#153a37', (c, w) => { text(c, `ENGINEERING · ${model.engineering?.status || 'idle'}`, 30, 24, 29, '#b5c6a0', w - 60); lines(c, model.engineering?.task || 'No active task', 30, 78, w - 60, 29, 2, '#fffcf0'); (model.engineering?.lines || []).slice(-4).forEach((line, i) => { lines(c, typeof line === 'string' ? line : line.text || line.message || JSON.stringify(line), 30, 177 + i * 92, w - 60, 25, 2, '#d6e3ce'); }); });
     paint(ideas, '#e2d4b5', (c, w) => { text(c, 'IDEAS & DIRECTION', 30, 24, 37); if(!model.strategy?.ideas?.length){text(c,'Space for the next good idea.',36,120,32,'#655d4d');text(c,'No proposals recorded yet.',36,174,25,'#756c5b');} (model.strategy?.ideas || []).slice(pageOffsets.strategy,pageOffsets.strategy+4).forEach((idea, i) => { const x = 30 + (i % 2) * (w / 2 - 10), y = 95 + Math.floor(i / 2) * 265; c.fillStyle = i % 2 ? '#d6e1bd' : '#fff4cb'; c.fillRect(x, y, w / 2 - 45, 237); c.fillStyle = '#ca705d'; c.beginPath(); c.arc(x + (w / 2 - 45) / 2, y + 12, 7, 0, Math.PI * 2); c.fill(); lines(c, idea.title, x + 20, y + 35, w / 2 - 85, 30, 2); lines(c, idea.body || idea.status, x + 20, y + 118, w / 2 - 85, 23, 3); }); });
     const q = model.qa || {};
-    paint(qaConsole, '#eef5f4', c => { text(c, 'Quality', 35, 30, 44, '#214e62'); text(c, q.candidateId || 'Waiting for a candidate', 35, 98, 30, '#45686d'); (q.stages || []).forEach((stage,i) => { const copy = qaStageCopy(stage, model.mode); text(c, copy.title, 35, 168+i*76, 26, '#214e62'); text(c, copy.headline, 360, 168+i*76, 26, stage.outcome === 'fail' ? '#a34e42' : '#45686d', 700); }); });
-    gateLabels.forEach((s, i) => { const stage = q.stages?.[i]; const copy = qaStageCopy(stage || { id: ['provenance', 'meaning', 'regression', 'release'][i] }, model.mode); stageNodes[i].textContent = copy.title; stageNodes[i].dataset.outcome = stage?.outcome || 'not_run'; stageNodes[i].title = copy.headline; paint(s, ['#2858b7','#187d80','#be5e3d','#b88a26'][i], c => { text(c, copy.title, 18, 20, 44, '#f4efdf', 480); text(c, copy.headline, 18, 94, 31, '#b5c6a0', 480); }); const outcome = stage?.outcome; gates[i].material.color.setHex(outcome === 'pass' ? P.green : ['fail', 'error'].includes(outcome) ? P.red : outcome === 'pending' ? P.amber : P.sage); });
+    paint(qaConsole, '#eef5f4', c => { text(c, 'Quality', 35, 30, 44, '#214e62'); text(c, q.candidateId ? (q.status==='failed'?'Stopped · review the failed gate':q.status==='completed'?'Checks complete':'Candidate in verification') : 'Waiting for a candidate', 35, 98, 30, '#45686d'); (q.stages || []).forEach((stage,i) => { const copy = qaStageCopy(stage, model.mode); text(c, copy.title, 35, 168+i*76, 26, '#214e62'); text(c, copy.headline, 360, 168+i*76, 26, stage.outcome === 'fail' ? '#a34e42' : '#45686d', 700); }); });
+    gateLabels.forEach((s, i) => { const stage = q.stages?.[i]; const copy = qaStageCopy(stage || { id: ['provenance', 'meaning', 'regression', 'release'][i] }, model.mode); stageNodes[i].textContent = copy.title; stageNodes[i].dataset.outcome = stage?.outcome || 'not_run'; stageNodes[i].title = copy.headline; paint(s, ['#2858b7','#187d80','#be5e3d','#b88a26'][i], c => { text(c, copy.title, 18, 20, 44, '#f4efdf', 480); text(c, copy.headline, 18, 94, 31, '#b5c6a0', 480); }); const outcome = stage?.outcome; gates[i].material.color.setHex(outcome === 'pass' ? P.green : ['fail', 'error'].includes(outcome) ? P.red : outcome === 'pending' ? P.amber : P.sage);gates[i].material.emissive.copy(gates[i].material.color);gates[i].material.emissiveIntensity=outcome==='not_run'||!outcome?0:.22; });
     parcel.visible = Boolean(q.candidateId);
-    paint(parcelFace, '#fffcf0', c => { text(c, q.candidateId || 'No candidate', 20, 25, 45, '#244f4a', 480); text(c, `Attempt ${q.attempt || 0}`, 20, 105, 35); });
+    paint(parcelFace, '#fffcf0', c => { text(c, q.candidateId ? 'CANDIDATE' : 'No candidate', 20, 25, 45, '#244f4a', 480); text(c, `Attempt ${q.attempt || 0}`, 20, 105, 35); });
     if (reduced.matches || q.status === 'failed' || q.status === 'idle') parcel.position.x = gateX[Math.min(3, Math.max(0, Number(q.stageIndex) || 0))];
     paint(safeDisplay, '#153a37', c => { text(c, 'BUDGET / SPENT', 25, 20, 29, '#b5c6a0'); text(c, currency(model.finance?.budget), 25, 76, 64, '#fffcf0', 790); text(c, currency(model.finance?.spent), 25, 163, 43, '#e3af62', 790); text(c, `Reserved ${currency(model.finance?.reserved)}`, 25, 255, 28, '#fffcf0', 790); });
     paint(safeLedger,'#f8f5eb',(c,w)=>{
@@ -371,40 +380,33 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
       const rows=[['Approved budget',money(f.budget)],['Reserved',money(f.reserved)],['Available',f.budget==null||f.spent==null||f.reserved==null?'Unknown':money(f.budget-f.spent-f.reserved)],['Burn / hour',f.burnRate==null?'Not reported':money(f.burnRate)],['Usage',model.usage??'Not connected']];
       rows.forEach(([label,value],i)=>{const y=284+i*100;c.fillStyle='#cbd5c9';c.fillRect(40,y-16,w-80,1);text(c,label,40,y,25,'#64736c');text(c,value,40,y+33,30,'#244f4a',w-80);});text(c,model.mode==='demo'?'Illustrative demo':'Recorded costs only',40,816,23,'#637973');
     });
-    if(selected==='ticker')paint(ticker,'#102d37',(c,w)=>{
-      text(c,'XARTS / OPERATIONS',48,32,48,'#d6f3ed');
-      if(model.operations){
-        const story=model.operations;
-        text(c,story.objective,48,110,30,'#a3c9bd',w-96);
-        lines(c,story.heading,48,185,w-96,62,2,'#f3faf5');
-        lines(c,story.detail,48,345,w-96,30,3,'#bad5ce');
-        text(c,'NEXT',48,490,26,'#8ebdae');
-        lines(c,story.next,48,535,w-96,32,3,'#f3faf5');
-        text(c,'Click this screen for roles, evidence and the work queue →',48,725,29,'#b9dace',w-96);
-        return;
-      }
-      const values=[['USAGE',model.usage??'Not connected'],['ERRORS',model.errors??'Not connected'],['BACKLOG',(model.kanban?.columns||[]).reduce((n,col)=>n+col.cards.length,0)],['QA',model.qa?.status||'idle'],['SPEND',currency(model.finance?.spent)],['SOURCE',model.mode==='demo'?'Illustrative demo':'Recorded snapshot']];
-      values.forEach(([label,value],i)=>{const x=48+(i%3)*510,y=154+Math.floor(i/3)*260;c.fillStyle='#1d424a';c.fillRect(x,y,476,222);text(c,label,x+24,y+24,29,'#99c6bb');text(c,value,x+24,y+92,45,'#f3faf5',425);});
-      if(model.operations)lines(c,model.operations.heading,48,704,w-96,30,2,'#b9dace');
-    });else paint(ticker, '#102d37', c => { const count = (model.kanban?.columns || []).reduce((sum, col) => sum + (col.cards?.length || 0), 0); const parts=model.operations?[model.operations.heading.toUpperCase(),model.operations.activeCount+' AGENTS WORKING','CLICK FOR NEXT STEPS','XARTS / OPERATIONS']:[String(model.mode || 'live').toUpperCase(),'USAGE '+(model.usage??'—'),'ERRORS '+(model.errors??'—'),'BACKLOG '+count,'QA '+String(q.status || 'idle').toUpperCase(),'SPEND '+currency(model.finance?.spent),'XARTS / OPERATIONS']; let x=30; for(const part of parts){text(c,part,x,52,42,'#d6f3ed');c.font='600 42px system-ui,sans-serif';x+=c.measureText(part).width+100;} });
+    paint(ticker,'#071822',(c,w,h)=>{
+      const count=(model.kanban?.columns||[]).reduce((n,col)=>n+col.cards.length,0);
+      const values=[['XARTS / OPS',model.mode==='demo'?'DEMO':'LIVE'],['USAGE',model.usage??'—'],['ERRORS',model.errors??'—'],['BACKLOG',count],['QA',String(q.status||'idle').toUpperCase()],['SPEND',currency(model.finance?.spent)]];
+      values.forEach(([label,value],i)=>{const x=i*w/6+30; text(c,label,x,38,31,'#7ca4be');text(c,value,x,112,61,i===4&&q.status==='failed'?'#ff785c':'#55e4c3',w/6-65);});
+      c.fillStyle='#06131a88';for(let x=0;x<w;x+=7)c.fillRect(x,0,1,h);for(let y=0;y<h;y+=7)c.fillRect(0,y,w,1);
+    });
     if(nativeDetail){const panel=surfaces[nativeDetail.surface];paint(panel,nativeDetail.surface==='qa'?'#eef5f4':'#fffcf0',(c,w)=>{text(c,'← Back · click board',32,26,25,'#487571');lines(c,nativeDetail.title,32,100,w-64,40,3);text(c,nativeDetail.headline,32,268,32,['fail','error'].includes(nativeDetail.outcome)?'#ad382e':'#287d79',w-64);lines(c,nativeDetail.body,32,342,w-64,26,5);});}
-    engBubble.textContent = model.engineering?.status === 'idle' ? 'Ready for a task' : String(model.engineering?.status || 'Idle');
-    const currentStage = q.stages?.[q.stageIndex];
-    qaBubble.textContent = q.status === 'failed' ? (model.mode === 'demo' && currentStage ? qaStageCopy(currentStage, model.mode).headline : 'Check failed · inspect evidence') : q.status === 'completed' ? 'Checks passed' : q.status === 'running' ? `${currentStage ? qaStageCopy(currentStage, model.mode).title : 'Checks'} in progress` : 'Waiting for a candidate';
-    qaBubble.dataset.outcome = q.status || 'idle';
-    ceoBubble.textContent = `${model.strategy?.ideas?.length || 0} ideas to explore`;
+    const engineeringActive=!['idle','completed','cancelled'].includes(model.engineering?.status??'idle');
+    activityBubble(engBubble,`Engineering · ${model.engineering?.status||'idle'}`,engineeringActive?(model.engineering?.task||'Task in progress'):'',model.engineering?.status==='stopped'?'attention':'working');
+    const currentStage=q.stages?.[q.stageIndex];
+    const copy=currentStage?qaStageCopy(currentStage,model.mode):null;
+    activityBubble(qaBubble,q.status==='failed'?'QA · Needs attention':q.status==='running'?'QA · Checking':q.status==='completed'?'QA · Complete':'QA',q.candidateId?(copy?.headline||'Waiting for verification'):'',q.status==='failed'?'attention':q.status==='running'?'working':'complete');
+    const proposals=(model.strategy?.ideas||[]).filter(i=>!['completed','done','cancelled','refused'].includes(i.status)).length;
+    activityBubble(ceoBubble,'CEO · Decision queue',proposals?`${proposals} proposal${proposals===1?'':'s'} awaiting review`:'','neutral');
     requestRender();
   }
-  function focus(id) { if(nativeDetail){nativeDetail=null;signature='';update(model);}tourMode='off';tourTime=0;tourLabel(); selected = stations[id] ? id : null; ticker.canvas.width=selected==='ticker'?1600:4096;ticker.canvas.height=selected==='ticker'?800:160;const oldTickerTexture=ticker.texture;oldTickerTexture.dispose();textures.splice(textures.indexOf(oldTickerTexture),1);ticker.texture=new THREE.CanvasTexture(ticker.canvas);ticker.texture.colorSpace=THREE.SRGBColorSpace;ticker.texture.wrapS=THREE.RepeatWrapping;ticker.face.material.map=ticker.texture;ticker.face.material.needsUpdate=true;textures.push(ticker.texture);ticker.texture.repeat.x=selected==='ticker'?1:.5;signature='';update(model);focusElapsed=0; hovered = null; if (detailElement) { detailElement.classList.toggle('world-surface', !!selected); if (!selected) { detailElement.style.removeProperty('transform'); detailElement.style.removeProperty('width'); detailElement.style.removeProperty('height'); detailElement.style.removeProperty('opacity'); } } requestRender(); }
+  function focus(id) { if(nativeDetail){nativeDetail=null;signature='';update(model);}tourMode='off';tourTime=0;tourLabel(); selected = stations[id] ? id : null; signature='';update(model);focusElapsed=0; hovered = null; if (detailElement) { detailElement.classList.toggle('world-surface', !!selected); if (!selected) { detailElement.style.removeProperty('transform'); detailElement.style.removeProperty('width'); detailElement.style.removeProperty('height'); detailElement.style.removeProperty('opacity'); } } requestRender(); }
   function preview(id) { hovered = stations[id] ? id : null; requestRender(); }
   const cameraTarget = new THREE.Vector3(0, 1, 0);
   const destination = new THREE.Vector3();
   const cameraOffset = baseCamera.clone().sub(cameraTarget), targetOffset = new THREE.Vector3();
   const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
-  function pick(event) { const rect = renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1); raycaster.setFromCamera(pointer, camera); const hit = raycaster.intersectObjects(pickable, true)[0]; let o = hit?.object; while (o && !o.userData.station) o = o.parent; return o?.userData.station; }
+  function pick(event) { const rect = renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1); raycaster.setFromCamera(pointer, camera); const hit = raycaster.intersectObjects(pickable, true).find(h=>{for(let o=h.object;o;o=o.parent)if(!o.visible)return false;return true;}); let o = hit?.object; while (o && !o.userData.station) o = o.parent; return o?.userData.station; }
   function click(e) {
     const id=pick(e);
     if(selected && surfaces[selected]){
+      if(selected==='qa'&&!nativeDetail){const plate=raycaster.intersectObjects(gateLabels.map(s=>s.face))[0];if(plate){const index=gateLabels.findIndex(s=>s.face===plate.object),stage=model.qa?.stages?.[index]??{id:['provenance','meaning','regression','release'][index]};const copy=qaStageCopy(stage,model.mode);nativeDetail={surface:'qa',title:copy.title,headline:copy.headline,body:copy.detail,outcome:stage.outcome};signature='';update(model);return;}}
       const hit=raycaster.intersectObject(surfaces[selected].face)[0];
       if(hit){
         if(nativeDetail){nativeDetail=null;signature='';update(model);return;}
@@ -433,37 +435,35 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
   function requestRender() { if (!disposed && !lost && !document.hidden && !frame) frame = requestAnimationFrame(render); }
   function render(time) {
     frame = 0; if (disposed || lost || document.hidden) return;
+    if(tourButton.disabled!==reduced.matches){if(reduced.matches){tourMode='off';tourTime=0;}tourLabel();}
     if (!reduced.matches && !selected && model.mode !== 'demo' && previous && time-previous<32) { requestRender(); return; }
     const dt = previous ? Math.min((time - previous) / 1000, .05) : .016; previous = time; clock += dt;
     const motion = !reduced.matches, demo = model.mode === 'demo';
-    const tickerTarget=selected==='ticker'?1:0;
-    tickerExpansion+=(tickerTarget-tickerExpansion)*(motion?1-Math.exp(-dt*5):1);
-    ticker.height=.47+2.15*tickerExpansion; ticker.face.scale.y=ticker.height/.47;
-    ticker.face.position.y=4.18-1.075*tickerExpansion;
-    tickerFrame.scale.y=(.68+2.15*tickerExpansion)/.68; tickerFrame.position.y=ticker.face.position.y;
-    ticker.texture.offset.x=motion&&selected!=='ticker'?(clock*.022)%1:0;
+    const tickerTarget=0;
+    ticker.texture.offset.x=motion?(clock*.014)%1:0;
     // Ambient posture is decorative; only recorded/demo state drives work activity.
     tester.g.rotation.z=motion?Math.sin(clock*.65)*.012:0;
     ticker.face.updateWorldMatrix(true,false);
 
-    const targetDoor = selected === 'finance' ? -1.95 : 0; hinge.rotation.y += (targetDoor - hinge.rotation.y) * (motion ? Math.min(1, dt * 7) : 1);
+    const targetDoor = selected === 'finance' ? -1.95 : 0;if(vaultRig){vaultRig.door.rotation.y=motion?THREE.MathUtils.damp(vaultRig.door.rotation.y,selected==='finance'?1.98:0,3.4,dt):(selected==='finance'?1.98:0);host.dataset.vaultOpen=String(vaultRig.door.rotation.y>.9);} hinge.rotation.y += (targetDoor - hinge.rotation.y) * (motion ? Math.min(1, dt * 7) : 1);
     if(tourMode==='playing'&&motion&&!selected)tourTime+=dt;
     const touring=tourMode!=='off'&&!selected&&!reduced.matches;const tour=touring?tourPose():null;
     destination.set(...(tour?tour.p:[0,1,0]));
     const activeSurface = selected ? surfaces[selected] : null;
-    if (activeSurface) activeSurface.face.getWorldPosition(destination);
-    const ease = motion ? 1 - Math.exp(-dt * 5) : 1;
+    if (activeSurface) activeSurface.face.getWorldPosition(destination);if(selected==='qa'&&!nativeDetail)destination.copy(qa.localToWorld(new THREE.Vector3(0,1.7,0)));if(selected==='finance'&&vaultRig)destination.copy(finance.localToWorld(new THREE.Vector3(.2,1.6,.55)));
+    const ease = motion ? 1 - Math.exp(-dt * 2.8) : 1;
     cameraTarget.lerp(destination, ease);
-    targetOffset.copy(selected ? new THREE.Vector3(0, 0, 35) : baseCamera.clone().sub(new THREE.Vector3(0,1,0)));
+    const angles={qa:nativeDetail?[6,4,35]:[10,17,32],finance:[10,8,30],engineering:[8,4,35],backlog:[6,3,35],strategy:[-5,3,35],ticker:[7,3,35]};targetOffset.copy(selected?new THREE.Vector3(...angles[selected]):baseCamera.clone().sub(new THREE.Vector3(0,1,0)));if(touring){targetOffset.x+=Math.sin(tourTime/18)*3;targetOffset.y+=Math.sin(tourTime/24)*1.5;}
     cameraOffset.lerp(targetOffset, ease);
     camera.position.copy(cameraTarget).add(cameraOffset); camera.lookAt(cameraTarget);
     const fitWidth=selected==='qa'?.65:.84, fitHeight=selected==='finance'?.68:.8;
-    const targetZoom = activeSurface ? Math.min((camera.right-camera.left) * fitWidth / activeSurface.width, (camera.top-camera.bottom) * fitHeight / activeSurface.height) : (tour?.z??1);
+    const targetZoom = selected==='finance'&&vaultRig ? Math.min((camera.right-camera.left)*.77/4.5,(camera.top-camera.bottom)*.77/4.1) : selected==='qa'&&!nativeDetail ? Math.min((camera.right-camera.left)*.84/8.2,(camera.top-camera.bottom)*.76/4.7) : activeSurface ? Math.min((camera.right-camera.left) * fitWidth / activeSurface.width, (camera.top-camera.bottom) * fitHeight / activeSurface.height) : (tour?.z??1);
     camera.zoom += (targetZoom-camera.zoom) * ease;
     camera.near=.1; focusElapsed+=dt;
     camera.updateProjectionMatrix(); camera.updateMatrixWorld();
     const q = model.qa || {}; const target = gateX[Math.min(3, Math.max(0, Number(q.stageIndex) || 0))];
     if (q.status === 'running' || q.status === 'completed') parcel.position.x += (target - parcel.position.x) * (motion ? Math.min(1, dt * 2.7) : 1);
+    if(conveyor){const moving=motion&&q.status==='running';if(moving)conveyor.texture.offset.x=(clock*.13)%1;conveyor.scanner.visible=moving;conveyor.scanner.position.x=target+Math.sin(clock*3)*.3;host.dataset.conveyorMotion=moving?'running':q.status==='failed'?'stopped-at-failure':'idle';}
     if (motion && q.status === 'running') slats.forEach((s, i) => { s.position.x = -3.37 + i * .197 + (clock * .65 % .197); });
     if(motion && !selected) for(const staff of generatedStaff) updateStaff(staff,dt);
     host.dataset.staffMotion=selected||!motion?'paused':'ambient-routes';
@@ -476,10 +476,22 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     // Shared materials are untouched, so the inspected object's frame remains physically intact.
     for (const item of inspectionObjects) {
       item.object.visible=item.visible;
-      if (selected && (!motion || focusElapsed>.22) && item.object!==stations[selected] && (item.object.name.startsWith('generated-preview-') || item.front > destination.z+.25)) item.object.visible=false;
+      if (selected && (!motion || focusElapsed>.22) && item.object!==stations[selected] && item.object.userData.station!==selected && (item.object.name.startsWith('generated-preview-') || item.front > destination.z+.25)) item.object.visible=false;
     }
+    for(const [id,station] of Object.entries(stations))station.visible=!selected||id===selected;
     if (selected && detailElement) detailElement.style.opacity=String(motion?Math.min(1,Math.max(0,(focusElapsed-.3)/.25)):1);
-    labels.forEach(({ node, anchor: point }) => { point.getWorldPosition(v); v.project(camera); node.style.left = `${(v.x + 1) * .5 * width}px`; node.style.top = `${(-v.y + 1) * .5 * height}px`; node.hidden = !!selected || !hovered || node.dataset.station !== hovered || node.classList.contains('office-stage-label') || v.z < -1 || v.z > 1; });
+    const bubbleRects=[];
+    labels.forEach(({node,anchor:point})=>{
+      point.getWorldPosition(v);v.project(camera);let x=(v.x+1)*.5*width,y=(-v.y+1)*.5*height;
+      const isActivity=node.classList.contains('office-bubble');if(isActivity)node.style.transform='translate(-50%,-100%)';
+      node.hidden=!!selected||v.z< -1||v.z>1||(isActivity?node.dataset.active!=='true':!hovered||node.dataset.station!==hovered||node.classList.contains('office-stage-label'));
+      if(isActivity&&!node.hidden){
+        const bw=Math.min(214,width*.43),bh=76;x=Math.max(bw/2+18,Math.min(width-bw/2-18,x));y=Math.max(95,Math.min(height-120,y));
+        for(const rect of bubbleRects)if(Math.abs(x-rect.x)<bw+16&&Math.abs(y-rect.y)<bh+12)y=rect.y-bh-14;
+        if(y<85){node.hidden=true;return;}bubbleRects.push({x,y});
+      }
+      node.style.left=`${x}px`;node.style.top=`${y}px`;
+    });
     for(const [id,element] of Object.entries(nativeSurfaces)){element.hidden=selected!==id;element.inert=selected!==id;}
     renderer.domElement.style.pointerEvents='auto';
     returnButton.hidden=!selected;
@@ -494,8 +506,8 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
       detailElement.style.transform = `matrix(${(right.x-origin.x)/dw},${(right.y-origin.y)/dw},${(bottom.x-origin.x)/dh},${(bottom.y-origin.y)/dh},${origin.x},${origin.y})`;
     }
     renderer.render(scene, camera);
-    const settling = (selected && focusElapsed<.8) || Math.abs(tickerExpansion-tickerTarget)>.001 || cameraOffset.distanceTo(targetOffset) > .001 || cameraTarget.distanceTo(destination) > .001 || Math.abs(hinge.rotation.y - targetDoor) > .001 || Math.abs(camera.zoom - targetZoom) > .001 || ((q.status === 'running' || q.status === 'completed') && Math.abs(parcel.position.x - target) > .002);
-    if (motion && (!selected || demo || q.status === 'running' || settling)) requestRender();
+    const settling = (selected && focusElapsed<2.5) || Math.abs(tickerExpansion-tickerTarget)>.001 || cameraOffset.distanceTo(targetOffset) > .001 || cameraTarget.distanceTo(destination) > .001 || Math.abs(hinge.rotation.y - targetDoor) > .001 || Math.abs(camera.zoom - targetZoom) > .001 || ((q.status === 'running' || q.status === 'completed') && Math.abs(parcel.position.x - target) > .002);
+    if (motion && (!selected || selected==='ticker' || demo || q.status === 'running' || settling)) requestRender();
   }
   function visibility() { if (document.hidden) { cancelAnimationFrame(frame); frame = 0; } else { previous = 0; requestRender(); } }
   function motionChange() { if(reduced.matches){tourMode='off';tourTime=0;}tourLabel();previous = 0; requestRender(); }
@@ -505,26 +517,32 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
   // Decorative circulation stays separate from actual task state. The authored aisle
   // routes avoid workstations; root motion from generated clips cannot steer people.
   function updateStaff(staff,dt){
-    const {placed,route,mixer,bones}=staff;if(!route)return;
-    let walking=false;
-    if(staff.wait>0)staff.wait-=dt;
-    else {
-      const next=route[staff.step+staff.direction];
-      const dx=next[0]-placed.position.x,dz=next[1]-placed.position.z,distance=Math.hypot(dx,dz);
+    const {placed,route}=staff;if(!route)return;let travel=0;
+    if(staff.wait>0){staff.wait-=dt;staff.speed=THREE.MathUtils.damp(staff.speed??0,0,6,dt);}
+    else{
+      const next=route[(staff.step+1)%route.length],dx=next[0]-placed.position.x,dz=next[1]-placed.position.z,distance=Math.hypot(dx,dz);
       const targetAngle=Math.atan2(dx,dz),angle=Math.atan2(Math.sin(targetAngle-placed.rotation.y),Math.cos(targetAngle-placed.rotation.y));
-      placed.rotation.y+=Math.max(-dt*1.3,Math.min(dt*1.3,angle));
-      if(Math.abs(angle)<.4){
-        const travel=Math.min(distance,dt*.38);placed.position.x+=dx/Math.max(distance,.0001)*travel;placed.position.z+=dz/Math.max(distance,.0001)*travel;walking=true;
-        if(distance<.03){placed.position.set(next[0],0,next[1]);staff.step+=staff.direction;if(staff.step===route.length-1||staff.step===0)staff.direction*=-1;staff.wait=12+(staff.step%3)*4;walking=false;}
-      }
+      placed.rotation.y+=Math.max(-dt*1.7,Math.min(dt*1.7,angle));
+      staff.speed=THREE.MathUtils.damp(staff.speed??0,Math.abs(angle)<.6?Math.min(.9,distance*1.5):0,4,dt);
+      travel=Math.min(distance,dt*staff.speed);placed.position.x+=dx/Math.max(distance,.0001)*travel;placed.position.z+=dz/Math.max(distance,.0001)*travel;
+      if(distance<.06){placed.position.set(next[0],0,next[1]);staff.step=(staff.step+1)%route.length;staff.wait=4+(staff.step%2)*3;}
     }
-    mixer.update(dt*(walking?.65:.22));
-    for(const {bone,rotation,position} of bones){
-      if(bone.name==='Hips'){bone.quaternion.copy(rotation);bone.position.copy(position);}
-      else bone.quaternion.slerp(rotation,walking?.4:.88);
-    }
-    // Bounds change as colleagues move, so close-up occlusion must follow them.
+    applyWalkingPose(THREE,staff,travel,dt,travel>.0001);
     const record=inspectionObjects.find(x=>x.object===placed);if(record)record.front=placed.position.z+.5;
+  }
+  function fitGeneratedSurface(id,placed){
+    const panel={workstation:terminal,backlog:board,ideas,safe:safeDisplay}[id];if(!panel)return;
+    placed.updateWorldMatrix(true,true);const whole=new THREE.Box3().setFromObject(placed),size=whole.getSize(new THREE.Vector3()),found=new THREE.Box3(),samples=[];
+    // Locate a blank monitor/board from its texture and geometry, not guessed pixels
+    // in the reference image. The same physical display remains through zoom.
+    if(['workstation','safe','backlog'].includes(id))placed.traverse(mesh=>{if(!mesh.isMesh||!mesh.geometry.attributes.uv)return;const material=Array.isArray(mesh.material)?mesh.material[0]:mesh.material,image=material.map?.image;if(!image)return;const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data,uv=mesh.geometry.attributes.uv,pos=mesh.geometry.attributes.position;
+      for(let i=0;i<pos.count;i++){const p=new THREE.Vector3().fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);if(p.y<whole.min.y+size.y*(id==='safe'?.6:id==='workstation'?.6:.2))continue;const u=Math.max(0,Math.min(canvas.width-1,Math.floor(uv.getX(i)*canvas.width))),v=Math.max(0,Math.min(canvas.height-1,Math.floor(uv.getY(i)*canvas.height))),k=(v*canvas.width+u)*4;const brightness=(pixels[k]+pixels[k+1]+pixels[k+2])/765;const saturation=(Math.max(pixels[k],pixels[k+1],pixels[k+2])-Math.min(pixels[k],pixels[k+1],pixels[k+2]))/255;if(id==='backlog'?brightness>.73:brightness<.12&&saturation<.035&&p.x>whole.min.x+size.x*.2&&p.x<whole.max.x-size.x*.15){samples.push(p);found.expandByPoint(p);}}
+    });
+    if(samples.length>20&&id!=='backlog'){const quantile=(axis,q)=>samples.map(p=>p[axis]).sort((a,b)=>a-b)[Math.floor((samples.length-1)*q)];found.min.set(quantile('x',.03),quantile('y',.03),quantile('z',.1));found.max.set(quantile('x',.97),quantile('y',.97),quantile('z',.9));}if(found.isEmpty())found.copy(whole);
+    const extent=found.getSize(new THREE.Vector3()),center=found.getCenter(new THREE.Vector3());
+    const w=extent.x*(id==='workstation'?.80:id==='ideas'?.93:.9),h=extent.y*(id==='ideas'?.9:.9);if(id==='workstation'){center.x-=extent.x*.07;}
+    if(id==='safe'){finance.add(panel.face);panel.face.visible=true;panel.face.material.map=panel.texture;surfaces.finance=panel;}
+    const parent=panel.face.parent;panel.face.position.copy(parent.worldToLocal(new THREE.Vector3(center.x,center.y,found.max.z+.025)));panel.face.geometry.dispose();panel.face.geometry=new THREE.PlaneGeometry(w,h);panel.width=w;panel.height=h;
   }
   async function loadGenerated(id, size, position, rotation, replacement, file=id+'.glb') {
     try {
@@ -535,25 +553,27 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
       object.scale.multiplyScalar(size/(['engineer','ceo','qa-person','product-lead','plants'].includes(id)?extent.y:Math.max(extent.x,extent.z)));
       const scaled=new THREE.Box3().setFromObject(object),center=scaled.getCenter(new THREE.Vector3());object.position.set(-center.x,-scaled.min.y,-center.z);
       const placed=new THREE.Group();placed.name=`generated-preview-${id}`;placed.add(object);placed.position.set(...position);placed.rotation.y=rotation;
-      object.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=false;for(const m of Array.isArray(n.material)?n.material:[n.material]){m.emissiveIntensity=0;if(m.map){m.map.minFilter=THREE.LinearFilter;m.map.generateMipmaps=false;m.map.anisotropy=renderer.capabilities.getMaxAnisotropy();m.map.needsUpdate=true;}if(m.specularIntensity!==undefined)m.specularIntensity=.3;if(['engineer','ceo','qa-person','product-lead'].includes(id)){m.metalness=0;m.roughness=Math.max(.8,m.roughness);m.roughnessMap=null;}for(const value of Object.values(m))if(value?.isTexture&&!textures.includes(value))textures.push(value);}}});
-      scene.add(placed);if(id==='plants'){for(const [x,z,scale] of [[9,-5.5,.96],[9,5.5,.82],[-9,4.4,.8]]){const copy=placed.clone(true);copy.position.set(x,0,z);copy.scale.setScalar(scale);copy.rotation.y=x>0?-.6:.8;scene.add(copy);inspectionObjects.push({object:copy,visible:true,front:z+1});const old=scene.getObjectByName(`authored-plant-${x}-${z}`);if(old)old.visible=false;}}if(replacement){replacement.visible=false;const record=inspectionObjects.find(x=>x.object===replacement);if(record)record.visible=false;}
+      object.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=false;for(const m of Array.isArray(n.material)?n.material:[n.material]){m.emissiveIntensity=0;m.normalMap=null;m.metalnessMap=null;m.roughnessMap=null;m.metalness=.08;m.roughness=.68;if(m.map){m.map.minFilter=THREE.LinearFilter;m.map.generateMipmaps=false;m.map.anisotropy=renderer.capabilities.getMaxAnisotropy();m.map.needsUpdate=true;}if(m.specularIntensity!==undefined)m.specularIntensity=.3;if(['engineer','ceo','qa-person','product-lead'].includes(id)){m.metalness=0;m.roughness=Math.max(.8,m.roughness);m.roughnessMap=null;}for(const value of Object.values(m))if(value?.isTexture&&!textures.includes(value))textures.push(value);}}});
+      scene.add(placed);const staffBubble={engineer:engBubble,ceo:ceoBubble,'qa-person':qaBubble}[id];if(staffBubble){const attachment=labels.find(l=>l.node===staffBubble);placed.add(attachment.anchor);attachment.anchor.position.set(0,size+.36,0);staffBubble.dataset.role=id;}if(id==='chair'){const old=scene.getObjectByName('authored-task-chair');if(old){old.visible=false;const record=inspectionObjects.find(x=>x.object===old);if(record)record.visible=false;}}if(id==='plants'){for(const [x,z,scale] of [[9,-5.5,.96],[9,5.5,.82],[-9,4.4,.8]]){const copy=placed.clone(true);copy.position.set(x,0,z);copy.scale.setScalar(scale);copy.rotation.y=x>0?-.6:.8;scene.add(copy);inspectionObjects.push({object:copy,visible:true,front:z+1});const old=scene.getObjectByName(`authored-plant-${x}-${z}`);if(old)old.visible=false;}}for(const old of (Array.isArray(replacement)?replacement:replacement?[replacement]:[])){old.visible=false;const record=inspectionObjects.find(x=>x.object===old);if(record)record.visible=false;}
+      if(id==='qa-line'){const b=new THREE.Box3().setFromObject(placed),sz=b.getSize(new THREE.Vector3());slats.forEach(s=>s.visible=false);const beltCanvas=document.createElement('canvas');beltCanvas.width=512;beltCanvas.height=128;const bc=beltCanvas.getContext('2d');bc.fillStyle='#172b34';bc.fillRect(0,0,512,128);for(let x=0;x<512;x+=64){bc.fillStyle='#354a53';bc.fillRect(x,0,3,128);bc.fillStyle='#0b1b22';bc.fillRect(x+3,0,2,128);}const beltTexture=new THREE.CanvasTexture(beltCanvas);beltTexture.colorSpace=THREE.SRGBColorSpace;beltTexture.wrapS=THREE.RepeatWrapping;beltTexture.repeat.set(5,1);textures.push(beltTexture);const belt=new THREE.Mesh(new THREE.PlaneGeometry(sz.x-.48,Math.min(sz.z*.7,1.25)),new THREE.MeshStandardMaterial({map:beltTexture,roughness:.78}));belt.rotation.x=-Math.PI/2;belt.position.set(0,sz.y*.44+.055,0);qa.add(belt);const scanner=new THREE.Mesh(new THREE.PlaneGeometry(.12,1.2),new THREE.MeshBasicMaterial({color:0x49fff0,transparent:true,opacity:.65,depthWrite:false}));scanner.rotation.x=-Math.PI/2;scanner.position.set(gateX[0],belt.position.y+.025,0);qa.add(scanner);conveyor={texture:beltTexture,belt,scanner};gateLabels.forEach((s,i)=>{s.face.position.set(gateX[i],sz.y-.12,b.max.z-qa.position.z+.025);s.face.scale.set(.98,1,1);rounded(qa,1.46,.43,.07,[s.face.position.x,s.face.position.y,s.face.position.z-.045],mats.dark,.018);gates[i].position.set(gateX[i]+.58,sz.y+.17,s.face.position.z-.04);});parcel.position.y=sz.y*.44+.36;qaConsole.face.scale.setScalar(.46);qaConsoleFrame.scale.setScalar(.46);qaConsole.face.position.set(0,sz.y+1.1,-.7);qaConsoleFrame.position.set(0,sz.y+1.1,-.74);qaConsole.width=5.55*.46;qaConsole.height=2.55*.46;for(const x of [-.8,.8])box(qa,[.045,1.1,.045],[x,sz.y+.38,-.74],finish.chrome);}
+      const stationId={workstation:'engineering',backlog:'backlog',ideas:'strategy',safe:'finance','qa-line':'qa'}[id];
+      if(stationId){placed.userData.station=stationId;pickable.push(placed);fitGeneratedSurface(id,placed);if(id==='safe'){vaultRig=articulateVault(THREE,placed,safeDisplay,safeLedger);if(vaultRig)surfaces.finance=safeLedger;}}
       inspectionObjects.push({object:placed,visible:true,front:new THREE.Box3().setFromObject(placed).max.z});
-      if(gltf.animations.length){
-        const mixer=new THREE.AnimationMixer(object);mixer.clipAction(gltf.animations[0]).play();generatedMixers.push(mixer);
+      if(['engineer','ceo','qa-person','product-lead'].includes(id)){
         const bones=[];object.traverse(n=>{if(n.isBone)bones.push({bone:n,rotation:n.quaternion.clone(),position:n.position.clone()});});
-        const routes={engineer:[[-3.6,4.8],[-1.4,4.8],[-1.4,1]],ceo:[[-2,2],[-1.5,-1],[3.8,-1],[3.8,.4]],'qa-person':[[5.4,5.3],[7.9,5.3],[7.9,.2]],'product-lead':[[2.9,-2.5],[3.6,-1.2],[.2,-1.2]]};
-        generatedStaff.push({id,placed,mixer,bones,route:routes[id],step:0,direction:1,wait:8+generatedStaff.length*6,phase:0});
+        const routes={engineer:[[-3.6,4.8],[-1.4,4.8],[-1.4,.6],[-2.7,.6],[-2.7,4.8]],ceo:[[-2,2],[.1,1],[.1,-1.3],[3.8,-1.3],[3.8,.2],[.1,.2]],'qa-person':[[5.4,5.3],[8.2,5.3],[8.2,.2],[7.8,.2],[7.8,5.3]],'product-lead':[[2.9,-2.5],[4.6,-2.5],[4.6,-1],[2.9,-1]]};
+        generatedStaff.push({id,placed,bones,route:routes[id],step:0,direction:1,wait:2+generatedStaff.length*2,phase:0});
       }
       generatedStatus[id]='loaded';host.setAttribute(`data-${id}-asset`,'generated');requestRender();
     } catch {generatedStatus[id]='unavailable';host.setAttribute(`data-${id}-asset`,'fallback');}
     assetNotice.textContent=`Generated previews · ${Object.values(generatedStatus).filter(s=>s==='loaded').length} loaded${Object.values(generatedStatus).includes('unavailable')?' · some unavailable':''} · review in Studio ↗`;
   }
   async function loadOfficeAssets(){let entries=[];try{const r=await fetch('/api/office-assets');if(r.ok)entries=(await r.json()).entries??[];}catch{}if(disposed)return;
-    const placements={engineer:[2.5,[-3.6,0,4.8],.3,engineer.g],chair:[2.4,[-6.7,0,5.65],.15,scene.getObjectByName('authored-lounge')],ceo:[2.65,[-2,0,2],.35,ceo.g],'qa-person':[2.5,[5.4,0,5.3],-.4,tester.g],'product-lead':[2.5,[2.9,0,-2.5],.4,null],slide:[3.6,[-8.8,0,-.4],0,scene.getObjectByName('authored-slide')],planning:[3.9,[.85,0,-4.5],0,planningFurniture],plants:[2.8,[-9,0,-5.5],0,scene.getObjectByName('authored-plant--9--5.5')]};
+    const placements={engineer:[2.5,[-3.6,0,4.8],.3,engineer.g],chair:[2.4,[-6.7,0,5.65],.15,scene.getObjectByName('authored-lounge')],ceo:[2.65,[-2,0,2],.35,ceo.g],'qa-person':[2.5,[5.4,0,5.3],-.4,tester.g],'product-lead':[2.5,[2.9,0,-2.5],.4,null],slide:[3.6,[-8.8,0,-.4],0,scene.getObjectByName('authored-slide')],planning:[3.9,[.85,0,-4.5],0,planningFurniture],plants:[2.8,[-9,0,-5.5],0,scene.getObjectByName('authored-plant--9--5.5')],workstation:[4.1,[-5.1,0,2.5],0,fixtureParts.workstation],backlog:[5.1,[-6.4,0,-2.7],0,fixtureParts.backlog],ideas:[4.1,[.85,1.6,-5.7],0,fixtureParts.ideas],'qa-line':[7.2,[3.7,0,3.35],0,fixtureParts['qa-line']],safe:[2.8,[6.85,0,-3.75],0,fixtureParts.safe]};
     for(const [id,placement] of Object.entries(placements)){const entry=entries.find(e=>e.id===id);if(entry||['engineer','chair'].includes(id))void loadGenerated(id,...placement,entry?.file??id+'.glb');}
-    const art=entries.find(e=>e.id==='art');if(art){new THREE.TextureLoader().load('/assets/generated/'+art.file,t=>{if(disposed){t.dispose();return;}t.colorSpace=THREE.SRGBColorSpace;textures.push(t);const panel=mesh(scene,new THREE.PlaneGeometry(1.45,.96),new THREE.MeshStandardMaterial({map:t,roughness:.9}),[-2.45,4.1,-6.99]);panel.castShadow=false;requestRender();});}
+    const art=entries.find(e=>e.id==='art');if(art){new THREE.TextureLoader().load('/assets/generated/'+art.file,t=>{if(disposed){t.dispose();return;}t.colorSpace=THREE.SRGBColorSpace;textures.push(t);const panel=mesh(scene,new THREE.PlaneGeometry(.95,.63),new THREE.MeshStandardMaterial({map:t,roughness:.9}),[-2.8,4.35,-6.94]);panel.castShadow=false;requestRender();});}
   }
   void loadOfficeAssets();
   resize(); update({});
-  return { update, focus, preview, dispose() { disposed = true; tourControls.remove();returnButton.remove();assetNotice.remove();generatedMixers.forEach(m=>m.stopAllAction()); cancelAnimationFrame(frame); resizeObserver.disconnect(); document.removeEventListener('visibilitychange', visibility); reduced.removeEventListener('change', motionChange); renderer.domElement.removeEventListener('wheel',scrollSurface); renderer.domElement.removeEventListener('click', click); renderer.domElement.removeEventListener('pointermove', hover); renderer.domElement.removeEventListener('pointerleave', leave); renderer.domElement.removeEventListener('webglcontextlost', contextLost); labels.forEach(({ node }) => node.remove()); fallbackNode?.remove(); const geometries = new Set(), materials = new Set(); scene.traverse(o => { if (o.geometry) geometries.add(o.geometry); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materials.add(m)); }); geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => t.dispose()); renderer.dispose(); renderer.domElement.remove(); } };
+  return { update, focus, preview, dispose() { disposed = true; tourControls.remove();returnButton.remove();assetNotice.remove();cancelAnimationFrame(frame); resizeObserver.disconnect(); document.removeEventListener('visibilitychange', visibility); reduced.removeEventListener('change', motionChange); renderer.domElement.removeEventListener('wheel',scrollSurface); renderer.domElement.removeEventListener('click', click); renderer.domElement.removeEventListener('pointermove', hover); renderer.domElement.removeEventListener('pointerleave', leave); renderer.domElement.removeEventListener('webglcontextlost', contextLost); labels.forEach(({ node }) => node.remove()); fallbackNode?.remove(); const geometries = new Set(), materials = new Set(); scene.traverse(o => { if (o.geometry) geometries.add(o.geometry); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materials.add(m)); }); geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => t.dispose()); renderer.dispose(); renderer.domElement.remove(); } };
 }
