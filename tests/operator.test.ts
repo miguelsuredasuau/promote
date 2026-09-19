@@ -142,3 +142,42 @@ it('serves only an incident-bound verification log and rejects changed bytes',as
  expect((await fetch(`${base}/api/incidents/${incident.id}/gates/unknown/log`)).status).toBe(404);
  writeFileSync(join(directory,hash),'changed');expect((await fetch(url)).status).toBe(409);
 });
+
+it('persists exact owner decisions, queues planning only, and refuses stale or conflicting approval',async()=>{
+ const {base,store}=await setup();
+ const seed=(key:string)=>{store.ingest(key,'a'.repeat(64),{schema:'fixture',kind:'rating',note:'Chart axis is unreadable'},null);store.triageRecord(key,[{id:'proposal-test',title:'Make the axis readable',category:'feedback',priority:55,evidenceKey:'axis',nextAction:'Review the original render and propose an acceptance example.'}],'a'.repeat(64));};
+ seed('source:one');
+ const get=async()=> JSON.parse(await (await fetch(`${base}/api/overview`)).text()).ownerReport;
+ const proposal=(await get()).decisions[0];
+ const {token}=JSON.parse(await(await fetch(`${base}/api/owner-session`)).text());
+ const body={proposalId:proposal.id,revision:proposal.revision,action:'approve_plan',feedback:'Preserve the palette'};
+ const send=(value:unknown,headers:Record<string,string>={})=>fetch(`${base}/api/owner-decisions`,{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-Owner-Token':token,...headers},body:JSON.stringify(value)});
+ expect((await send(body,{'X-Owner-Token':'wrong'})).status).toBe(403);
+ expect((await send(body,{Origin:'https://untrusted.example'})).status).toBe(403);
+ expect((await send({...body,action:'request_changes',feedback:''})).status).toBe(400);
+ expect((await send({...body,totalAcu:100})).status).toBe(400);
+ seed('source:two');
+ expect((await send(body)).status).toBe(409);
+ body.revision=(await get()).decisions[0].revision;
+ expect((await send(body)).status).toBe(200);
+ expect((await send(body)).status).toBe(200);
+ expect(store.workQueue()).toHaveLength(1);
+ expect(store.workQueue()[0]).toMatchObject({kind:'proposal_assessment',role:'product',state:'queued'});
+ expect(store.engineeringReservations()).toHaveLength(0);
+ expect((await send({...body,action:'reject'})).status).toBe(409);
+ const report=await get();
+ expect(report.decisions[0].resolution.authority).toEqual({planningOnly:true,paidDispatch:false,repositoryWrites:false,release:false});
+ expect(report.decisionHistory).toHaveLength(1);
+ expect(store.activity().some(e=>e.category==='owner_decision')).toBe(true);
+});
+
+it('keeps requested changes and declined proposals without dispatching work',async()=>{
+ const {store,base}=await setup();
+ for(const id of ['change','decline']){
+  store.ingest(id,'a'.repeat(64),{schema:'fixture'},null);
+  store.triageRecord(id,[{id,title:id,category:'feature',priority:40,evidenceKey:id,nextAction:'Scope the request'}],'a'.repeat(64));
+ }
+ const report=JSON.parse(await(await fetch(`${base}/api/overview`)).text());
+ for(const p of report.ownerReport.decisions)store.decideProposal({proposalId:p.id,revision:p.revision,action:p.id==='change'?'request_changes':'reject',feedback:'Keep existing behavior'});
+ expect(store.ownerDecisions()).toHaveLength(2);expect(store.workQueue()).toHaveLength(0);
+});

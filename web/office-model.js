@@ -108,7 +108,14 @@ export function createOfficeModel(snapshot, mode, demoState) {
   const economics = snapshot?.ownerReport?.economics;
   const operations=snapshot?.operationsOverview?operationsStory(snapshot.operationsOverview):null;
   if(operations){
-    for(const proposal of operations.proposals)cards.push({id:proposal.id,title:proposal.title,kind:proposal.category,status:'proposed',columnId:'queued'});
+    for(const proposal of operations.proposals){
+      const decision=array(snapshot?.ownerReport?.decisions).find(d=>d.id===proposal.id)?.resolution;
+      if(decision?.action==='reject')continue;
+      const work=array(snapshot?.ownerReport?.decisionWork).find(w=>w.id===decision?.workId);
+      const status=decision?.action==='request_changes'?'changes_requested':work?`planning_${work.state}`:'proposed';
+      const columnId=decision?.action==='request_changes'||work?.state==='completed'?'review':work?'active':'queued';
+      cards.push({id:proposal.id,title:proposal.title,kind:proposal.category,status,columnId});
+    }
     if(operations.review&&selected){const card=cards.find(c=>c.id===selected.id);if(card){card.columnId='review';card.status=operations.review.state==='blocked'?'blocked':'evaluating';}}
   }
   return {

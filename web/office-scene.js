@@ -208,7 +208,11 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
   paint(qaConsole, '#eef5f4', c => { text(c, 'QUALITY CONTROL', 40, 45, 48, '#fffcf0'); text(c, 'Inspect the candidate · follow the evidence', 40, 125, 28, '#b5c6a0'); });
   const safeLedger = surface(finance, 2.12, 2.2, [0, 1.55, 1.165], 840, 870);
   paint(safeLedger, '#e7ece1', c => text(c, 'TREASURY', 50, 50, 45));
-  const surfaces = { backlog: board, engineering: terminal, strategy: ideas, qa: qaConsole, finance: safeLedger, ticker };
+  const executive = station('briefing', .85, -4.05);executive.position.y=2.05;executive.rotation.x=-1.08;executive.scale.setScalar(.52);
+  rounded(executive,4.12,2.86,.12,[0,0,0],mats.petrol,.07);
+  const decisionSurface=surface(executive,4,2.72,[0,0,.08],1200,816);
+  label('CEO · Decisions',anchor(executive,0,1.65,0),'office-label','briefing');
+  const surfaces = { briefing:decisionSurface, backlog: board, engineering: terminal, strategy: ideas, qa: qaConsole, finance: safeLedger, ticker };
   const fixtureParts={
     workstation:eng.children.filter(o=>o.isMesh&&o!==terminal.face),
     backlog:backlog.children.filter(o=>o.isMesh&&o!==board.face),
@@ -365,6 +369,7 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
       text(c, 'WORK QUEUE', 32, 22, 37);text(c,'Scroll to browse · click a note to inspect',530,30,23,'#697a6c'); const cols = model.kanban?.columns || []; const cw = (w - 50) / Math.max(cols.length, 1);
       cols.forEach((col, i) => { const x = 25 + i * cw; c.fillStyle = '#e9eadb'; c.fillRect(x, 91, cw - 15, 535); text(c, `${col.label} · ${col.cards.length}`, x + 14, 109, 27, '#244f4a', cw - 43); (col.cards || []).slice(pageOffsets.backlog, pageOffsets.backlog+4).forEach((card, j) => { const y = 160 + j * 112; c.fillStyle = j % 2 ? '#dde7d3' : '#f6e8bc'; c.fillRect(x + 12, y, cw - 39, 98); text(c, String(card.kind||'Task').replaceAll('_',' '), x + 24, y + 9, 16, '#64756a', cw-66); c.save();c.beginPath();c.rect(x+12,y,cw-39,98);c.clip();lines(c, card.title, x + 24, y + 36, cw - 66, 23, 2);c.restore(); }); });
     });
+    paint(decisionSurface,'#f8f5ec',(c,w)=>{text(c,'THE CEO’S DESK',65,60,26,'#45686d');text(c,String(model.ownerDecisions??0).padStart(2,'0'),65,150,180,'#2258bb');text(c,'Decisions for you',65,370,55,'#183c54');text(c,'Review · commission · redirect',65,470,28,'#45686d');text(c,'Open the decision folio →',65,670,32,'#2258bb');});
     paint(terminal, '#153a37', (c, w) => { text(c, `ENGINEERING · ${model.engineering?.status || 'idle'}`, 30, 24, 29, '#b5c6a0', w - 60); lines(c, model.engineering?.task || 'No active task', 30, 78, w - 60, 29, 2, '#fffcf0'); (model.engineering?.lines || []).slice(-4).forEach((line, i) => { lines(c, typeof line === 'string' ? line : line.text || line.message || JSON.stringify(line), 30, 177 + i * 92, w - 60, 25, 2, '#d6e3ce'); }); });
     paint(ideas, '#e2d4b5', (c, w) => { text(c, 'IDEAS & DIRECTION', 30, 24, 37); if(!model.strategy?.ideas?.length){text(c,'Space for the next good idea.',36,120,32,'#655d4d');text(c,'No proposals recorded yet.',36,174,25,'#756c5b');} (model.strategy?.ideas || []).slice(pageOffsets.strategy,pageOffsets.strategy+4).forEach((idea, i) => { const x = 30 + (i % 2) * (w / 2 - 10), y = 95 + Math.floor(i / 2) * 265; c.fillStyle = i % 2 ? '#d6e1bd' : '#fff4cb'; c.fillRect(x, y, w / 2 - 45, 237); c.fillStyle = '#ca705d'; c.beginPath(); c.arc(x + (w / 2 - 45) / 2, y + 12, 7, 0, Math.PI * 2); c.fill(); lines(c, idea.title, x + 20, y + 35, w / 2 - 85, 30, 2); lines(c, idea.body || idea.status, x + 20, y + 118, w / 2 - 85, 23, 3); }); });
     const q = model.qa || {};
@@ -392,7 +397,7 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     const currentStage=q.stages?.[q.stageIndex];
     const copy=currentStage?qaStageCopy(currentStage,model.mode):null;
     activityBubble(qaBubble,q.status==='failed'?'QA · Needs attention':q.status==='running'?'QA · Checking':q.status==='completed'?'QA · Complete':'QA',q.candidateId?(q.status==='failed'&&model.operations?.heading?model.operations.heading:copy?.headline||'Waiting for verification'):'',q.status==='failed'?'attention':q.status==='running'?'working':'complete');
-    const proposals=(model.strategy?.ideas||[]).filter(i=>!['completed','done','cancelled','refused'].includes(i.status)).length;
+    const proposals=model.ownerDecisions??(model.strategy?.ideas||[]).filter(i=>!['completed','done','cancelled','refused'].includes(i.status)).length;
     activityBubble(ceoBubble,'CEO · Decision queue',proposals?`${proposals} proposal${proposals===1?'':'s'} awaiting review`:'','neutral');
     requestRender();
   }
@@ -453,11 +458,11 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     if (activeSurface) activeSurface.face.getWorldPosition(destination);if(selected==='qa'&&!nativeDetail)destination.copy(qa.localToWorld(new THREE.Vector3(0,1.7,0)));if(selected==='finance'&&vaultRig)destination.copy(finance.localToWorld(new THREE.Vector3(.2,1.6,.55)));
     const ease = motion ? 1 - Math.exp(-dt * 2.8) : 1;
     cameraTarget.lerp(destination, ease);
-    const angles={qa:nativeDetail?[6,4,35]:[10,17,32],finance:[10,8,30],engineering:[8,4,35],backlog:[6,3,35],strategy:[-5,3,35],ticker:[7,3,35]};targetOffset.copy(selected?new THREE.Vector3(...angles[selected]):baseCamera.clone().sub(new THREE.Vector3(0,1,0)));if(touring){targetOffset.x+=Math.sin(tourTime/18)*3;targetOffset.y+=Math.sin(tourTime/24)*1.5;}
+    const angles={briefing:[1,31,17],qa:nativeDetail?[6,4,35]:[10,17,32],finance:[10,8,30],engineering:[8,4,35],backlog:[6,3,35],strategy:[-5,3,35],ticker:[7,3,35]};targetOffset.copy(selected?new THREE.Vector3(...angles[selected]):baseCamera.clone().sub(new THREE.Vector3(0,1,0)));if(touring){targetOffset.x+=Math.sin(tourTime/18)*3;targetOffset.y+=Math.sin(tourTime/24)*1.5;}
     cameraOffset.lerp(targetOffset, ease);
     camera.position.copy(cameraTarget).add(cameraOffset); camera.lookAt(cameraTarget);
     const fitWidth=selected==='qa'?.65:.84, fitHeight=selected==='finance'?.68:.8;
-    const targetZoom = selected==='finance'&&vaultRig ? Math.min((camera.right-camera.left)*.77/4.5,(camera.top-camera.bottom)*.77/4.1) : selected==='qa'&&!nativeDetail ? Math.min((camera.right-camera.left)*.84/8.2,(camera.top-camera.bottom)*.76/4.7) : activeSurface ? Math.min((camera.right-camera.left) * fitWidth / activeSurface.width, (camera.top-camera.bottom) * fitHeight / activeSurface.height) : (tour?.z??1);
+    const targetZoom = selected==='briefing' ? Math.min((camera.right-camera.left)*.84/(4*.52),(camera.top-camera.bottom)*.8/(2.72*.52)) : selected==='finance'&&vaultRig ? Math.min((camera.right-camera.left)*.77/4.5,(camera.top-camera.bottom)*.77/4.1) : selected==='qa'&&!nativeDetail ? Math.min((camera.right-camera.left)*.84/8.2,(camera.top-camera.bottom)*.76/4.7) : activeSurface ? Math.min((camera.right-camera.left) * fitWidth / activeSurface.width, (camera.top-camera.bottom) * fitHeight / activeSurface.height) : (tour?.z??1);
     camera.zoom += (targetZoom-camera.zoom) * ease;
     camera.near=.1; focusElapsed+=dt;
     camera.updateProjectionMatrix(); camera.updateMatrixWorld();
@@ -495,17 +500,18 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     });
     for(const [id,element] of Object.entries(nativeSurfaces)){element.hidden=selected!==id;element.inert=selected!==id;}
     renderer.domElement.style.pointerEvents='auto';
-    returnButton.hidden=!selected;
+    returnButton.hidden=!selected||selected==='briefing';
     if (activeSurface && !nativeSurfaces[selected] && detailElement?.open) {
       // Orthographic projection is affine: these three corners exactly register DOM to mesh.
       const { face, width: sw, height: sh } = activeSurface;
       const project = (x,y) => { const point = face.localToWorld(new THREE.Vector3(x,y,0)).project(camera); const rect = host.getBoundingClientRect(); return { x:rect.left+(point.x+1)*width/2, y:rect.top+(1-point.y)*height/2 }; };
       const localHeight=face.geometry.parameters.height;
       const origin=project(-sw/2,localHeight/2), right=project(sw/2,localHeight/2), bottom=project(-sw/2,-localHeight/2);
-      const dw = Math.round(Math.min(width * fitWidth, height * fitHeight * sw / sh)), dh = dw*sh/sw;
+      const dw = selected==='briefing' ? 1200 : Math.round(Math.min(width * fitWidth, height * fitHeight * sw / sh)), dh = dw*sh/sw;
       detailElement.style.width = `${dw}px`; detailElement.style.height = `${dh}px`;
       detailElement.style.transform = `matrix(${(right.x-origin.x)/dw},${(right.y-origin.y)/dw},${(bottom.x-origin.x)/dh},${(bottom.y-origin.y)/dh},${origin.x},${origin.y})`;
     }
+    decisionSurface.face.visible=!(selected==='briefing'&&detailElement?.open);
     renderer.render(scene, camera);
     const settling = (selected && focusElapsed<2.5) || Math.abs(tickerExpansion-tickerTarget)>.001 || cameraOffset.distanceTo(targetOffset) > .001 || cameraTarget.distanceTo(destination) > .001 || Math.abs(hinge.rotation.y - targetDoor) > .001 || Math.abs(camera.zoom - targetZoom) > .001 || ((q.status === 'running' || q.status === 'completed') && Math.abs(parcel.position.x - target) > .002);
     if (motion && (!selected || selected==='ticker' || demo || q.status === 'running' || settling)) requestRender();
