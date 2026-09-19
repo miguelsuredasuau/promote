@@ -1,4 +1,4 @@
-// Xarts Workshop contracts v1 (server barrel). Canonical source: docs/autonomy/02-contracts.md.
+// Promoted contracts v1 (server barrel). See docs/contracts.md.
 // Browser code must import './browser' instead.
 export * from './browser';
 export * from './hash';

@@ -67,7 +67,7 @@ const fail = (error: TransitionError, message: string): TransitionResult => ({ o
  * - `cancel_pending`/`cancelled` require recorded cancellation intent;
  * - no terminal state unless remote sessions AND local processes are confirmed stopped (0).
  *   The canonical table has no `evaluating|accepted|releasing -> cancel_pending`; with live work
- *   those phases must route `-> blocked -> cancel_pending -> cancelled` (gap flagged in W01-HANDOFF.md);
+ *   those phases must route `-> blocked -> cancel_pending -> cancelled` (gap flagged in docs/contracts.md);
  * - `-> accepted` requires a trusted `accepted` verdict whose identity equals `currentIdentity`;
  *   the identity is then carried and must equal `currentIdentity` for `releasing`/`completed`
  *   (and for resuming a block back into `accepted`).

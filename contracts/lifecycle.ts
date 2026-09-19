@@ -1,7 +1,7 @@
 // Browser-safe lifecycle table (for display/derivation). Authoritative guards: ./state (server-only).
 import { ACTIONABLE_PHASES, type IncidentStatus } from './records';
 
-/** Canonical table from 02-contracts.md. `blocked -> <phase>` is further restricted to the recorded phase. */
+/** Canonical table from docs/contracts.md. `blocked -> <phase>` is further restricted to the recorded phase. */
 export const INCIDENT_TRANSITIONS: Readonly<Record<IncidentStatus, readonly IncidentStatus[]>> = {
   received: ['reproducing', 'refused', 'cancelled'],
   reproducing: ['engineering', 'evaluating', 'refused', 'blocked', 'cancelled'],

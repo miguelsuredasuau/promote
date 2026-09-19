@@ -14,3 +14,12 @@ scratchpad/
 *.p12
 *.pfx
 credentials*
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+.npmrc
+.netrc
+.pypirc
+id_rsa
+id_ed25519

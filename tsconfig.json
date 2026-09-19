@@ -19,6 +19,7 @@
     "contracts/**/*.ts",
     "fixtures/**/*.ts",
     "tests/**/*.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "server/**/*.ts"
   ]
 }

@@ -6,7 +6,7 @@ Learns from user feedback, finds issues and opportunities, and ships verified im
 
 A standalone foundation for an engineering control layer: receive an external request, dispatch an engineering agent, verify its candidate independently, return failures, and release only accepted artifacts.
 
-**Status:** early implementation. Versioned contracts and synthetic fixtures are implemented and independently verified: typecheck and 70 contract tests pass on Node 22.22.1. The controller, Devin adapter, execution runner, release system, and dashboard are planned, not implemented. Fixtures are not real autonomous runs.
+**Status:** early implementation. Versioned contracts, synthetic fixtures, and the first durable controller-storage slice are implemented: typecheck and 82 tests pass on Node 22.22.1. The HTTP API, scheduler, Devin adapter, execution runner, release system, and dashboard are not implemented yet. Fixtures are not real autonomous runs.
 
 ## Development
 
@@ -27,8 +27,10 @@ This repository has its own dependency manifest, lockfile, tests, and Git histor
 - **Runner:** disposable candidate execution, with immutable evaluator/input identity and controlled evidence collection.
 - **Operator UI:** provider-neutral live/replay view; configurable branding and artifact previews.
 
-Xarts is the first planned external project integration. It remains a separate repository. See [repository boundaries](docs/repository-boundaries.md) and [delivery plan](docs/delivery.md).
+Xarts is the first planned external project integration. It remains a separate repository. See [repository boundaries](docs/repository-boundaries.md) and [delivery plan](docs/delivery.md), and [implementation stages and acceptance criteria](docs/implementation-plan.md).
 
 ## Sharing
 
 The public repository contains the reusable foundation. Package publication remains disabled. An open-source license has not yet been selected; public visibility alone does not grant an open-source license. No Xarts source, brand assets, account identifiers, real run evidence, or credentials are included.
+
+See [controller storage](docs/controller-storage.md) for the implemented interface and its boundaries. `pnpm check` includes a tracked-source credential-pattern and excluded-file check; it complements source review rather than guaranteeing secret detection.

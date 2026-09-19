@@ -1,4 +1,4 @@
-// FIXTURE scenarios required by 02-contracts.md ("Required contract fixtures").
+// FIXTURE scenarios required by docs/contracts.md ("Required contract fixtures").
 // Synthetic data for controller/dashboard development. Never a real Devin run.
 import { FX_BASE, fxGitSha, fxProfile, scenarioBuilder, type FixtureScenario, type StatusStep } from './factories';
 

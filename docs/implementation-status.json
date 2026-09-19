@@ -14,14 +14,15 @@
     },
     {
       "id": "controller",
-      "status": "next",
+      "status": "in_progress",
       "acceptance": [
         "durable incident intake with idempotency",
         "transactional event sequence",
         "worker lease prevents duplicate dispatch",
         "ambiguous provider creation persists and blocks redispatch",
         "restart preserves operation identity"
-      ]
+      ],
+      "completedSlice": "durable intake, transactional events, create-operation intent and claims"
     },
     {
       "id": "devin-adapter",
@@ -44,5 +45,11 @@
       "status": "planned"
     }
   ],
-  "paidDispatchEnabled": false
+  "paidDispatchEnabled": false,
+  "verification": {
+    "node": "22.22.1",
+    "typecheck": "pass",
+    "testsPassed": 82,
+    "publicSourceCheck": "pass"
+  }
 }

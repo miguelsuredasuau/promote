@@ -5,7 +5,7 @@ The independently installed/tested contract core is complete: 70 tests and typec
 | Stage | Depends on | Output and acceptance |
 | --- | --- | --- |
 | Contracts (verified) | None | Schemas, legal state transitions, frozen identity acceptance, fail-closed gates, marked fixtures; typecheck and contract tests pass |
-| Controller | Contracts | Durable operations, deduplicated intake, bounded retries, events; restart cannot duplicate dispatch |
+| Controller (storage implemented) | Contracts | Durable operations, deduplicated intake, bounded retries, events; restart cannot duplicate dispatch |
 | Devin adapter | Contracts | API start/inspect/feedback/cancel and reconciliation; unknown creation cannot trigger duplicate paid work |
 | Runner | Contracts | Disposable execution with protected inputs/oracle; timeout and missing evidence block acceptance |
 | External Xarts adapter | Contracts, runner | Independently verified reproducible chart incident and trusted packaging plan; no core import of Xarts |
