@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "projectId": "xarts",
+  "sourceRevision": "e3ebca5ee3712cb1396d774cbc1ef87e4772614d",
+  "entries": [
+    {
+      "id": "xarts.financialBridge",
+      "label": "Financial bridge regression",
+      "argv": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/unit/financialBridge.test.tsx"
+      ],
+      "classification": "regression",
+      "autonomyGateIds": [
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned",
+        "happy-dom and repository render assets available"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": null,
+      "failureMeaning": "A covered financial behavior differs from the suite expectations.",
+      "limitations": "Imports bridge arithmetic, decoders and renderer; literal expectations do not make the entire suite independent.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "tests/unit/financialBridge.test.tsx"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.financialBridgeUnits",
+      "label": "Financial units regression",
+      "argv": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/unit/financialBridgeUnits.test.tsx"
+      ],
+      "classification": "regression",
+      "autonomyGateIds": [
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned",
+        "happy-dom and repository render assets available"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": null,
+      "failureMeaning": "A covered financial behavior differs from the suite expectations.",
+      "limitations": "Expected labels call production formatMeasuredAmount; DOM pointer behavior is mocked.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "tests/unit/financialBridgeUnits.test.tsx"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.financialExternalAudit",
+      "label": "External financial data regression",
+      "argv": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/unit/financialExternalAudit.test.tsx"
+      ],
+      "classification": "regression",
+      "autonomyGateIds": [
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned",
+        "happy-dom and repository render assets available"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": null,
+      "failureMeaning": "A covered financial behavior differs from the suite expectations.",
+      "limitations": "Imports registry, production decoders and resolver; some negative/empty-input cases accept a thrown error.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "tests/unit/financialExternalAudit.test.tsx"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.golden",
+      "label": "Golden render smoke",
+      "argv": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/golden"
+      ],
+      "classification": "smoke",
+      "autonomyGateIds": [
+        "A04",
+        "A05"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned",
+        "UPDATE_GOLDEN must be unset; protected named baseline coverage required",
+        "Record font and render environment; missing mandatory baselines yield not_run"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": null,
+      "failureMeaning": "A demo render fails XML validation or a present normalized baseline differs.",
+      "limitations": "Missing baselines skip. Production XML validation and normalized byte equality cannot prove numeric meaning.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "tests/golden/charts.test.ts"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.gatesVivos",
+      "label": "Required lint gate presence",
+      "argv": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "tests/lint/gatesVivos.test.ts"
+      ],
+      "classification": "consistency",
+      "autonomyGateIds": [
+        "A06",
+        "A07"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned"
+      ],
+      "oracleIndependence": "unreviewed",
+      "productionHelpers": "no",
+      "selfTest": null,
+      "failureMeaning": "An enumerated lint test is absent or a scanned test contains a skip/only call.",
+      "limitations": "Presence is not detector strength. Protect the enumerated gate inventory; source-pattern scanning has limited scope.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "tests/lint/gatesVivos.test.ts"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.overflow",
+      "label": "Overflow declarations",
+      "argv": [
+        "pnpm",
+        "revisa-desbordamiento:check"
+      ],
+      "classification": "consistency",
+      "autonomyGateIds": [
+        "A06",
+        "A07"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": [
+        "pnpm",
+        "revisa-desbordamiento:autoprueba"
+      ],
+      "failureMeaning": "An overflow declaration violates static declaration checks.",
+      "limitations": "Source patterns cannot establish that rendered overflow is caught. Self-test availability is not a current passed mutation test.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "render-cli/revisa-desbordamiento.ts"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.holes",
+      "label": "UI content region ratchet",
+      "argv": [
+        "pnpm",
+        "revisa-huecos:check"
+      ],
+      "classification": "ratchet",
+      "autonomyGateIds": [
+        "A06",
+        "A07"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned",
+        "Candidate preview SVG assets available"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": [
+        "pnpm",
+        "revisa-huecos:autoprueba"
+      ],
+      "failureMeaning": "UI unpublished content regions exceed the ratchet, a thumbnail is absent, or the detector control fails.",
+      "limitations": "UI-family thumbnail scope only; documented false positives and false negatives. Protect ratchet and controls.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "render-cli/revisa-huecos.ts"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.schema",
+      "label": "Generated schema consistency",
+      "argv": [
+        "pnpm",
+        "emit-schema:check"
+      ],
+      "classification": "consistency",
+      "autonomyGateIds": [
+        "A07"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": null,
+      "failureMeaning": "Committed JSON schema is absent or differs from the generated schema.",
+      "limitations": "Schema consistency does not establish correct chart geometry or numerical meaning.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "render-cli/emit-schema.ts"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.metadata",
+      "label": "Metadata coverage ratchet",
+      "argv": [
+        "pnpm",
+        "metadatos:check"
+      ],
+      "classification": "ratchet",
+      "autonomyGateIds": [
+        "A06",
+        "A07"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": [
+        "pnpm",
+        "metadatos:autoprueba"
+      ],
+      "failureMeaning": "Metadata coverage drops or a static metadata rule is violated.",
+      "limitations": "Production layout thresholds are reused; coverage and static declarations are not rendered semantic proof.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "render-cli/deriva-metadatos.ts"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.demoSpecs",
+      "label": "Demo specification consistency",
+      "argv": [
+        "pnpm",
+        "specs-demo:check"
+      ],
+      "classification": "consistency",
+      "autonomyGateIds": [
+        "A04",
+        "A07"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned",
+        "Repository demo render assets and fonts available"
+      ],
+      "oracleIndependence": "not_independent",
+      "productionHelpers": "yes",
+      "selfTest": null,
+      "failureMeaning": "Demo specs are missing/stale or generated demo rendering fails.",
+      "limitations": "Demo input rendering is not reproduction of the immutable incident input.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "render-cli/exporta-specs-demo.ts"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.typecheck",
+      "label": "TypeScript integration",
+      "argv": [
+        "pnpm",
+        "typecheck"
+      ],
+      "classification": "consistency",
+      "autonomyGateIds": [
+        "A07"
+      ],
+      "prerequisites": [
+        "Read-only candidate checkout and protected evaluator revision recorded",
+        "Node 22 and frozen pnpm dependencies provisioned"
+      ],
+      "oracleIndependence": "unreviewed",
+      "productionHelpers": "no",
+      "selfTest": null,
+      "failureMeaning": "TypeScript reports a type or configuration error.",
+      "limitations": "Compile-time compatibility does not establish numerical or artifact correctness.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "tsconfig.json"
+      ],
+      "executionStatus": "not_run"
+    },
+    {
+      "id": "xarts.packageConsumer",
+      "label": "Exact SDK package consumer",
+      "argv": [
+        "node",
+        "render-cli/sdk/check-consumer.mjs",
+        ".promote-inputs/candidate.tgz",
+        "--financial"
+      ],
+      "classification": "regression",
+      "autonomyGateIds": [
+        "A04",
+        "A05",
+        "A08"
+      ],
+      "prerequisites": [
+        "Node 22.22.1, npm and local Chrome provisioned",
+        "Trusted runner stages exact compiled candidate tarball at .promote-inputs/candidate.tgz and records SHA-256 before execution",
+        "Temporary consumer directory writable; dependency installation/network explicitly provisioned",
+        "Packaged reference fonts and workspace dependencies available"
+      ],
+      "oracleIndependence": "unreviewed",
+      "productionHelpers": "yes",
+      "selfTest": null,
+      "failureMeaning": "The exact installed package fails a covered Node, CLI, declaration, React, browser or financial consumer check.",
+      "limitations": "Creates a temporary consumer and installs dependencies. Full oracle independence is unreviewed; Node/CLI parity shares package implementation. Does not regenerate arbitrary original incident input or prove activation/repeat benefit.",
+      "auditBasis": "source_inspection",
+      "sourceFiles": [
+        "package.json",
+        "render-cli/sdk/check-consumer.mjs",
+        "tests/consumer/sdk/README.md",
+        "tests/consumer/sdk/financial-node.mjs"
+      ],
+      "executionStatus": "not_run"
+    }
+  ]
+}

@@ -182,6 +182,22 @@ export class ControllerStore {
     });
   }
 
+  /** One consistent, bounded read for the operator UI. Claim tokens stay server-side. */
+  operatorSnapshot(): { incidents: Incident[]; operations: Omit<DispatchOperation, 'claimToken'>[]; events: WorkshopEvent[] } {
+    return this.transaction(() => {
+      const incidents = this.db.prepare('SELECT record FROM incidents ORDER BY rowid DESC LIMIT 100').all()
+        .map((row) => Incident.parse(JSON.parse(String(row.record))));
+      const operations = this.db.prepare('SELECT record FROM operations ORDER BY rowid DESC LIMIT 100').all()
+        .map((row) => {
+          const { claimToken: _claim, ...operation } = DispatchOperation.parse(JSON.parse(String(row.record)));
+          return operation;
+        });
+      const events = this.db.prepare('SELECT sequence, record FROM events ORDER BY sequence DESC LIMIT 100').all()
+        .reverse().map((row) => WorkshopEvent.parse({ ...JSON.parse(String(row.record)), sequence: row.sequence }));
+      return { incidents, operations, events };
+    });
+  }
+
   private writeOperation(input: DispatchOperation): DispatchOperation {
     const operation = DispatchOperation.parse(input);
     this.db.prepare('UPDATE operations SET record = ? WHERE id = ?').run(canonicalJson(operation), operation.id);

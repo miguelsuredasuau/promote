@@ -18,11 +18,11 @@
       "acceptance": [
         "durable incident intake with idempotency",
         "transactional event sequence",
-        "worker lease prevents duplicate dispatch",
+        "exclusive dispatch claim prevents duplicate dispatch",
         "ambiguous provider creation persists and blocks redispatch",
         "restart preserves operation identity"
       ],
-      "completedSlice": "durable intake, transactional events, create-operation intent and claims"
+      "completedSlice": "durable intake, transactional events, create-operation claims; read-only operator snapshot API"
     },
     {
       "id": "devin-adapter",
@@ -34,22 +34,44 @@
     },
     {
       "id": "external-project-adapter",
-      "status": "planned"
+      "status": "in_progress",
+      "completedSlice": "audited Xarts gate catalog and frozen profile builder; runner not connected",
+      "ownerRole": "project-adapter-engineer",
+      "acceptance": [
+        "gate inventory audit: 12 catalog entries with source revision, prerequisites, independence and self-test availability",
+        "catalog maps existing commands to A00\u2013A10 coverage without claiming complete authority",
+        "profile binds catalog digest and requires protected meaning/artifact gates",
+        "trusted runner must collect fresh authenticated results before any gate pass"
+      ]
     },
     {
       "id": "operator-ui",
-      "status": "planned"
+      "status": "in_progress",
+      "completedSlice": "verified read-only owner briefing, isometric department map, project readiness, gate inspection, persisted task snapshots; live provider and write controls pending"
     },
     {
       "id": "real-repair-loop",
       "status": "planned"
+    },
+    {
+      "id": "ceo-mandate-and-reporting",
+      "status": "planned",
+      "acceptance": [
+        "versioned owner mandate and routine-work scope",
+        "feedback inbox and prioritized proposals",
+        "budget reservation and reconciled provider usage",
+        "revision-bound decisions for substantial investments, pivots and technology changes"
+      ],
+      "completedSlice": "owner report structure; missing integrations shown explicitly"
     }
   ],
   "paidDispatchEnabled": false,
   "verification": {
     "node": "22.22.1",
     "typecheck": "pass",
-    "testsPassed": 82,
-    "publicSourceCheck": "pass"
+    "testsPassed": 95,
+    "publicSourceCheck": "pass",
+    "observedAt": "2026-09-19T09:29:42.940368Z",
+    "browserQa": "desktop 1440px, mobile 390px, gate inspection, stale/reconnect verified"
   }
 }

@@ -22,13 +22,15 @@ Runner executes allowlisted plans in disposable candidate environments. Original
 
 Acceptance: a bounded real Devin session retrieves the configured base and submits a full candidate SHA; feedback continues work; unknown creation does not duplicate dispatch; remote and local termination are both verified. No credentials appear in exported evidence.
 
-## P04 — First external project adapter
+## P04 — First external project adapter (catalog verified)
+
+Owner: project-adapter engineer. First work package: gate inventory audit, source revision and independence classification, executable command catalog, digest-bound profile construction and legacy evidence mapping. This catalog slice is implemented and tested; runner integration remains pending.
 
 Depends on P01 and runner. Xarts is the first target, connected through configuration and an independently maintained adapter. Reproduction, numerical oracle, package consumption and output checks are domain-owned. The core has no Xarts import or dependency.
 
 Acceptance: one actual or explicitly labeled seeded defect fails for the expected reason; invalid inputs are refused separately; held-out good/bad controls pass; original input remains unchanged. Engineering writes only to isolated candidate checkouts.
 
-## P05 — Operator view
+## P05 — Operator view (read-only owner briefing implemented)
 
 Depends on P01; live integration depends on P02. Build a branded isometric company/workshop view plus an accessible incident table and evidence inspector. Departments represent intake, engineering, verification and release. Display comes from recorded state, never invented progress animations.
 
@@ -51,3 +53,7 @@ Acceptance: a real feedback item yields a reproducible improvement and usable ou
 Depends on P05–P06; P07 is stretch until the real repair loop works. Capture the real rejection/correction trace and final artifact. Test restart, duplicate triggers, timeout, cancellation, stale evidence and refusal. Clearly label replay and fault injection.
 
 Publishing this repository does not certify these future stages as complete. Keep implementation status, README and evidence aligned. Review the Git publication set and run the public-source check before every push; raw provider transcripts, local configuration and runtime evidence are excluded by default.
+
+## P09 — CEO mandate and reporting
+
+Owner: control-plane engineer; depends on P02. Define feedback/proposal/mandate/decision/budget records separately from frozen gate evidence. Implement routine-work authorization, bounded reservations, reconciled cost observations and revision-bound investment decisions. The owner receives priorities, verified releases, feedback patterns and spend reporting. See [CEO mandate](ceo-mandate.md). No example budget is activated automatically.

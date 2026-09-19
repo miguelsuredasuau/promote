@@ -6,7 +6,7 @@ Learns from user feedback, finds issues and opportunities, and ships verified im
 
 A standalone foundation for an engineering control layer: receive an external request, dispatch an engineering agent, verify its candidate independently, return failures, and release only accepted artifacts.
 
-**Status:** early implementation. Versioned contracts, synthetic fixtures, and the first durable controller-storage slice are implemented: typecheck and 82 tests pass on Node 22.22.1. The HTTP API, scheduler, Devin adapter, execution runner, release system, and dashboard are not implemented yet. Fixtures are not real autonomous runs.
+**Status:** early implementation. Contracts, durable controller storage, a read-only owner briefing, and an audited Xarts gate catalog are implemented. Typecheck and 95 tests pass on Node 22.22.1. Autonomous scheduling, Devin execution, feedback ingestion, financial reconciliation, decisions and releases remain unconnected. Fixtures are not real autonomous runs.
 
 ## Development
 
@@ -15,7 +15,10 @@ Use Node 22.22.1 and pnpm 10.33.0:
 ```sh
 pnpm install --frozen-lockfile
 pnpm check
+pnpm dev
 ```
+
+Open `http://127.0.0.1:4310`. To inspect an external checkout, use `PROMOTE_PROJECT_PATH=/path/to/xarts pnpm dev`. The checkout stays separate and is read only. See the [owner console](docs/operator-console.md) and [CEO mandate](docs/ceo-mandate.md).
 
 This repository has its own dependency manifest, lockfile, tests, and Git history. It does not require Xarts, its node_modules, fonts, source code, or credentials. Dependencies come from the package registry.
 
@@ -27,7 +30,7 @@ This repository has its own dependency manifest, lockfile, tests, and Git histor
 - **Runner:** disposable candidate execution, with immutable evaluator/input identity and controlled evidence collection.
 - **Operator UI:** provider-neutral live/replay view; configurable branding and artifact previews.
 
-Xarts is the first planned external project integration. It remains a separate repository. See [repository boundaries](docs/repository-boundaries.md) and [delivery plan](docs/delivery.md), and [implementation stages and acceptance criteria](docs/implementation-plan.md).
+Xarts is the first external project integration; its catalog is audited and its execution adapter is still in progress. It remains a separate repository. See [repository boundaries](docs/repository-boundaries.md) and [delivery plan](docs/delivery.md), and [implementation stages and acceptance criteria](docs/implementation-plan.md).
 
 ## Sharing
 
