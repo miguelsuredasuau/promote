@@ -16,7 +16,7 @@ export const XARTS_NODE_IMAGE = 'node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667a
 export async function prepareXartsImage(checkout: string, sha: string, root: string) {
   if (!/^[a-f0-9]{40}$/.test(sha)) throw Error('invalid_candidate_sha');
   await mkdir(root, { recursive: true });
-  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'LICENSE', 'LICENSE-COMMERCIAL.md'], { cwd: checkout, timeout:30000,killSignal:'SIGKILL' });
+  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'docs/SPREADSHEETS.md', 'docs/catalogo-ficha.json', 'docs/mandos.json', 'docs/primitivas.json', 'docs/variantes.json', 'LICENSE', 'LICENSE-COMMERCIAL.md'], { cwd: checkout, timeout:30000,killSignal:'SIGKILL' });
   for (const sibling of await readdir(dirname(root))) {
     try {
       const prior = JSON.parse(await readFile(join(dirname(root), sibling, 'identity.json'), 'utf8'));

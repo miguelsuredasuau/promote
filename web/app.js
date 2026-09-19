@@ -104,7 +104,8 @@ function renderDesk(key=desk,shell=document.getElementById('desk')){
   const project=snapshot?.project??{};content.append(record('Xarts Office',project.repositoryAvailable?`Checkout ${project.head?.slice(0,10)} · ${project.revisionMatchesCatalog?'audit matches':'re-audit required'}`:'Checkout not available'));
   content.append(record('Mandate',snapshot?.ownerReport?.mandate?.routineWork??'No operating mandate configured.',snapshot?.ownerReport?.mandate?.status));
   const feedbackItems=list(snapshot?.inbox);
-  content.append(record('Demo feedback', `${feedbackItems.length} recent records received · awaiting triage`));
+  const pending=feedbackItems.filter(item=>item.disposition==='awaiting_triage').length;
+  content.append(record(mode==='demo'?'Demo feedback':'Chat feedback', `${feedbackItems.length} recent records received · ${pending?`${pending} awaiting triage`:'all triaged'}`));
   feedbackItems.slice(0,12).forEach(item=>content.append(record(`${human(item.kind)} · ${human(item.outcome)}`,item.summary||item.runId||item.sourceKey,item.disposition)));
   list(snapshot?.implementation?.milestones).forEach(m=>content.append(record(human(m.id),m.completedSlice??'Not yet delivered.',m.status)));
   content.append(record('Implementation verification',`${snapshot?.implementation?.verification?.testsPassed??'Unknown'} tests recorded. These verify Promoted, not a candidate Xarts release.`));

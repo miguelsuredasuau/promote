@@ -42,7 +42,7 @@ export class ContainerRunner implements ExecutionRunner {
     const dir=join(this.config.root,runId);await mkdir(dir,{recursive:true});
     const args=['create','--name',name,'--network','none','--read-only','--user','65534:65534','--cap-drop','ALL',
       '--security-opt','no-new-privileges','--pids-limit','64','--cpus','1','--memory',`${plan.ceilings.memoryMb}m`,
-      '--memory-swap',`${plan.ceilings.memoryMb}m`,'--tmpfs',`/tmp:rw,nosuid,size=${Math.max(1,Math.ceil(plan.ceilings.artifactBytes/1048576))}m`,
+      '--memory-swap',`${plan.ceilings.memoryMb}m`,'--tmpfs',`/tmp:rw,exec,nosuid,nodev,size=${Math.max(1,Math.ceil(plan.ceilings.artifactBytes/1048576))}m`,
       '--workdir','/tmp'];
     // An anonymous volume survives process exit for collection, is never mounted
     // into another job, and is removed with the container. No host write mount.
