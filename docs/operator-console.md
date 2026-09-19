@@ -10,7 +10,7 @@ The console polls `GET /api/overview` every five seconds. It presents separate s
 - **Engineering records:** persisted incidents, dispatch operations, outcomes and chronological events. Claim tokens remain server-side. The current storage interface supports recording these; no paid provider dispatch is connected yet.
 - **Gate inspection:** audited command arrays, prerequisites, independence limits and autonomy mappings. NOT_RUN stays distinct from a passing gate. No catalog entry is executed by opening the UI.
 
-The snapshot bounds each incident, operation and event collection to the latest 100 records; backlog counts explicitly use that visible window. Full-history pagination and durable report aggregates remain future work. The isometric office is a department map; it does not animate fictional model activity.
+The snapshot bounds each incident, operation and event collection to the latest 100 records; backlog counts explicitly use that visible window. Full-history pagination and durable report aggregates remain future work. Live scene displays are projections of recorded state; demo activity is explicitly illustrative.
 
 The browser keeps the last snapshot with a stale warning when disconnected, and reconnects automatically. Gate and incident details are rendered as text, never executed as HTML. Static assets are allowlisted; this server does not serve arbitrary repository files, environment files, database contents or raw transcripts. The local server binds to loopback and rejects foreign Host/Origin values. It does not implement deployment authentication or write APIs; do not expose it as a public control service.
 
@@ -20,8 +20,10 @@ See [CEO mandate](ceo-mandate.md) for routine-work authority, investment decisio
 
 ## Full-viewport office upgrade
 
-The main route is now the interactive Xarts Office. Five keyboard-accessible scene objects and equivalent dock buttons open the backlog, engineering event terminal, strategy wall, QA inspector and finance safe. A separate CEO briefing retains milestones and verification evidence. A broker-style ticker shows known counters and leaves unconnected usage/error/PR/cost telemetry unknown.
+The main route is now the interactive Xarts Office. Five raycast-selectable scene objects and keyboard-accessible Office menu buttons open the backlog, engineering event terminal, strategy wall, QA inspector and finance safe. A separate CEO briefing retains milestones and verification evidence. The in-room ticker shows known counters and leaves unconnected usage/error/PR/cost telemetry unknown.
 
-Live is the default. Explore demo supplies clearly labeled browser-only illustrative tasks, output, QA states and expenses; switching modes never changes controller data. The finance example is not an approved spend limit. Characters and conveyor decoration animate only in demo and honor reduced motion.
+Live is the default. Explore demo supplies clearly labeled browser-only illustrative tasks, output, QA states and expenses; switching modes never changes controller data. The finance example is not an approved spend limit. Characters animate in demo; conveyor movement follows the projected QA state. Camera approaches and surface reveals honor reduced motion.
 
-An optional logo is fetched from `/api/project/logo`, which serves only `xarts.svg` from the configured checkout under a sandboxed SVG policy. The logo is absent from public Git history. The separate [3D QA prototype](/qa-prototype) evaluates the renderer decision described in [office renderer review](office-renderer-review.md).
+An optional logo is fetched from `/api/project/logo`, which serves only `xarts.svg` from the configured checkout under a sandboxed SVG policy. The logo is absent from public Git history. The main scene now uses Three.js; the separate `/qa-prototype` remains the earlier renderer trial.
+
+The scene textures and detail surfaces consume one browser model. The demo supports moving non-pipeline kanban cards, a seven-step repair story, candidate-bound QA outcomes, terminal logs and illustrative finance. Pipeline-owned cards cannot bypass acceptance by dragging. Unknown live evidence and costs remain unknown. Labels appear on hover or menu focus; opening a station approaches it with the camera and reveals a material-themed HTML working surface. The detail controls are accessible HTML, not interactive pixels inside a WebGL texture.

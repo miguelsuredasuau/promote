@@ -20,7 +20,7 @@ Grouping A00–A10 on a conveyor is presentation only. Every actual gate result 
 
 The backlog whiteboard holds fixes/features; the workstation holds recorded engineering events; the ideas wall holds proposals/owner decisions; QA holds the complete gate inspector; the finance safe holds costs and budget distinctions; the CEO briefing holds implementation milestones and integration evidence. Broker-style telemetry distinguishes observed counters from unknown data. The previous long-page evidence sections are relocated rather than removed.
 
-The working full-viewport SVG room remains a comparison implementation while the QA prototype is evaluated. It must not be described as the completed 3D office.
+The prototype established the benefit of spatial geometry. The main room now uses procedural Three.js geometry, articulated figures, projected hover labels and shared-model CanvasTexture displays. Selecting a station approaches it with the camera and reveals accessible material-themed HTML controls; this is not yet a fully perspective-attached interactive surface. The old trial remains available for comparison.
 
 ## Source of truth and branding
 

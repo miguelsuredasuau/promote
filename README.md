@@ -6,7 +6,7 @@ Learns from user feedback, finds issues and opportunities, and ships verified im
 
 A standalone foundation for an engineering control layer: receive an external request, dispatch an engineering agent, verify its candidate independently, return failures, and release only accepted artifacts.
 
-**Status:** early implementation. Contracts, durable controller storage, a read-only owner briefing, and an audited Xarts gate catalog are implemented. Typecheck and 96 tests pass on Node 22.22.1. Autonomous scheduling, Devin execution, feedback ingestion, financial reconciliation, decisions and releases remain unconnected. Fixtures are not real autonomous runs.
+**Status:** early implementation. Contracts, durable controller storage, a read-only owner briefing, and an audited Xarts gate catalog are implemented. Typecheck and 106 tests pass on Node 22.22.1. Autonomous scheduling, Devin execution, feedback ingestion, financial reconciliation, decisions and releases remain unconnected. Fixtures are not real autonomous runs.
 
 ## Development
 
@@ -18,7 +18,7 @@ pnpm check
 pnpm dev
 ```
 
-Open `http://127.0.0.1:4310` for the full-screen Xarts Office. Its five desks, finance safe, ticker and CEO briefing are read-only; Explore demo is explicitly illustrative. A separate `http://127.0.0.1:4310/qa-prototype` tests the Three.js renderer before full-office conversion. To inspect an external checkout, use `PROMOTE_PROJECT_PATH=/path/to/xarts pnpm dev`. The checkout stays separate and is read only. See the [owner console](docs/operator-console.md) and [CEO mandate](docs/ceo-mandate.md).
+Open `http://127.0.0.1:4310` for the full-screen Xarts Office. The integrated Three.js room has five interactive workstations, an in-room ticker and CEO briefing. Hover objects for labels; select one to approach its working surface. Office menu provides keyboard navigation and mode switching. Live records are read-only; Explore demo runs a shared, explicitly illustrative repair story. The earlier renderer trial remains at `/qa-prototype`. To inspect an external checkout, use `PROMOTE_PROJECT_PATH=/path/to/xarts pnpm dev`. The checkout stays separate and is read only. See the [owner console](docs/operator-console.md) and [CEO mandate](docs/ceo-mandate.md).
 
 This repository has its own dependency manifest, lockfile, tests, and Git history. It does not require Xarts, its node_modules, fonts, source code, or credentials. Dependencies come from the package registry.
 

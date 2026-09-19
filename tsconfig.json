@@ -13,7 +13,8 @@
     "noEmit": true,
     "types": [
       "node"
-    ]
+    ],
+    "allowJs": true
   },
   "include": [
     "contracts/**/*.ts",
@@ -21,6 +22,7 @@
     "tests/**/*.ts",
     "vitest.config.ts",
     "server/**/*.ts",
-    "adapters/**/*.ts"
+    "adapters/**/*.ts",
+    "web/office-model.js"
   ]
 }

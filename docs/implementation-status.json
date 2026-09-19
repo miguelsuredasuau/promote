@@ -47,7 +47,7 @@
     {
       "id": "operator-ui",
       "status": "in_progress",
-      "completedSlice": "full-viewport SVG office with five interactive desks, ticker, finance safe and briefing; separate Three.js QA prototype; live model/financial telemetry not connected"
+      "completedSlice": "Full-viewport Three.js office with shared-model textured workstations, hover labels, camera approach and material-themed detail surfaces; real provider dispatch and financial telemetry remain unconnected"
     },
     {
       "id": "real-repair-loop",
@@ -69,9 +69,9 @@
   "verification": {
     "node": "22.22.1",
     "typecheck": "pass",
-    "testsPassed": 96,
+    "testsPassed": 106,
     "publicSourceCheck": "pass",
-    "observedAt": "2026-09-19T09:50:05.545683Z",
-    "browserQa": "five desk dialogs, local logo, desktop/mobile, demo/live distinction; Three.js scripted rejection/correction and reduced-motion controls"
+    "observedAt": "2026-09-19T10:04:57.454089+00:00",
+    "browserQa": "Integrated Three.js office: shared kanban/QA/terminal/finance demo, failure and recovery, camera approach, hover labels, menu navigation, desktop/mobile without overflow or browser errors"
   }
 }

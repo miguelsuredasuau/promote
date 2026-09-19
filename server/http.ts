@@ -9,6 +9,8 @@ const assets: Record<string, { file: string; mime: string }> = {
   '/qa-prototype': { file: 'qa-prototype.html', mime: 'text/html; charset=utf-8' },
   '/qa-prototype.js': { file: 'qa-prototype.js', mime: 'text/javascript; charset=utf-8' },
   '/qa-prototype.css': { file: 'qa-prototype.css', mime: 'text/css; charset=utf-8' },
+  '/office-model.js': { file: 'office-model.js', mime: 'text/javascript; charset=utf-8' },
+  '/office-scene.js': { file: 'office-scene.js', mime: 'text/javascript; charset=utf-8' },
   '/app.js': { file: 'app.js', mime: 'text/javascript; charset=utf-8' },
   '/styles.css': { file: 'styles.css', mime: 'text/css; charset=utf-8' },
 };

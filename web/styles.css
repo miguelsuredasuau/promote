@@ -5,3 +5,47 @@
 #xarts-logo{width:clamp(120px,13vw,210px);height:auto;vertical-align:baseline}.prototype-link{display:block;background:#dce7dc;padding:15px;border-radius:10px;font-size:12px;margin-bottom:18px}@media(max-width:850px){#xarts-logo{width:115px}}
 
 @media(max-width:850px){.scene-stage{left:-20px;right:-20px}}
+/* Shared components: the same view model paints their 3D surfaces. */
+.scene-stage{isolation:isolate;inset:0 0 65px}.scene-stage canvas{width:100%;height:100%;display:block}.office-label{position:absolute;z-index:1;transform:translate(-50%,-50%);border:0;border-radius:10px;background:#faf8f2ef;padding:9px 13px;font-size:11px;box-shadow:0 5px 20px #172a2510;white-space:nowrap;cursor:pointer}.office-label:hover{background:white}.office-bubble{position:absolute;z-index:1;transform:translate(-50%,-100%);background:#fffdf2f0;border:1px solid #d2dbca;border-radius:13px 13px 13px 3px;padding:9px 12px;max-width:195px;font-size:10px;line-height:1.5;pointer-events:none}.mode-banner{z-index:3;font-size:9px;width:300px;top:85px}.mode-banner strong{display:block;font-size:9px;letter-spacing:1px;margin-bottom:5px}.mode-banner>span{display:block}.demo-controls{display:flex;gap:5px;margin-top:10px}.demo-controls button,.action{padding:8px 11px;border-radius:8px;background:#1b4a6b;color:white;font-size:10px}.demo-controls button:disabled{opacity:.4;cursor:default}.demo-controls button:nth-child(n+2){background:#dfcf9c;color:#64542b}dialog.wide{width:870px}.kanban{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.kanban-column{border-radius:12px;background:#eaece2;padding:12px;min-height:320px;transition:background .2s var(--ease)}.kanban-column h3{margin:0 0 18px;font-size:10px;letter-spacing:.6px;display:flex;justify-content:space-between;text-transform:uppercase}.kanban-column h3 span{border-radius:50%;background:#d5dccc;padding:3px 6px}.kanban-card{border-radius:8px;background:#fffdf7;padding:13px;margin-bottom:12px;box-shadow:0 3px 8px #23382005;border-top:3px solid #1b4a6b}.kanban-card[draggable=true]{cursor:grab}.kanban-card h4{font-size:12px;line-height:1.5;margin:10px 0}.kanban-card small{font-size:8px;color:var(--muted);overflow-wrap:anywhere}.kanban-card select{display:block;max-width:100%;margin-top:12px;padding:6px 4px;background:#edf0e6;border:0;border-radius:5px;font-size:9px}.card-status{display:block;font-size:8px;color:var(--muted);margin-top:12px}.column-empty{font-size:10px;color:#7e8a7e}.drag-target{background:#d2dfcb}.terminal{font-size:11px;min-height:310px}.pipeline{gap:10px}.pipeline .stage{padding:20px 8px;font-size:11px}.office-caption,.briefing-button{z-index:2}.station-dock{z-index:2}@media(max-width:850px){.scene-stage{inset:125px 0 100px}.mode-banner{top:172px;width:auto;font-size:8px}.demo-controls button{font-size:9px;padding:7px 10px}.office-label{padding:5px 7px;font-size:8px}.office-bubble{font-size:8px;max-width:135px;padding:6px}.kanban{grid-template-columns:repeat(2,minmax(0,1fr))}.kanban-column{min-height:180px;padding:10px}.kanban-card{padding:10px}.kanban-card h4{font-size:11px}.pipeline{display:grid;grid-template-columns:1fr 1fr}.pipeline .stage{padding:12px;font-size:10px}}
+
+.outcome-banner{padding:22px;border-radius:15px;background:#e6e9df;margin:18px 0}.outcome-banner strong{font:30px/1.15 Georgia}.outcome-banner p{font-size:12px;line-height:1.7;margin-bottom:0}.outcome-banner.red{background:#f2dcd4;color:#882f25}.outcome-banner.green{background:#dce9d8;color:#24513a}.pipeline button.stage{text-align:left;border:1px solid #ffffff80;cursor:pointer;transition:transform .2s var(--ease)}.pipeline button.stage:hover{transform:translateY(-3px)}.pipeline button.stage>strong{font-size:14px;line-height:1.4;display:block}.pipeline button.stage>p{font-size:12px;line-height:1.5;min-height:36px}.pipeline button.stage>small{font-size:9px}.stage-evidence:empty{display:none}.stage-evidence{background:#edeee5;padding:18px;border-radius:12px;font-size:12px;line-height:1.7;margin-bottom:20px}.stage-evidence h3{margin-top:0}.office-label strong{display:block}.office-label small{display:block;font-size:9px;margin-top:4px;color:#627366}
+
+/* Approach the selected workstation, then unfold its working surface. */
+.office-heading h1{font-size:clamp(35px,3.5vw,60px)}
+.office-heading #xarts-logo{width:clamp(105px,10vw,170px)}
+.office-heading .intro{font-size:11px}
+.office-heading,.connection,.office-caption,.briefing-button,.station-dock{transition:opacity .35s ease,transform .55s var(--ease)}
+body[data-station] .office-heading,body[data-station] .connection,body[data-station] .office-caption,body[data-station] .briefing-button,body[data-station] .station-dock{opacity:0;pointer-events:none;transform:translateY(12px)}
+body[data-station] .station-dock{transform:translate(-50%,12px)}
+dialog{inset:155px 0 30px;margin:auto;width:min(850px,calc(100vw - 70px));height:fit-content;max-height:calc(100dvh - 185px);border-radius:12px;border:8px solid #caa57c;box-shadow:0 28px 75px #153a3740;transform-origin:50% 60%;animation:desk-approach .85s var(--ease) both}
+dialog.wide{width:min(1050px,calc(100vw - 70px))}
+dialog::backdrop{background:#eeeae510;backdrop-filter:none}
+#close-desk{width:auto;border-radius:8px;padding:8px 12px;font-size:12px;white-space:nowrap}
+dialog[data-station=engineering]{border-color:#244f4a;background:#e7ece3}
+dialog[data-station=strategy]{border-color:#b38c61;background:#f0e6ce}
+dialog[data-station=finance]{border:12px solid #667e75;background:#e7ece1}
+dialog[data-station=qa]{border-color:#244f4a}
+@keyframes desk-approach{0%,35%{opacity:0;transform:perspective(1400px) translateY(65px) rotateX(16deg) scale(.62)}100%{opacity:1;transform:perspective(1400px) translateY(0) rotateX(0) scale(1)}}
+@media(max-width:850px){dialog,dialog.wide{inset:110px 0 15px;width:calc(100vw - 22px);max-width:none;max-height:calc(100dvh - 125px);padding:18px;border-width:5px}.office-heading h1{font-size:38px}}
+
+/* The room owns the viewport; controls are available on demand. */
+.topbar{position:fixed;top:65px;left:22px;right:auto;height:auto;padding:14px;border-radius:14px;background:#faf8f2;z-index:6;display:none;box-shadow:0 10px 35px #203e3215}
+.topbar .brand,.topbar .office-address,.market-ticker{display:none}
+.office-viewport{height:100dvh;min-height:560px}
+.scene-stage{inset:0}
+.office-heading{top:72px;left:28px}
+.office-heading .eyebrow,.office-heading .intro,.office-caption{display:none}
+.office-heading h1{font-size:35px;margin:10px 0;letter-spacing:-1px}
+.office-heading #xarts-logo{width:105px}
+.connection{top:30px;right:28px;font-size:10px}
+.briefing-button{bottom:24px;right:24px;padding:10px 14px}
+.station-dock{display:none;position:fixed;left:22px;bottom:auto;top:135px;transform:none;flex-direction:column;align-items:stretch;border:0;border-radius:14px;z-index:6;padding:9px;background:#faf8f2}
+.station-dock button{justify-content:start}.station-dock small{margin-left:auto}
+.office-menu{position:fixed;left:24px;top:23px;z-index:7;background:#faf8f2e8;border-radius:12px;padding:10px 13px;color:var(--petrol);font:bold 24px Georgia;box-shadow:0 3px 15px #203e3208}
+.office-menu span{font:11px system-ui;vertical-align:middle;margin-left:8px}
+.menu-open .topbar,.menu-open .station-dock{display:flex}
+body[data-station] .office-menu{display:none}
+.mode-banner{top:80px;right:25px}
+@media(max-width:850px){.office-viewport{height:100dvh;min-height:560px}.scene-stage{inset:30px 0}.office-heading{top:75px;left:24px}.office-heading h1{font-size:28px}.office-heading #xarts-logo{width:85px}.connection{left:auto;right:20px;top:28px;max-width:175px;text-align:right}.connection small{font-size:7px}.station-dock{width:210px;left:22px;top:135px;bottom:auto}.station-dock button{flex-direction:row;font-size:11px;padding:10px;gap:10px}.station-dock small{position:static}.briefing-button{left:auto;bottom:18px;right:18px}.briefing-button small{display:none}.mode-banner{top:145px;left:24px;right:24px;width:auto}.topbar{padding:12px}}
+
+body[data-station] .topbar,body[data-station] .mode-banner{visibility:hidden}
