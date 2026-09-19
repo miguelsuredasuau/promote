@@ -1,66 +1,190 @@
-# Promoted
+<div align="center">
 
-**Turn your Devin agent into the CEO of your codebase.**
+# promote.
 
-Learns from user feedback, finds issues and opportunities, and ships verified improvements. Your code keeps healing and evolving—so you can focus on what matters.
+### You build it. Promote helps maintain it.
 
-A standalone foundation for an engineering control layer: receive an external request, dispatch an engineering agent, verify its candidate independently, return failures, and release only accepted artifacts.
+An engineering team for the solo developer.<br>
+Connect what happens in your app to the agents that improve your code.
 
-**Status:** active integration. Chat evidence intake, durable orchestration, proposal triage, scoped Devin dispatch, ACU reservations, a ten-minute heartbeat and the live office/operations journal are implemented. A real repair candidate has been returned and reviewed for scope; no repaired Xarts release has been activated. Isolated build, standalone-consumer checks, original SQL-backed chart replay and guarded release activation are now wired; the first complete real run remains blocked by the local Docker environment. Local analyst roles use deterministic rules, not undisclosed model calls.
+**Observe → Improve → Verify → Deliver**
 
-## What is in this repository?
+[Explore the office](#an-office-you-can-read) · [How it works](#three-layers-one-maintenance-loop) · [Run locally](#run-locally) · [Build status](#where-we-are-today)
 
-| Component | Location |
+</div>
+
+---
+
+Solo developers are building more than ever. Every new app brings bugs to investigate, feedback to understand, dependencies to manage, and improvements to ship. The work continues long after the first launch.
+
+**Promote is being built to take that maintenance loop off your plate.** It connects application evidence to an engineering agent, tracks the work, and independently checks the result before making a release available to your app. You set the scope and spending limits; Promote coordinates the work within them.
+
+> **Active prototype.** Real chat intake, orchestration and Devin dispatch are implemented. The first real repair returned a candidate; the complete verification-to-release cycle is still pending. The reusable observability SDK and general deployment integrations are next steps.
+
+## An office you can read
+
+![Promote's live 3D office, with engineering, verification and decision-making workstations](docs/images/office.png)
+
+*The running local office, captured September 19, 2026. Its stations and ticker reflect controller state. Generated assets shown here are local previews and are not bundled with a fresh clone.*
+
+The office gives the work a place: a backlog to prioritize, an engineering desk, a verification station, a strategy wall and a finance vault. Open the ticker to see the objective, blocker and next action in plain language.
+
+![Promote's activity view showing the current objective, repair progress and role status](docs/images/activity.png)
+
+*The live activity view from the same local service. Screenshots are observations of this instance, not a claim that a repair has shipped.*
+
+| You want to know… | Promote shows… |
 | --- | --- |
-| 3D office and live viewer | `web/`, port 4310 |
-| Asset builder, concept generation and model review | `studio/`, `web/studio/`, port 4311 |
-| Orchestrator, durable queue, logs and budget controls | `server/`, `contracts/` |
-| Devin engineering adapter and role instructions | `adapters/devin/`, `prompts/` |
-| Local verified-release registry writer | `server/registry.ts` |
+| What are we trying to achieve? | The current objective and repair stages |
+| Who is doing something? | Role status, local processes and remote Devin work |
+| Why hasn't it shipped? | The blocker and the next required action |
+| What happens after this? | Prioritized proposals and the work queue |
+| What is it costing? | Reported ACUs, reserved limits and labelled dollar estimates |
 
-The chart-building chat is a separate **xarts-chat** project. The chart implementation is the separate private **visx-anlak** repository. The Studio builder here builds office assets; it is not the chart chat.
+The office also has an **Explore demo** mode with an illustrative repair story. Demo activity is labelled separately from live records.
 
-Devin pushes a candidate branch in the target repository. Promote checks that exact commit, builds and verifies its package, then activates a registry release. The chat's reader can install the active verified package for subsequent requests. This design does **not** serve arbitrary branch-tip commits, and the real candidate-to-release loop is not yet complete.
+## Three layers. One maintenance loop.
 
-## Development
+| Layer | Responsibility | Implementation today |
+| --- | --- | --- |
+| **01 · Observe** | Capture failures, user feedback and execution context inside your project. | Xarts Chat emits durable run records, feedback and progress. A general installable SDK is planned. |
+| **02 · Improve** | Turn evidence into scoped work and coordinate an engineering team. | Promote triages and schedules locally; Devin performs authorized engineering work in its remote sandbox. |
+| **03 · Deliver** | Independently verify the candidate and deliver an accepted update. | Xarts package build, consumer checks, request replay and registry activation are wired. Full real-loop acceptance remains pending. |
 
-Use Node 22.22.1 and pnpm 10.33.0:
+```mermaid
+flowchart LR
+    App["Your application"] -->|"Errors · feedback · progress"| Observe["01 / Observe"]
+    Observe --> Team["02 / Coordinate"]
+    Team -->|"Scoped task + budget"| Devin["Devin sandbox"]
+    Devin -->|"Candidate commit"| Verify["03 / Independent verification"]
+    Verify -->|"Checks fail"| Team
+    Verify -->|"Checks pass + policy permits"| Release["Verified release"]
+    Release -->|"Consumer picks up update"| App
+```
+
+**Promote coordinates the team. Devin supplies the engineering execution environment.** Today, triage and analyst roles use deterministic local rules. Semantic research and model-backed feature discovery are still planned.
+
+The delivery target currently implemented is a **verified package registry**. Deploying arbitrary applications to hosting providers is a future integration, not an existing universal deploy button.
+
+## From a bad chart to a better release
+
+Our first integration is **Xarts**, a chart library, connected to a separate chat application.
+
+1. A user requests a chart. The chat executes SQL against its dataset, renders with Xarts and records the outcome.
+2. Render checks and user feedback enter Promote's durable inbox. Repeated signals become proposals for investigation.
+3. An authorized repair becomes a Devin task with a named repository, permitted paths and an ACU ceiling.
+4. Devin returns a candidate branch. Promote checks the exact commit and runs independent build, consumer and original-request checks.
+5. Once the required checks and release policy pass, Promote activates the package. Subsequent chat requests can use that verified version.
+
+**Steps 1–3 have been exercised with real activity, and Devin returned a candidate.** The verification and activation path is implemented, but the first complete package run was interrupted by the local Docker environment. No repaired Xarts release has been activated.
+
+| Repository | What it owns |
+| --- | --- |
+| **[promote](https://github.com/miguelsuredasuau/promote)** · public | Orchestration, Devin integration, verification, registry, office and asset Studio |
+| **[xarts-chat](https://github.com/miguelsuredasuau/xarts-chat)** · public | The chart-building chat, SQL tools, feedback and release consumption |
+| **[visx-anlak](https://github.com/miguelsuredasuau/visx-anlak)** · private | The chart library that receives candidate fixes |
+
+The Studio in this repository builds **office assets**. The chart builder lives in `xarts-chat`.
+
+## Autonomy with a scope
+
+- **Evidence before action.** User feedback informs proposals; independent checks establish whether a repair works.
+- **Bounded engineering.** Dispatch requires an approved task, allowed paths, a budget and applicable funding conditions. A provider key alone does not authorize spending.
+- **Independent verification.** The engineering agent's success message is a claim to check. Promote evaluates the frozen candidate commit before release.
+- **Durable work.** Intake, work claims and events persist. Ambiguous paid requests are reconciled instead of blindly resent.
+- **Visible accounting.** Reserved ceilings and reported usage are distinct. Dollar estimates are labelled, and provider usage can arrive late.
+
+A ten-minute heartbeat reviews project activity. Scheduling prioritizes candidate verification and reliability, with every fifth eligible assessment reserved for discovery. The heartbeat does not grant itself new scope or spending authority.
+
+## Run locally
+
+Use **Node 22.22.1** and **pnpm 10.33.0**.
 
 ```sh
+git clone https://github.com/miguelsuredasuau/promote.git
+cd promote
 pnpm install --frozen-lockfile
 pnpm check
 pnpm dev
 ```
 
-Open `http://127.0.0.1:4310` for the full-screen Xarts Office. The integrated Three.js room has five interactive workstations, an in-room ticker and CEO briefing. Hover objects for labels; select one to approach its working surface. Office menu provides keyboard navigation and mode switching. Live records are read-only; Explore demo runs a shared, explicitly illustrative repair story. The earlier renderer trial remains at `/qa-prototype`. To inspect an external checkout, use `PROMOTE_PROJECT_PATH=/path/to/xarts pnpm dev`. The checkout stays separate. Candidate review may fetch a remote branch but does not edit the working tree. Engineering pushes only the branch authorized by its task. See the [owner console](docs/operator-console.md) and [CEO mandate](docs/ceo-mandate.md).
+Open **http://127.0.0.1:4310** for the office or **http://127.0.0.1:4310/activity** for the operations journal. The service can start without the private Xarts source or provider credentials; live engineering requires the configuration below.
 
-This repository has its own dependency manifest, lockfile, tests, and Git history. It does not require Xarts, its node_modules, fonts, source code, or credentials. Dependencies come from the package registry.
+<details>
+<summary><strong>Connect the Xarts integration and engineering provider</strong></summary>
 
-## Runtime configuration
+Configure an external checkout and the chat's outbox:
 
-Use ignored `.env` for `DEVIN_API_KEY`, `DEVIN_ORG_ID` and `FAL_KEY`. Configure the external checkout with `PROMOTE_PROJECT_PATH` and the chat outbox with `PROMOTE_CHAT_OUTBOX` or `.local/integration.json`. Never commit credentials, transcripts or local runtime state. Existing evidence, generated assets and approval records under `.local/` are not included in a clone.
+```sh
+PROMOTE_PROJECT_PATH=/absolute/path/to/visx-anlak \
+PROMOTE_CHAT_OUTBOX=/absolute/path/to/xarts-chat/runs/outbox \
+pnpm dev
+```
 
-- [Devin configuration and spending](docs/devin-operations.md)
-- [Orchestration roles, scheduling and current limits](docs/orchestrator-runtime.md)
-- [Studio builder and viewer](studio/README.md)
-- [Integration progress](docs/integration-progress.md)
+Store `DEVIN_API_KEY` and `DEVIN_ORG_ID` in an ignored `.env` file. `FAL_KEY` is used by the optional asset Studio. Follow [Devin configuration and spending](docs/devin-operations.md) to configure the task mandate and budget before dispatch.
 
-`/activity` is the human-readable operations journal; clicking the office ticker opens it. The provider is not automatically authorized by configuring a key. Dispatch requires an exact approved task, budget and any funding conditions.
+The chat and Promote currently exchange files through configured local paths. Remote hosting requires shared storage or an authenticated transport; cloning the repositories does not copy the running system's evidence or credentials. See the chat's [hosting handoff](https://github.com/miguelsuredasuau/xarts-chat/blob/main/docs/HOSTING.md).
 
-## Boundaries
+Independent candidate execution requires Docker and the configured verification environment. Follow [Xarts delivery](docs/xarts-delivery.md) for the exact setup and acceptance boundaries.
 
-- **Core:** incidents, state transitions, operation identity, policy, budgets, evidence, acceptance, and releases.
-- **Harness adapters:** agent execution (Devin first; other providers can implement the same contract).
-- **Project adapters:** request validation, trusted reproduction/evaluation/package plans, independent domain oracles.
-- **Runner:** disposable candidate execution, with immutable evaluator/input identity and controlled evidence collection.
-- **Operator UI:** provider-neutral live/replay view; configurable branding and artifact previews.
+</details>
 
-Xarts is the first external project integration; its catalog is audited and its execution adapter is still in progress. It remains a separate repository. See [repository boundaries](docs/repository-boundaries.md) and [delivery plan](docs/delivery.md), and [implementation stages and acceptance criteria](docs/implementation-plan.md).
+<details>
+<summary><strong>Explore the asset Studio</strong></summary>
 
-## Sharing
+The optional Studio provides office concept generation, model inspection and visual review on port **4311**. Generated assets and review history live under ignored local storage. A clone includes the viewer and source, not the locally generated asset collection.
 
-The public repository contains the reusable foundation. Package publication remains disabled. An open-source license has not yet been selected; public visibility alone does not grant an open-source license. The public integration intentionally includes the Xarts name, an Anlak-inspired palette, and an audited catalog of command names and source-path references. It does not include Xarts implementation source, proprietary font files, logos, customer data, provider transcripts or credentials. Office illustrations are newly authored for Promoted.
+See [Studio setup and current limits](studio/README.md). Asset generation uses its own provider and spending controls.
 
-See [controller storage](docs/controller-storage.md) for the implemented interface and its boundaries. `pnpm check` includes a tracked-source credential-pattern and excluded-file check; it complements source review rather than guaranteeing secret detection.
+</details>
 
-The concrete candidate-to-chat delivery setup and current validation limits are documented in [Xarts delivery](docs/xarts-delivery.md).
+## Where we are today
+
+Status recorded **September 19, 2026**. Implementation and a completed live acceptance run are tracked separately.
+
+| Capability | Status |
+| --- | --- |
+| Durable chat intake, feedback and progress journals | Implemented for Xarts Chat |
+| Proposal triage, role queue and ten-minute heartbeat | Implemented with local rules |
+| Scoped Devin dispatch and ACU reservations | Implemented; one real repair candidate returned |
+| 3D office, ticker and readable activity journal | Implemented |
+| Isolated Xarts verification and registry activation | Wired; first full real cycle pending |
+| Reusable project observability SDK | Planned |
+| Model-backed research and feature discovery | Planned |
+| General application deployment integrations | Planned |
+
+Next milestones: complete the real Xarts repair-to-release loop, extract a reusable integration SDK, then connect a second project to prove the adapter boundary works beyond charts.
+
+For detailed evidence, see [implementation status](docs/implementation-status.json), [acceptance plan](docs/implementation-plan.md) and [integration progress](docs/integration-progress.md).
+
+## Build on Promote
+
+The core owns incidents, policy, budgets, evidence and releases. Project adapters define reproduction, evaluation and packaging; engineering adapters connect execution providers. Devin and Xarts are the first concrete integrations.
+
+| Area | Source | Read next |
+| --- | --- | --- |
+| Controller and persistence | [`server/`](server/) | [Storage and lifecycle](docs/controller-storage.md) |
+| Contracts and adapter interfaces | [`contracts/`](contracts/) | [Contract reference](docs/contracts.md) |
+| Providers and project checks | [`adapters/`](adapters/) | [Repository boundaries](docs/repository-boundaries.md) |
+| Role instructions | [`prompts/`](prompts/) | [Orchestration behavior](docs/orchestrator-runtime.md) |
+| Office and activity UI | [`web/`](web/) | [Operator console](docs/operator-console.md) |
+| Asset builder and review | [`studio/`](studio/) | [Studio guide](studio/README.md) |
+
+Run `pnpm check` for the publication-source check, TypeScript checks and tests. Docker integration checks have additional prerequisites documented in the delivery guides.
+
+<details>
+<summary><strong>Source availability and local state</strong></summary>
+
+This repository is public; an open-source license has not yet been selected. Package publication remains disabled.
+
+Credentials, customer data, provider transcripts, private chart implementation, generated asset files and local runtime state are excluded from the repository. The screenshots above document the local UI; they do not bundle its underlying generated models. Keep `.env` and `.local/` outside commits.
+
+</details>
+
+---
+
+<div align="center">
+
+**Build the next thing. Keep this one improving.**
+
+</div>
