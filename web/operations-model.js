@@ -1,0 +1,60 @@
+const list=x=>Array.isArray(x)?x:[];
+export const words=x=>String(x??'').replaceAll('_',' ').replaceAll('.',' ');
+export function reasonText(reason){return {
+ candidate_scope_violation:'The repair changes a file outside its approved scope.',
+ independent_runtime_checks_pending:'Scope checks passed. Isolated build and regression tests still need to run.',
+ candidate_awaiting_independent_evaluation:'The engineer returned a candidate; QA has not accepted it yet.',
+ engineering_adapter_and_mandate_not_configured:'Engineering was blocked while provider access and spending authority were being configured.',
+ role_execution_failed:'This step could not finish. Its evidence needs inspection before retrying.',
+ authorization_changed:'The approved task changed or its authorization expired.',
+ candidate_branch_mismatch:'The remote branch no longer matches the submitted candidate.',
+ }[reason]??words(reason);}
+export function operationsStory(service={}){
+ const work=list(service.workQueue),sessions=list(service.engineeringSpend?.sessions),proposals=list(service.proposals);
+ const review=work.filter(w=>w.kind==='candidate_review').at(-1);
+ const session=sessions.at(-1),objective=list(service.objectives).find(o=>!['completed','cancelled','refused'].includes(o.status));
+ const active=sessions.filter(s=>s.state==='running'),held=sessions.filter(s=>s.state==='held');
+ const scopeBlocked=review?.result?.reason==='candidate_scope_violation';
+ const heading=scopeBlocked?'QA found a scope mismatch':held.length?'Engineering needs reconciliation':active.length?'Devin is working on the repair':session?.candidateSha?'Candidate ready for independent checks':'Reviewing project priorities';
+ const detail=scopeBlocked?`${list(review.result.outsideAllowedPaths).join(', ')} is outside the approved paths. The candidate has not been accepted.`:held.length?'The existing session needs inspection before more work can start.':active.length?'One authorized engineering session is active. Usage is polled every 15 seconds.':session?.candidateSha?'Engineering has stopped. QA and release checks must pass before this reaches the chat.':'The orchestrator groups evidence, assesses proposals and assigns authorized work.';
+ const next=review?.result?.nextAction??(active.length?'Wait for the candidate, then run independent QA.':service.provider?.paidDispatchEnabled?'Select the next authorized task.':service.provider?.explanation??'Review new evidence and prepare a scoped task.');
+ const roleState=role=>{
+  const jobs=work.filter(w=>w.role===role),running=jobs.find(w=>w.state==='running'),blocked=jobs.filter(w=>w.state==='blocked').at(-1);
+  if(running)return{status:'Working',detail:'Processing an assigned work item.'};
+  if(blocked)return{status:'Needs attention',detail:reasonText(blocked.result?.reason)};
+  if(jobs.some(w=>w.state==='queued'))return{status:'Queued',detail:'An assignment is ready for the next review.'};
+  return{status:jobs.length?'Up to date':'Waiting',detail:jobs.length?`${jobs.filter(w=>w.state==='completed').length} assessments completed.`:'No work assigned yet.'};
+ };
+ const agents=[{id:'orchestrator',name:'Orchestrator',location:'Planning desk',mode:'Local scheduler',status:service.orchestrator?'Monitoring':'Starting',detail:'Reviews the project every 10 minutes.'},
+ {id:'feedback',name:'Feedback analyst',location:'Work queue',mode:'Local rules',...roleState('feedback')},
+ {id:'product',name:'Product analyst',location:'Ideas wall',mode:'Local rules',...roleState('product')},
+ {id:'engineer',name:'Devin engineer',location:'Engineering desk',mode:'Remote AI agent',status:active.length?'Working':held.length?'Needs attention':session?'Stopped':'Waiting',detail:active.length?'Implementing the approved SDK repair.':session?.candidateSha?'Candidate submitted. No engineering process is running.':'No paid session is running.'},
+ {id:'qa',name:'Independent QA',location:'QA line',mode:'Local checks',...roleState('qa')}];
+ const stages=[{label:'Evidence received',state:service.receivedRecords?'done':'pending'},{label:'Triage',state:list(service.proposals).length||list(service.workQueue).length?'done':'pending'},{label:'Engineering',state:session?.candidateSha?'done':active.length?'active':'pending'},{label:'Independent QA',state:review?.state==='blocked'?'blocked':review?.state==='running'?'active':'pending'},{label:'Release',state:objective?.status==='completed'?'done':'pending'}];
+ return{objective:objective?.title??'Improve Xarts from real usage',heading,detail,next,agents,stages,
+  ticker:`${heading}. ${scopeBlocked?'Review the additional test path.':active.length?'1 engineer active.':session?.candidateSha?'No release yet.':'Monitoring incoming evidence.'}`,
+  proposals,work,review,session,activeCount:active.length,blockedCount:work.filter(w=>w.state==='blocked').length+held.length};
+}
+export function eventCopy(event){
+ const d=event.details??{},role={qa:'QA',feedback:'Feedback analyst',product:'Product analyst',engineer:'Engineer'}[d.role]??'Orchestrator';
+ const titles={
+ 'Feedback analyst triaged record':`Feedback reviewed · ${list(d.proposalIds).length} proposals identified`,
+ 'Work assigned':`${role} received a new assignment`,
+ 'Role started work':`${role} started an assigned step`,
+ 'Role completed work':`${role} completed an assessment`,
+ 'Role requires follow-up':`${role} needs follow-up`,
+ 'Scheduled project review completed':'Orchestrator reviewed the project',
+ 'Engineering capacity and ACU budget reserved':'Budget reserved for the SDK repair',
+ 'Sending Devin session creation':'Starting the authorized Devin session',
+ 'Devin session observation':d.state==='stopped'?'Devin stopped; candidate retained':d.state==='held'?'Devin session needs reconciliation':`Devin is ${words(d.state)}`,
+ 'Engineering provider readiness changed':'Engineering readiness updated',
+ 'Demo record received':'New evidence received from the chat',
+ 'Chat progress received':`Chat: ${words(d.eventType)}`,
+ 'incident.transitioned':`Repair moved from ${words(d.from)} to ${words(d.to)}`,
+ 'baseline.observed':'SDK build failure reproduced',
+ 'incident.received':'SDK repair added to the incident backlog',
+ 'incident.blocked':'Repair paused for a prerequisite',
+ 'session.created':'Devin session created',
+ };
+ return{title:titles[event.summary]??event.summary,detail:d.result?.reason?reasonText(d.result.reason):d.result?.nextAction??(d.reason?reasonText(d.reason):d.role?`Assigned role: ${role}`:'')};
+}

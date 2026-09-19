@@ -1,5 +1,7 @@
 # Delivery plan
 
+For the next implementation milestone, use the [verified repair-loop delivery plan](repair-loop-delivery-plan.md): ownership, cross-repository contracts, sequencing, failure tests and observed completion criteria for P02–P06/P08.
+
 The independently installed/tested contract core is complete: 70 tests and typecheck pass. Existing Xarts planning remains a local historical integration plan, not the new repository's source of truth.
 
 | Stage | Depends on | Output and acceptance |

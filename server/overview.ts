@@ -1,3 +1,4 @@
+import { evaluationSnapshots } from './qa';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFile } from 'node:fs/promises';
@@ -24,12 +25,15 @@ export async function overview(root: string, store: ControllerStore, checkout?: 
     projectReadiness(checkout),
   ]);
   const snapshot = store.operatorSnapshot();
+  const inbox = store.inboxSnapshot();
+  const report = ownerReport(snapshot.incidents);
   return {
-    ownerReport: ownerReport(snapshot.incidents),
+    orchestrator: store.orchestratorHeartbeat(), operationsOverview: store.serviceSnapshot(), inbox, chatActivity: store.chatActivity(), evaluations: evaluationSnapshots(store),
+    ownerReport: { ...report, feedback: { status: inbox.length ? 'receiving' : 'not_connected', items: inbox } },
     mode: 'live', observedAt: new Date().toISOString(), implementation,
     project: {
       id: 'xarts', name: 'Xarts', ...readiness, adapterStatus: 'catalog_only',
-      providerStatus: 'not_connected', revisionMatchesCatalog: readiness.head !== null && readiness.head === catalog.sourceRevision,
+      providerStatus: store.serviceSnapshot().provider.status, revisionMatchesCatalog: readiness.head !== null && readiness.head === catalog.sourceRevision,
       catalog,
     },
     ...snapshot,

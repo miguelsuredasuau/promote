@@ -22,15 +22,17 @@
         "ambiguous provider creation persists and blocks redispatch",
         "restart preserves operation identity"
       ],
-      "completedSlice": "durable intake, transactional events, create-operation claims; read-only operator snapshot API"
+      "completedSlice": "Durable intake, exact-task dispatch claims and budgets, local feedback triage, proposals and role work queue, ten-minute scheduler, provider observation and human-readable activity. Independent runtime verification and release automation remain pending."
     },
     {
       "id": "devin-adapter",
-      "status": "planned"
+      "status": "in_progress",
+      "completedSlice": "API v3 adapter, explicit durable dispatch, task mandates and ACU ledger. First real F1 session returned candidate f4b2e29e189013903fe827cc85f50aab8571b24d and exit was confirmed. Independent acceptance pending; reported usage may lag."
     },
     {
       "id": "runner",
-      "status": "planned"
+      "status": "in_progress",
+      "completedSlice": "allowlisted Docker runner with verified immutable file inputs, no network or credentials, bounded resources/logs and confirmed cleanup; real Docker tests pass. Candidate checkout and package artifact collection remain pending."
     },
     {
       "id": "external-project-adapter",
@@ -47,31 +49,48 @@
     {
       "id": "operator-ui",
       "status": "in_progress",
-      "completedSlice": "Full-viewport Three.js office with shared-model textured workstations, hover labels, camera approach and mesh-registered interactive detail surfaces; real provider dispatch and financial telemetry remain unconnected"
+      "completedSlice": "3D office, asset studio, shared live ticker and human-readable operations journal with objectives, role states, queue, blockers, next steps and cost estimates. Browser desktop/mobile checks pass."
     },
     {
       "id": "real-repair-loop",
-      "status": "planned"
+      "status": "in_progress",
+      "completedSlice": "Baseline reproduced; real Devin candidate returned and session stopped. Candidate scope and independent tests pending; no repaired release activated."
     },
     {
       "id": "ceo-mandate-and-reporting",
-      "status": "planned",
+      "status": "in_progress",
       "acceptance": [
         "versioned owner mandate and routine-work scope",
         "feedback inbox and prioritized proposals",
         "budget reservation and reconciled provider usage",
         "revision-bound decisions for substantial investments, pivots and technology changes"
       ],
-      "completedSlice": "owner report structure; missing integrations shown explicitly"
+      "completedSlice": "Exact-task mandate, reservations, local proposal assessment and priority balancing implemented. Semantic model-backed discovery and general owner decision controls remain pending."
     }
   ],
   "paidDispatchEnabled": false,
   "verification": {
     "node": "22.22.1",
     "typecheck": "pass",
-    "testsPassed": 106,
+    "testsPassed": 155,
     "publicSourceCheck": "pass",
-    "observedAt": "2026-09-19T10:16:39.708237+00:00",
-    "browserQa": "Modern studio and adult staff: desktop/mobile shared repair story, transparent local wall logo, five mesh-registered surfaces bounded and focused, readable screen-pixel typography, keyboard navigation and reduced motion"
-  }
+    "observedAt": "2026-09-19T12:42:47.282915+00:00",
+    "browserQa": "Six mesh-registered non-modal surfaces captured and inspected; complete frames after whole-object foreground culling; ticker motion/reduced-motion checks; desktop/mobile and shared demo failure/recovery pass",
+    "studioTestsPassed": 18,
+    "dockerIntegration": "4 checks timed out; docker info also timed out (local daemon unresponsive)"
+  },
+  "integrationVerification": {
+    "observedAt": "2026-09-19T12:42:47.282915+00:00",
+    "node": "22.22.1",
+    "promoteTestsPassed": 155,
+    "dockerIntegrationEnabled": true,
+    "chatTestsPassed": 23,
+    "crossRepositorySeams": "pass, synthetic package bytes; no install or real release",
+    "activityBrowserQa": "desktop and mobile; no overflow or browser errors; office link works",
+    "paidProviderCalls": "One real engineering session; integration test itself uses zero paid calls",
+    "realRepairLoop": "candidate_scope_reviewed_release_not_completed",
+    "studioTestsPassed": 18,
+    "dockerIntegrationResult": "4 checks timed out in latest run"
+  },
+  "paidDispatchNote": "Public defaults do not authorize spending. A local mandate authorized one live F1 session; credentials and mandate files are ignored."
 }

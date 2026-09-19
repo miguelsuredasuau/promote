@@ -11,3 +11,11 @@ Acceptance verdicts are process-local and immutable. After restart, reevaluate p
 Fixtures use fictional repository identity and are explicitly labeled FIXTURE with countsAsRealRun false. They cover repair, rejection/correction, input refusal, gate growth, capability growth, ambiguous provider creation, pending cancellation, stale candidates, missing evidence, and unknown spend.
 
 The event reducer skips duplicate sequence numbers but does not detect sequence gaps; the controller/UI must recover from a snapshot. Several event payloads remain open records. No provider calls, persistence, release activation, or user-feedback ingestion are implemented yet.
+
+### Additive event revision, 2026-09-19
+
+The event vocabulary now includes `incident.transitioned`, with controller-authored
+`from`, `to`, and monotonic incident `revision`. It is committed atomically with the
+incident update. Consumers must allow this additive event; frozen gate profiles and
+acceptance identity hashing remain unchanged. The office consumes authoritative
+persisted evaluation projections instead of requiring A00–A10 as executed gate IDs.

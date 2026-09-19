@@ -1,3 +1,4 @@
+import { operationsStory } from './operations-model.js';
 /** Pure browser projection. Demo phases are local fixtures, never controller commands. */
 const COLUMNS = [['queued', 'Queued'], ['active', 'Active'], ['review', 'Review'], ['done', 'Done']];
 const GROUPS = [
@@ -20,7 +21,7 @@ export function qaStageCopy(stage, mode) {
     meaning: { title: 'Chart correctness', pass: 'Chart checks passed', detail: 'A03–A04 · Independent checks of chart meaning and values' },
     regression: { title: 'Regressions', pass: 'No regressions found', detail: 'A05–A07 · Existing behavior and protected tests' },
     release: { title: 'Release', pass: 'Release checks passed', detail: 'A08–A10 · Release evidence and delivery checks' },
-  }[stage.id] ?? { title: 'Check', pass: 'Check passed', detail: 'Recorded acceptance check' };
+  }[stage.id] ?? { title: stage.label || 'Check', pass: 'Check passed', detail: 'Recorded acceptance check' };
   if (mode === 'demo' && stage.id === 'meaning' && stage.outcome === 'fail') {
     return { title: copy.title, headline: 'Rounding is wrong', detail: 'Expected €1.01 · received €1.00 (illustrative)' };
   }
@@ -69,7 +70,7 @@ function demoModel(state) {
     mode: 'demo', kanban: board(state.cards),
     engineering: { lines: lines.slice(0, phase + 1), status: repair.status, task: repair.title },
     strategy: { ideas: state.cards.filter(card => card.id !== 'demo-repair').map(card => ({ id: card.id, title: card.title, body: card.kind === 'gate_strengthening' ? 'Use an independent oracle to protect financial output meaning.' : 'Improve how customers create and understand Xarts charts.', status: card.status })) },
-    qa: { candidateId: phase < 2 ? null : phase < 4 ? 'DEMO-42 / candidate-1' : 'DEMO-42 / candidate-2', attempt: phase === 0 ? 0 : phase < 4 ? 1 : 2, stageIndex: phase === 2 || phase === 3 ? 1 : phase >= 5 ? 3 : -1, status: phase === 3 ? 'failed' : phase >= 5 ? 'completed' : phase === 2 ? 'running' : 'idle', stages: stages(outcomes) },
+    qa: { executionMode: 'fixture', candidateId: phase < 2 ? null : phase < 4 ? 'DEMO-42 / candidate-1' : 'DEMO-42 / candidate-2', attempt: phase === 0 ? 0 : phase < 4 ? 1 : 2, stageIndex: phase === 2 || phase === 3 ? 1 : phase >= 5 ? 3 : -1, status: phase === 3 ? 'failed' : phase >= 5 ? 'completed' : phase === 2 ? 'running' : 'idle', stages: stages(outcomes) },
     finance: { budget: 100, spent: [0, 1.2, 2.1, 3.4, 4.9, 6.2, 6.2][phase], reserved: phase === 0 || phase === 6 ? 0 : 8, burnRate: phase === 0 || phase === 6 ? 0 : 3.3, currency: 'EUR' },
     usage: [0, 12000, 22000, 34000, 49000, 62000, 62000][phase], errors: phase >= 3 ? 1 : 0,
   };
@@ -105,12 +106,26 @@ export function createOfficeModel(snapshot, mode, demoState) {
   const selected = incidents.find(incident => !['completed', 'cancelled', 'refused', 'budget_exhausted'].includes(incident.status)) ?? incidents[0];
   const events = array(snapshot?.events).filter(event => event.incidentId === selected?.id).slice().sort((a, b) => a.sequence - b.sequence);
   const economics = snapshot?.ownerReport?.economics;
+  const operations=snapshot?.operationsOverview?operationsStory(snapshot.operationsOverview):null;
+  if(operations){
+    for(const proposal of operations.proposals)cards.push({id:proposal.id,title:proposal.title,kind:proposal.category,status:'proposed',columnId:'queued'});
+    if(operations.review&&selected){const card=cards.find(c=>c.id===selected.id);if(card){card.columnId='review';card.status=operations.review.state==='blocked'?'blocked':'evaluating';}}
+  }
   return {
-    mode: 'live', kanban: board(cards),
-    engineering: { lines: events.slice(-14).map(event => `${event.occurredAt} · ${event.type}${event.payload?.reason ? ` · ${event.payload.reason}` : ''}`), status: selected?.status ?? 'idle', task: selected?.requestedOutcome.summary ?? 'No controller tasks received' },
+    mode: 'live', operations, kanban: board(cards),
+    engineering: { lines: operations?[operations.heading,operations.detail,`Next: ${operations.next}`]:events.slice(-14).map(event => `${event.occurredAt} · ${event.type}${event.payload?.reason ? ` · ${event.payload.reason}` : ''}`), status: operations?.activeCount?'engineering':operations?.session?.state==='stopped'?'stopped':selected?.status ?? 'idle', task: selected?.requestedOutcome.summary ?? 'No controller tasks received' },
     strategy: { ideas: cards.filter(card => card.kind !== 'repair').map(card => ({ id: card.id, title: card.title, body: card.kind === 'gate_strengthening' ? 'Controller request to strengthen acceptance gates.' : 'Controller capability request.', status: card.status })) },
-    qa: liveQA(selected, events),
+    qa: operations?.review?{executionMode:'local_checks',candidateId:operations.review.result?.candidateSha??operations.session?.candidateSha??null,attempt:1,stageIndex:0,status:operations.review.state==='blocked'?'failed':'running',stages:[{id:'provenance',label:'Candidate scope',outcome:operations.review.result?.checks?.scope??'not_run'},{id:'meaning',label:'Independent build',outcome:'not_run'},{id:'regression',label:'Regression checks',outcome:'not_run'},{id:'release',label:'Release',outcome:'not_run'}]}:projectedQA(snapshot, selected, events),
     finance: { budget: numeric(economics?.approvedBudget), spent: numeric(economics?.reportedSpend), reserved: numeric(economics?.reserved), burnRate: null, currency: typeof economics?.currency === 'string' ? economics.currency : null },
     usage: null, errors: null,
   };
+}
+
+function projectedQA(snapshot, incident, events) {
+  const fallback = liveQA(incident, events);
+  const projection = snapshot?.evaluations?.[incident?.id];
+  if (!projection) return { ...fallback, executionMode: 'unknown' };
+  return { candidateId: projection.candidateId, attempt: Number(projection.attempt), stageIndex: Number(projection.stageIndex),
+    status: String(projection.status), executionMode: String(projection.executionMode),
+    stages: array(projection.stages).map(stage => ({ id: String(stage.id), label: String(stage.label), outcome: String(stage.outcome) })) };
 }

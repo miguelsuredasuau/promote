@@ -1,0 +1,53 @@
+// Opt-in cross-repository seam check. No Claude/Devin calls, installs or production registry writes.
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
+import { ControllerStore } from '../server/store';
+import { importChatOutbox, importChatProgress } from '../server/chat-intake';
+import { publishLocalRelease } from '../server/registry';
+import { hashGateProfile } from '../contracts/gates';
+import type { GateProfile } from '../contracts/profile';
+import type { GateResult } from '../contracts/records';
+const chat = process.env.PROMOTE_CHAT_PATH;
+if (!chat) throw new Error('Set PROMOTE_CHAT_PATH to the independently installed chat checkout');
+const root=mkdtempSync(join(tmpdir(),'promote-chat-integration-'));
+const hash=(value:string|Buffer)=>createHash('sha256').update(value).digest('hex');
+process.env.XARTS_CHAT_RUNS=join(root,'runs');process.env.XARTS_CHAT_DB=join(root,'synthetic.sqlite');
+const load=(file:string)=>import(pathToFileURL(join(resolve(chat),file)).href);
+const store=new ControllerStore(join(root,'controller.sqlite'));
+try{
+ assert.equal(readFileSync(join(resolve(chat),'lib/registry-wire.mjs'),'utf8'),readFileSync(new URL('../contracts/registry-wire.mjs',import.meta.url),'utf8'),'wire schema copies drifted');
+ const {buildRecord,writeRecord}=await load('server/record.mjs');
+ const {recordFeedback}=await load('lib/feedback.mjs');
+ const {appendProgress}=await load('lib/journal.mjs');
+ const runId='20260919T100000-1234abcd',conversationId='12345678-1234-4234-8234-123456789abc';
+ const runDir=join(root,'runs',runId);mkdirSync(runDir,{recursive:true});
+ writeFileSync(join(runDir,'tools.jsonl'),JSON.stringify({tool:'chart_render',artifact:'chart-1',chartId:'bar',sql:'SELECT value FROM synthetic',rows:1,dataHash:hash('synthetic'),svgHash:hash('<svg/>'),checks:[]})+'\n');
+ writeFileSync(join(runDir,'chart-1.spec.json'),JSON.stringify({chart:'bar'}));
+ const record=buildRecord({runId,conversationId,message:'Synthetic integration request',release:{kind:'baseline',sourceSha:'a'.repeat(40),packageHash:hash('baseline'),shims:[]},result:{isError:false,costUsd:null},exitCode:0,startedAt:new Date().toISOString()});
+ writeRecord(record);writeRecord(record); // identical outbox publication is idempotent
+ recordFeedback({runId,conversationId,artifact:'chart-1',kind:'rating',value:'down',reasons:['hard_to_read'],note:'Synthetic integration feedback'});
+ appendProgress(runId,{t:'request',message:'Synthetic integration request'});appendProgress(runId,{t:'end'});
+ const imported=await importChatOutbox(store,join(root,'runs/outbox'),join(root,'receipts'));
+ assert.equal(imported.imported,2);assert.equal(imported.quarantined,0);
+ assert.equal((await importChatOutbox(store,join(root,'runs/outbox'),join(root,'receipts'))).duplicates,2);
+ assert.equal(await importChatProgress(store,join(root,'runs')),2);
+ assert.equal(store.chatProgress(runId).length,2);
+ const profile:GateProfile={schemaVersion:1,profileId:'synthetic',libraryId:'synthetic',evaluatorRevision:'a'.repeat(40),gates:[{gateId:'consumer',gateVersion:1,requirement:'required',notApplicableAllowed:false}]};
+ const identity={candidateSha:'b'.repeat(40),evaluatorRevision:profile.evaluatorRevision,inputHash:hash('input'),acceptanceContractHash:hashGateProfile(profile)};
+ const results:GateResult[]=[{schemaVersion:1,id:'synthetic-gate',gateId:'consumer',gateVersion:1,...{candidateSha:identity.candidateSha,evaluatorRevision:identity.evaluatorRevision,inputHash:identity.inputHash},outcome:'pass',reason:'fixture_only',expected:null,actual:null,logArtifactId:'synthetic-log',durationMs:1,runnerIdentity:'fixture',startedAt:new Date().toISOString(),finishedAt:new Date().toISOString()}];
+ const packageBytes=Buffer.from('synthetic package bytes; not an installable library'),outputBytes=Buffer.from('<svg/>');
+ const registry=join(root,'registry');
+ const release=publishLocalRelease(registry,{releaseId:'synthetic-release',incidentId:'synthetic-incident',identity,profile,results,packageBytes,outputBytes,expectedPackageHash:hash(packageBytes),expectedOutputHash:hash(outputBytes),authorize:publish=>publish()});
+ const {resolveRelease}=await load('lib/release.mjs');const consumed=resolveRelease({promote:registry});
+ assert.equal(consumed.releaseId,release.id);assert.equal(consumed.packageHash,release.packageHash);
+ const prior=readFileSync(join(registry,'active.json'),'utf8');
+ assert.throws(()=>publishLocalRelease(registry,{releaseId:'cancelled-release',incidentId:'synthetic-incident',identity,profile,results,packageBytes,outputBytes,expectedPackageHash:hash(packageBytes),expectedOutputHash:hash(outputBytes),authorize:()=>{throw new Error('cancelled');}}));
+ assert.equal(readFileSync(join(registry,'active.json'),'utf8'),prior);
+ writeFileSync(join(registry,'packages',`${release.packageHash}.tgz`),'tampered');
+ assert.throws(()=>resolveRelease({promote:registry}),{code:'hash_mismatch'});
+ console.log(JSON.stringify({mode:'synthetic',producerRunAndFeedback:'pass',immutableRetry:'pass',progressImport:'pass',registryReaderCompatibility:'pass',failedActivationPreservesPrior:'pass',tamperRefused:'pass',paidCalls:0,packageInstallation:'not_tested'},null,2));
+}finally{store.close();rmSync(root,{recursive:true,force:true});}

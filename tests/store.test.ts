@@ -194,3 +194,23 @@ describe('durable dispatch claims', () => {
     expect(store.getOperation(intent.id)?.status).toBe('pending');
   });
 });
+
+it('persists the service log across reopening without inventing repeated intake', () => {
+  const {store,path}=open();
+  store.ingest('fixture:run','a'.repeat(64),{kind:'run'},null);
+  const sequence=store.activity()[0].sequence;
+  close(store);
+  const reopened=open(path).store;
+  expect(reopened.ingest('fixture:run','a'.repeat(64),{kind:'run'},null).duplicate).toBe(true);
+  expect(reopened.activity()).toHaveLength(1);
+  expect(reopened.activity()[0].sequence).toBe(sequence);
+});
+
+it('rolls back incident and service events together when evidence is malformed', () => {
+  const {store}=open();const input=incident();store.createIncident(input);
+  const prior=store.activity().length;
+  expect(()=>store.advance(input.id,0,'reproducing',{now:input.createdAt,activeRemoteSessions:0,activeLocalProcesses:0},
+    [{type:'gate.finished',payload:{result:{}}}])).toThrow();
+  expect(store.getIncident(input.id)?.status).toBe('received');
+  expect(store.activity()).toHaveLength(prior);
+});

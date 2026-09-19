@@ -207,7 +207,7 @@ describe('record validation (CONTRACT-01)', () => {
 describe('events', () => {
   it('matches the canonical event vocabulary exactly', () => {
     expect([...EVENT_TYPES]).toEqual([
-      'incident.received', 'baseline.observed', 'dispatch.pending', 'session.created', 'session.observed',
+      'incident.received', 'incident.transitioned', 'baseline.observed', 'dispatch.pending', 'session.created', 'session.observed',
       'candidate.received', 'gate.started', 'gate.finished', 'feedback.sent', 'decision.pending',
       'decision.recorded', 'release.started', 'release.activated', 'artifact.created', 'budget.observed',
       'incident.blocked', 'incident.refused', 'incident.completed', 'control.paused', 'control.resumed',

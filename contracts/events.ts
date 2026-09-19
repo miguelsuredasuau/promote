@@ -4,6 +4,7 @@ import { BudgetObservation, Candidate, Decision, GateResult, IncidentStatus, Ses
 
 export const EVENT_TYPES = [
   'incident.received',
+  'incident.transitioned',
   'baseline.observed',
   'dispatch.pending',
   'session.created',

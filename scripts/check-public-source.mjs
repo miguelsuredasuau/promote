@@ -6,6 +6,7 @@ const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).spli
 const forbiddenParts = new Set(['node_modules', '.local', 'scratchpad', 'out']);
 const forbiddenNames = new Set(['.npmrc', '.netrc', '.pypirc', 'id_rsa', 'id_ed25519']);
 const patterns = [
+  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{32,}/i,
   new RegExp('cog' + '_[A-Za-z0-9]{20,}'),
   new RegExp('gh[pousr]' + '_[A-Za-z0-9]{20,}'),
   new RegExp('github' + '_pat_[A-Za-z0-9_]{20,}'),

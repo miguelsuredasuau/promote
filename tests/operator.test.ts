@@ -103,3 +103,28 @@ it('serves only the configured local project logo with an isolated SVG policy', 
   expect(await logo.text()).toContain('Test logo');
   expect((await fetch(`${configured.base}/api/project/.env`)).status).toBe(404);
 });
+
+it('shows durable service activity and honest disconnected provider status', async () => {
+  const { base, store } = await setup();
+  store.recordActivity('service', 'Test service started');
+  store.serviceHeartbeat({ status: 'watching', configured: true });
+  const response = await fetch(`${base}/api/activity`);
+  const data = JSON.parse(await response.text());
+  expect(data.service.provider).toEqual({ status: 'not_connected', paidDispatchEnabled: false });
+  expect(data.service.intake.status).toBe('watching');
+  expect(data.events).toMatchObject([{ category: 'service', summary: 'Test service started' }]);
+  expect(JSON.parse(await (await fetch(`${base}/api/activity?after=${data.nextCursor}`)).text()).events).toEqual([]);
+  expect((await fetch(`${base}/api/activity?after=-1`)).status).toBe(400);
+  expect((await fetch(`${base}/api/activity`, { method: 'POST' })).status).toBe(405);
+});
+
+it('exposes received demo records separately from engineering incidents', async () => {
+  const { base, store } = await setup();
+  store.ingest('fixture:run', 'a'.repeat(64), { schema:'fixture', kind:'rating', value:'down', note:'Synthetic feedback' }, null);
+  const data = JSON.parse(await (await fetch(`${base}/api/inbox`)).text());
+  expect(data.items[0]).toMatchObject({ kind:'rating', summary:'Synthetic feedback', incidentId:null });
+  const activity = JSON.parse(await (await fetch(`${base}/api/activity`)).text());
+  expect(activity.service.receivedRecords).toBe(1);
+  expect(activity.service.incidents).toBe(0);
+  expect(activity.events[0].category).toBe('intake');
+});

@@ -1,0 +1,14 @@
+[
+  {
+    "asset": "Studio Small 09",
+    "author": "Sergej Majboroda",
+    "source": "https://polyhaven.com/a/studio_small_09",
+    "download": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://polyhaven.com/license",
+    "file": "web/assets/studio/studio-small-09.hdr",
+    "sha256": "e7cfda5f4e98e623db12b8bfd0184e048488e4855d9c83e2751fb44a32e80c45",
+    "bytes": 1615248,
+    "purpose": "Locally bundled HDR lighting and material reflections; no runtime external requests."
+  }
+]
