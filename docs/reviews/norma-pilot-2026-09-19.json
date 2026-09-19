@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "reviewType": "bounded-live-check-pilot",
+  "provider": "Norma MCP",
+  "repository": "https://github.com/miguelsuredasuau/promote",
+  "sourceSha": "464acab3ba54b17c0622203aed8c5051b98e90df",
+  "preparedAt": "2026-09-19T19:44:04.391624+00:00",
+  "recordedAt": "2026-09-19T19:48:13.652992+00:00",
+  "fullScanOutcome": "no_completed_scan",
+  "initialAttempt": "Default 60000ms MCP timeout; retried read-only checks with a 120000ms ceiling. Initial batch did not retain per-file responses.",
+  "totalFindings": 26,
+  "providerCostUsd": null,
+  "codeChanges": 0,
+  "releaseGate": false,
+  "files": [
+    {
+      "file": "server/chat-intake.ts",
+      "sha256": "af6ba88d09c7c03d6773f068787b25b85063faba6f993da25b8b790d2f8f870f",
+      "lines": 102,
+      "durationMs": 42474,
+      "outcome": "issues",
+      "totalIssues": 18,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesetsEvaluated": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "capped": false,
+      "findings": [
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 23,
+          "column": 19
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 24,
+          "column": 23
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 25,
+          "column": 20
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 32,
+          "column": 3
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 34,
+          "column": 17
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 60,
+          "column": 5
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 61,
+          "column": 5
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 74,
+          "column": 28
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 87,
+          "column": 16
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 92,
+          "column": 19
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 15,
+          "column": 22
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 16,
+          "column": 11
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 17,
+          "column": 11
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 26,
+          "column": 20
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "ruleName": "await Inside Loop (Sequential N+1 Data Fetching)",
+          "severity": "MEDIUM",
+          "impactArea": "scalability",
+          "line": 39,
+          "column": 20
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "ruleName": "await Inside Loop (Sequential N+1 Data Fetching)",
+          "severity": "MEDIUM",
+          "impactArea": "scalability",
+          "line": 41,
+          "column": 30
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "ruleName": "await Inside Loop (Sequential N+1 Data Fetching)",
+          "severity": "MEDIUM",
+          "impactArea": "scalability",
+          "line": 72,
+          "column": 18
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "ruleName": "await Inside Loop (Sequential N+1 Data Fetching)",
+          "severity": "MEDIUM",
+          "impactArea": "scalability",
+          "line": 90,
+          "column": 18
+        }
+      ]
+    },
+    {
+      "file": "adapters/devin/client.ts",
+      "sha256": "af0b07bf480afb8f49f90db7e8d3ffacb4113457b853712b92dc60a807a2e65d",
+      "lines": 85,
+      "durationMs": 10311,
+      "outcome": "issues",
+      "totalIssues": 8,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesetsEvaluated": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "capped": false,
+      "findings": [
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 49,
+          "column": 20
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 51,
+          "column": 33
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "ruleName": "Async Operation Without Error Handling",
+          "severity": "HIGH",
+          "impactArea": "scalability",
+          "line": 56,
+          "column": 13
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 57,
+          "column": 17
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 57,
+          "column": 45
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 58,
+          "column": 7
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 58,
+          "column": 47
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "ruleName": "Nested ternary expression",
+          "severity": "MEDIUM",
+          "impactArea": "maintainability",
+          "line": 59,
+          "column": 7
+        }
+      ]
+    },
+    {
+      "file": "server/registry.ts",
+      "sha256": "ad813efb35ec41a087bd17e4099daaf1cacb8909c36d6851089d1ce756f12c34",
+      "lines": 55,
+      "durationMs": 9839,
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesetsEvaluated": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "capped": false,
+      "findings": []
+    }
+  ]
+}

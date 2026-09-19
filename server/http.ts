@@ -1,8 +1,9 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
-import type { ControllerStore } from './store';
+import { createHash, randomBytes } from 'node:crypto';
+import { ControllerStore, StoreConflictError } from './store';
+import { ZodError } from 'zod';
 import { overview } from './overview';
 import { GateResult } from '../contracts/records';
 
@@ -20,10 +21,13 @@ const assets: Record<string, { file: string; mime: string }> = {
   '/office-furniture.js': { file: 'office-furniture.js', mime: 'text/javascript; charset=utf-8' },
   '/assets/studio/studio-small-09.hdr': { file: 'assets/studio/studio-small-09.hdr', mime: 'application/octet-stream' },
   '/office-scene.js': { file: 'office-scene.js', mime: 'text/javascript; charset=utf-8' },
+  '/decision-desk.js': { file: 'decision-desk.js', mime: 'text/javascript; charset=utf-8' },
+  '/decision-desk.css': { file: 'decision-desk.css', mime: 'text/css; charset=utf-8' },
   '/app.js': { file: 'app.js', mime: 'text/javascript; charset=utf-8' },
   '/styles.css': { file: 'styles.css', mime: 'text/css; charset=utf-8' },
 };
 export function createOperatorServer(options: { root: string; store: ControllerStore; checkout?: string }) {
+  const ownerToken = randomBytes(32).toString('hex');
   return createServer(async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -35,6 +39,20 @@ export function createOperatorServer(options: { root: string; store: ControllerS
     const origin = req.headers.origin;
     if (!allowedHost || (origin && origin !== `http://${host}`)) {
       res.writeHead(403).end('Forbidden'); return;
+    }
+    if (req.method === 'POST' && req.url === '/api/owner-decisions') {
+      if (origin !== `http://${host}` || req.headers['x-owner-token'] !== ownerToken) { res.writeHead(403).end('Owner session required'); return; }
+      if (req.headers['content-type'] !== 'application/json') { res.writeHead(415).end('JSON required'); return; }
+      try {
+        let body = '';
+        for await (const chunk of req) { body += chunk.toString(); if (Buffer.byteLength(body) > 12000) { res.writeHead(413).end('Request too large'); return; } }
+        const decision = options.store.decideProposal(JSON.parse(body));
+        res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify(decision));
+      } catch (error) {
+        const status = error instanceof StoreConflictError ? 409 : error instanceof ZodError || error instanceof SyntaxError ? 400 : 503;
+        res.writeHead(status, {'Content-Type':'application/json'}).end(JSON.stringify({error:status===409?'Decision changed; refresh and review again.':status===400?'Invalid decision or missing feedback.':'Decision could not be saved.'}));
+      }
+      return;
     }
     if (req.method !== 'GET') {
       res.setHeader('Allow', 'GET'); res.writeHead(405).end('Read-only operator surface'); return;
@@ -50,6 +68,7 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         if(bytes.length>4*1024*1024||createHash('sha256').update(bytes).digest('hex')!==sha){res.writeHead(409).end('Verification log failed its integrity check');return;}
         res.setHeader('Content-Type','text/plain; charset=utf-8');res.end(bytes);return;
       }
+      if (url.pathname === '/api/owner-session') { res.setHeader('Content-Type','application/json'); res.end(JSON.stringify({token:ownerToken})); return; }
       if (url.pathname === '/api/overview') {
         const data = await overview(options.root, options.store, options.checkout);
         res.setHeader('Content-Type', 'application/json; charset=utf-8');

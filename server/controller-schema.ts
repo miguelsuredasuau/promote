@@ -43,4 +43,14 @@ export const CONTROLLER_MIGRATIONS = [
       ) STRICT;
     `,
   },
+  {
+    version: 2,
+    name: 'owner_decisions',
+    sql: `
+      CREATE TABLE IF NOT EXISTS owner_decisions (
+        proposal_id TEXT NOT NULL, revision TEXT NOT NULL, record TEXT NOT NULL,
+        PRIMARY KEY(proposal_id, revision)
+      ) STRICT;
+    `,
+  },
 ] as const;

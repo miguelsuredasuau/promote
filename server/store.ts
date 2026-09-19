@@ -9,6 +9,7 @@ import { transitionIncident, type TransitionContext } from '../contracts/state';
 import { authorizeEngineering } from '../contracts/mandate';
 import { hashCanonical } from '../contracts/hash';
 import { isTerminal } from '../contracts/lifecycle';
+import { OwnerDecisionInput, decisionRevision } from './owner-decisions';
 import { Proposal, WorkItem } from '../contracts/orchestration';
 import { migrate } from './sqlite-migrations.mjs';
 import { CONTROLLER_MIGRATIONS } from './controller-schema';
@@ -296,6 +297,31 @@ export class ControllerStore {
     return this.db.prepare('SELECT record FROM proposals ORDER BY rowid').all().map(row=>{
       const p=JSON.parse(String(row.record));
       return {...p,sources:this.db.prepare('SELECT source_key FROM proposal_sources WHERE proposal_id=? ORDER BY source_key').all(p.id).map(r=>String(r.source_key))};
+    });
+  }
+
+  ownerDecisions() {
+    return this.db.prepare('SELECT record FROM owner_decisions ORDER BY rowid DESC').all().map(r => JSON.parse(String(r.record)));
+  }
+
+  decideProposal(input: unknown) {
+    const decision = OwnerDecisionInput.parse(input);
+    return this.transaction(() => {
+      const proposal = this.proposals().find(p => p.id === decision.proposalId);
+      if (!proposal || decisionRevision(proposal) !== decision.revision) throw new StoreConflictError('Proposal changed. Review the latest evidence.');
+      const previous = this.ownerDecisions().find(d => d.proposalId === decision.proposalId && d.revision === decision.revision);
+      if (previous) {
+        if (previous.action === decision.action && previous.feedback === decision.feedback) return previous;
+        throw new StoreConflictError('This revision already has an owner decision.');
+      }
+      const workId = decision.action === 'approve_plan' ? `owner-plan:${decision.revision}` : null;
+      const record = { ...decision, title: proposal.title, decidedAt: new Date().toISOString(), actor: 'local_owner', workId,
+        authority: { planningOnly: true, paidDispatch: false, repositoryWrites: false, release: false } };
+      this.db.prepare('INSERT INTO owner_decisions VALUES (?,?,?)').run(proposal.id, decision.revision, canonicalJson(record));
+      if (workId) this.enqueueWork({ id: workId, kind: 'proposal_assessment', role: 'product', lane: 'discovery', priority: proposal.priority,
+        payload: { proposalId: proposal.id, ownerDecision: decision.revision, approvedProposal: proposal }, promptHash: decision.revision });
+      this.recordActivity('owner_decision', decision.action === 'approve_plan' ? 'Owner commissioned a planning brief' : decision.action === 'reject' ? 'Owner declined proposal' : 'Owner requested changes', record);
+      return record;
     });
   }
 

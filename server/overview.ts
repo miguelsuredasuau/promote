@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { ControllerStore } from './store';
+import { decisionRevision } from './owner-decisions';
 import { ownerReport } from './owner-report';
 
 const exec = promisify(execFile);
@@ -27,9 +28,16 @@ export async function overview(root: string, store: ControllerStore, checkout?: 
   const snapshot = store.operatorSnapshot();
   const inbox = store.inboxSnapshot();
   const report = ownerReport(snapshot.incidents);
+  const history = store.ownerDecisions();
+  const decisions = store.proposals().map(proposal => {
+    const revision = decisionRevision(proposal);
+    const resolution = history.find(d => d.proposalId === proposal.id && d.revision === revision);
+    return { ...proposal, revision, resolution: resolution ?? null };
+  }).sort((a,b) => b.priority - a.priority);
+  const decisionWork = store.workQueue().filter(w => w.payload?.ownerDecision);
   return {
     orchestrator: store.orchestratorHeartbeat(), operationsOverview: store.serviceSnapshot(), inbox, chatActivity: store.chatActivity(), evaluations: evaluationSnapshots(store),
-    ownerReport: { ...report, feedback: { status: inbox.length ? 'receiving' : 'not_connected', items: inbox } },
+    ownerReport: { ...report, decisionWorkflowStatus: 'planning_review', decisions, decisionHistory: history, decisionWork, feedback: { status: inbox.length ? 'receiving' : 'not_connected', items: inbox } },
     mode: 'live', observedAt: new Date().toISOString(), implementation,
     project: {
       id: 'xarts', name: 'Xarts', ...readiness, adapterStatus: 'catalog_only',

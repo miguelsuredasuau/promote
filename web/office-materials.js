@@ -78,15 +78,15 @@ export function createOfficeMaterials(THREE) {
   // A single composition, with the hand-tufted texture in a separate relief map.
   const [rugCanvas, rugPaint] = canvas(1024);
   rugPaint.fillStyle = '#e6ddc8'; rugPaint.fillRect(0, 0, 1024, 1024);
-  rugPaint.fillStyle = '#448b8a';
+  rugPaint.fillStyle = '#087c83';
   rugPaint.beginPath(); rugPaint.moveTo(0, 115); rugPaint.bezierCurveTo(170, -65, 452, 80, 530, 220);
   rugPaint.bezierCurveTo(620, 365, 361, 432, 445, 573); rugPaint.bezierCurveTo(610, 823, 201, 1050, 0, 851); rugPaint.closePath(); rugPaint.fill();
-  rugPaint.fillStyle = '#81a8a0';
+  rugPaint.fillStyle = '#2461bf';
   rugPaint.beginPath(); rugPaint.moveTo(1024, 221); rugPaint.bezierCurveTo(710, 142, 623, 357, 740, 519);
   rugPaint.bezierCurveTo(823, 636, 557, 705, 657, 893); rugPaint.bezierCurveTo(729, 1024, 930, 982, 1024, 897); rugPaint.fill();
-  rugPaint.fillStyle = '#baa7bd';
+  rugPaint.fillStyle = '#eb743f';
   rugPaint.beginPath(); rugPaint.ellipse(385, 957, 239, 177, -.25, 0, Math.PI * 2); rugPaint.fill();
-  rugPaint.fillStyle = '#cfb475';
+  rugPaint.fillStyle = '#d7bc51';
   rugPaint.beginPath(); rugPaint.ellipse(973, 52, 153, 168, .4, 0, Math.PI * 2); rugPaint.fill();
   // Fine colour flecks emulate yarn variation without losing the large pattern.
   for (let i = 0; i < 24000; i++) {
