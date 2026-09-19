@@ -10,9 +10,8 @@ function badge(text,tone=''){return node('span',human(text),`badge ${tone}`)}
 function record(title,text,status){const n=node('article',undefined,'record');n.append(node('h3',title));if(status)n.append(badge(status));if(text)n.append(node('p',text));return n}
 function empty(text){return node('p',text,'empty')}
 function heading(text){return node('h3',text,'mini-heading')}
-const logo=$('xarts-logo');function logoReady(){if(logo.naturalWidth){logo.hidden=false;$('xarts-wordmark').hidden=true}}logo.addEventListener('load',logoReady);logoReady();
 let scene;
-try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key)})}catch{ $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
+try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detailElement:$('desk')})}catch{ $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}
 function update(force=false){
  model=createOfficeModel(snapshot,mode,demoState);
@@ -38,7 +37,7 @@ $('advance-demo').onclick=nextStep;
 $('play-demo').onclick=()=>{if(playTimer){stopStory();return}if(demoState.phase>=6)demoState=createDemoState();nextStep();playTimer=setInterval(nextStep,4200);update()};
 $('reset-demo').onclick=()=>{stopStory();demoState=createDemoState();update()};
 for(const m of ['live','demo'])$(`${m}-mode`).onclick=()=>{stopStory();mode=m;update(true)};
-function openDesk(key,source){if(!['backlog','engineering','strategy','qa','finance','briefing'].includes(key))return;desk=key;opener=source??document.activeElement;scene?.focus(key==='briefing'?null:key);document.body.dataset.station = key; $('desk').dataset.station = key; renderDesk();if(!$('desk').open)$('desk').showModal()}
+function openDesk(key,source){if(!['backlog','engineering','strategy','qa','finance','briefing'].includes(key))return;desk=key;opener=source??document.activeElement;scene?.focus(key==='briefing'?null:key);document.body.dataset.station = key; $('main').inert = true; $('desk').dataset.station = key; renderDesk();if(!$('desk').open)$('desk').show();$('close-desk').focus({preventScroll:true})}
 function moveCard(id,columnId){demoState=moveDemoCard(demoState,id,columnId);update()}
 function kanban(){
  const board=node('div',undefined,'kanban');
@@ -98,7 +97,7 @@ function renderDesk(){
  setText('desk-footer',mode==='demo'?'Demo state is local to this page. Reset or reload clears it. No live approval or spending.':'Read-only controller snapshot. Unknown evidence never becomes a pass.');
 }
 document.addEventListener('click',e=>{const target=e.target.closest('[data-open]');if(target)openDesk(target.dataset.open,target)});
-$('close-desk').onclick=()=>$('desk').close();$('desk').addEventListener('close',()=>{desk=null;delete document.body.dataset.station;scene?.focus(null);opener?.focus?.()});
+$('close-desk').onclick=()=>$('desk').close();$('desk').addEventListener('close',()=>{desk=null;$('main').inert = false;delete document.body.dataset.station;scene?.focus(null);opener?.focus?.()});
 $('desk').addEventListener('click',e=>{if(e.target===$('desk')){const r=$('desk').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('desk').close()}});
 async function refresh(){const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),8000);try{const r=await fetch('/api/overview',{signal:abort.signal,cache:'no-store'});if(!r.ok)throw Error();const data=await r.json();if(!data.project||!data.implementation)throw Error();snapshot=data;update();setText('connection-status','Local office connected');$('connection-light').classList.add('ready');setText('observed',`Provider ${human(data.project.providerStatus)} · updated ${new Date(data.observedAt).toLocaleTimeString()}`);$('error-banner').hidden=true}catch{setText('connection-status',snapshot?'Office disconnected · last snapshot':'Controller unavailable');$('connection-light').classList.remove('ready');setText('error-banner','Waiting for controller updates. The last snapshot remains visible.');$('error-banner').hidden=false}finally{clearTimeout(timeout);setTimeout(refresh,5000)}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopStory()});
@@ -112,3 +111,7 @@ for (const button of document.querySelectorAll('.station-dock [data-open]')) {
 }
 
 $('office-menu').onclick=()=>{const open=document.body.classList.toggle('menu-open');$('office-menu').setAttribute('aria-expanded',String(open))};
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('desk').open){e.preventDefault();$('desk').close()}});
+
+document.addEventListener('keydown',e=>{if(e.key!=='Tab'||!$('desk').open)return;const controls=[...$('desk').querySelectorAll('button,select,a[href],input,summary,[tabindex="0"]')].filter(n=>!n.disabled&&n.getClientRects().length);const first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}});

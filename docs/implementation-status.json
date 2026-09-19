@@ -47,7 +47,7 @@
     {
       "id": "operator-ui",
       "status": "in_progress",
-      "completedSlice": "Full-viewport Three.js office with shared-model textured workstations, hover labels, camera approach and material-themed detail surfaces; real provider dispatch and financial telemetry remain unconnected"
+      "completedSlice": "Full-viewport Three.js office with shared-model textured workstations, hover labels, camera approach and mesh-registered interactive detail surfaces; real provider dispatch and financial telemetry remain unconnected"
     },
     {
       "id": "real-repair-loop",
@@ -72,6 +72,6 @@
     "testsPassed": 106,
     "publicSourceCheck": "pass",
     "observedAt": "2026-09-19T10:04:57.454089+00:00",
-    "browserQa": "Integrated Three.js office: shared kanban/QA/terminal/finance demo, failure and recovery, camera approach, hover labels, menu navigation, desktop/mobile without overflow or browser errors"
+    "browserQa": "Integrated Three.js office: shared kanban/QA/terminal/finance demo, failure and recovery, mesh-registered surfaces, keyboard focus and reduced motion, hover labels, menu navigation, desktop/mobile without overflow or browser errors"
   }
 }

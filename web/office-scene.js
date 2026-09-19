@@ -2,7 +2,7 @@ import * as THREE from '/vendor/three.module.js';
 import { qaStageCopy } from './office-model.js';
 
 /** The scene is a view of the application model; it never advances a workflow. */
-export function createOfficeScene(host, { onSelect = () => {} } = {}) {
+export function createOfficeScene(host, { onSelect = () => {}, detailElement } = {}) {
   const P = { cream: 0xf4efdf, paper: 0xfffcf0, petrol: 0x244f4a, dark: 0x153a37, green: 0x82a68a, sage: 0xb5c6a0, wood: 0xcaa57c, amber: 0xe3af62, red: 0xca705d, metal: 0x667e75 };
   let renderer;
   const fallback = () => {
@@ -68,7 +68,7 @@ export function createOfficeScene(host, { onSelect = () => {} } = {}) {
     const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext('2d'); const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; textures.push(texture);
     const face = mesh(parent, new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: texture }), pos); face.castShadow = false;
-    return { canvas, ctx, texture, face };
+    return { canvas, ctx, texture, face, width: w, height: h };
   }
   function paint(s, bg, draw) { const c = s.ctx; c.fillStyle = bg; c.fillRect(0, 0, s.canvas.width, s.canvas.height); c.textBaseline = 'top'; c.textAlign = 'left'; draw(c, s.canvas.width, s.canvas.height); s.texture.needsUpdate = true; }
   function text(c, content, x, y, size = 30, color = '#244f4a', maxWidth) { c.fillStyle = color; c.font = `600 ${size}px system-ui,sans-serif`; if (maxWidth) c.fillText(String(content ?? ''), x, y, maxWidth); else c.fillText(String(content ?? ''), x, y); }
@@ -161,6 +161,18 @@ export function createOfficeScene(host, { onSelect = () => {} } = {}) {
   label('Finance', anchor(finance, 0, 3.7, 0), 'office-label', 'finance');
   const tickerFrame = rounded(scene, 5.2, .68, .13, [5.9, 4.18, -6.92], mats.petrol, .055);
   const ticker = surface(scene, 4.95, .47, [5.9, 4.18, -6.84], 1500, 160);
+  // Actual inspectable surfaces: DOM controls project onto these same mesh faces.
+  rounded(qa, 5.8, 2.8, .16, [0, 4.4, -1.05], mats.petrol);
+  const qaConsole = surface(qa, 5.55, 2.55, [0, 4.4, -.95], 1100, 510);
+  paint(qaConsole, '#153a37', c => { text(c, 'QUALITY CONTROL', 40, 45, 48, '#fffcf0'); text(c, 'Inspect the candidate · follow the evidence', 40, 125, 28, '#b5c6a0'); });
+  const safeLedger = surface(finance, 2.12, 2.2, [0, 1.55, 1.12], 840, 870);
+  paint(safeLedger, '#e7ece1', c => text(c, 'TREASURY', 50, 50, 45));
+  const surfaces = { backlog: board, engineering: terminal, strategy: ideas, qa: qaConsole, finance: safeLedger };
+  const wallBrand = surface(scene, 3.7, 1.1, [-.4, 4.1, -6.95], 1000, 300);
+  paint(wallBrand, '#fffcf0', c => text(c, 'Xarts', 90, 45, 155, '#2e9999'));
+  const brandImage = new Image();
+  brandImage.onload = () => { if (disposed) return; wallBrand.face.material.transparent = true; paint(wallBrand, '#fffcf0', (c,w,h) => { c.clearRect(0,0,w,h); const scale = Math.min(w / brandImage.naturalWidth, h / brandImage.naturalHeight) * .86; const iw = brandImage.naturalWidth * scale, ih = brandImage.naturalHeight * scale; c.drawImage(brandImage, (w-iw)/2, (h-ih)/2, iw, ih); }); requestRender(); };
+  brandImage.src = '/api/project/logo';
   // Lounge furniture and small inhabited details, kept clear of the main path.
   rounded(scene, 2.6, .48, 1.15, [1, .46, -.75], mats.green);
   rounded(scene, 2.6, .76, .3, [1, 1.06, -1.19], mats.petrol);
@@ -198,6 +210,7 @@ export function createOfficeScene(host, { onSelect = () => {} } = {}) {
     paint(terminal, '#153a37', (c, w) => { text(c, `ENGINEERING · ${model.engineering?.status || 'idle'}`, 30, 24, 29, '#b5c6a0', w - 60); lines(c, model.engineering?.task || 'No active task', 30, 78, w - 60, 29, 2, '#fffcf0'); (model.engineering?.lines || []).slice(-8).forEach((line, i) => { text(c, typeof line === 'string' ? line : line.text || line.message || JSON.stringify(line), 30, 177 + i * 46, 25, '#d6e3ce', w - 60); }); });
     paint(ideas, '#e2d4b5', (c, w) => { text(c, 'IDEAS & DIRECTION', 30, 24, 37); (model.strategy?.ideas || []).slice(0, 4).forEach((idea, i) => { const x = 30 + (i % 2) * (w / 2 - 10), y = 95 + Math.floor(i / 2) * 265; c.fillStyle = i % 2 ? '#d6e1bd' : '#fff4cb'; c.fillRect(x, y, w / 2 - 45, 237); c.fillStyle = '#ca705d'; c.beginPath(); c.arc(x + (w / 2 - 45) / 2, y + 12, 7, 0, Math.PI * 2); c.fill(); lines(c, idea.title, x + 20, y + 35, w / 2 - 85, 30, 2); lines(c, idea.body || idea.status, x + 20, y + 118, w / 2 - 85, 23, 3); }); });
     const q = model.qa || {};
+    paint(qaConsole, '#153a37', c => { text(c, 'QUALITY CONTROL', 35, 30, 40, '#fffcf0'); text(c, q.candidateId || 'Waiting for a candidate', 35, 98, 32, '#b5c6a0'); (q.stages || []).forEach((stage,i) => { const copy = qaStageCopy(stage, model.mode); text(c, copy.title, 35, 168+i*76, 26, '#fffcf0'); text(c, copy.headline, 360, 168+i*76, 26, stage.outcome === 'fail' ? '#efaa95' : '#b5c6a0', 700); }); });
     gateLabels.forEach((s, i) => { const stage = q.stages?.[i]; const copy = qaStageCopy(stage || { id: ['provenance', 'meaning', 'regression', 'release'][i] }, model.mode); stageNodes[i].textContent = copy.title; stageNodes[i].dataset.outcome = stage?.outcome || 'not_run'; stageNodes[i].title = copy.headline; paint(s, '#244f4a', c => { text(c, copy.title, 18, 20, 44, '#f4efdf', 480); text(c, stage?.outcome || 'not_run', 18, 94, 31, '#b5c6a0', 480); }); const outcome = stage?.outcome; gates[i].material.color.setHex(outcome === 'pass' ? P.green : ['fail', 'error'].includes(outcome) ? P.red : outcome === 'pending' ? P.amber : P.sage); });
     parcel.visible = Boolean(q.candidateId);
     paint(parcelFace, '#fffcf0', c => { text(c, q.candidateId || 'No candidate', 20, 25, 45, '#244f4a', 480); text(c, `Attempt ${q.attempt || 0}`, 20, 105, 35); });
@@ -211,10 +224,11 @@ export function createOfficeScene(host, { onSelect = () => {} } = {}) {
     ceoBubble.textContent = `${model.strategy?.ideas?.length || 0} ideas to explore`;
     requestRender();
   }
-  function focus(id) { selected = stations[id] ? id : null; hovered = null; requestRender(); }
+  function focus(id) { selected = stations[id] ? id : null; hovered = null; if (detailElement) { detailElement.classList.toggle('world-surface', !!selected); if (!selected) { detailElement.style.removeProperty('transform'); detailElement.style.removeProperty('width'); detailElement.style.removeProperty('height'); } } requestRender(); }
   function preview(id) { hovered = stations[id] ? id : null; requestRender(); }
   const cameraTarget = new THREE.Vector3(0, 1, 0);
   const destination = new THREE.Vector3();
+  const cameraOffset = baseCamera.clone().sub(cameraTarget), targetOffset = new THREE.Vector3();
   const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
   function pick(event) { const rect = renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1); raycaster.setFromCamera(pointer, camera); const hit = raycaster.intersectObjects(pickable, true)[0]; let o = hit?.object; while (o && !o.userData.station) o = o.parent; return o?.userData.station; }
   function click(e) { const id = pick(e); if (id) onSelect(id); }
@@ -231,10 +245,15 @@ export function createOfficeScene(host, { onSelect = () => {} } = {}) {
     const motion = !reduced.matches, demo = model.mode === 'demo';
     const targetDoor = selected === 'finance' ? -1.15 : 0; hinge.rotation.y += (targetDoor - hinge.rotation.y) * (motion ? Math.min(1, dt * 7) : 1);
     destination.set(0, 1, 0);
-    if (selected) { stations[selected].getWorldPosition(destination); destination.y = selected === 'backlog' || selected === 'strategy' ? 2.8 : 1.8; }
-    cameraTarget.lerp(destination, motion ? Math.min(1, dt * 5) : 1);
-    camera.position.copy(baseCamera).add(cameraTarget).sub(new THREE.Vector3(0, 1, 0)); camera.lookAt(cameraTarget);
-    const targetZoom = selected ? (width < 650 ? 1.65 : 2.35) : 1; camera.zoom += (targetZoom - camera.zoom) * (motion ? Math.min(1, dt * 5) : 1); camera.updateProjectionMatrix();
+    const activeSurface = selected ? surfaces[selected] : null;
+    if (activeSurface) activeSurface.face.getWorldPosition(destination);
+    const ease = motion ? 1 - Math.exp(-dt * 5) : 1;
+    cameraTarget.lerp(destination, ease);
+    targetOffset.copy(selected ? new THREE.Vector3(0, 0, 35) : baseCamera.clone().sub(new THREE.Vector3(0,1,0)));
+    cameraOffset.lerp(targetOffset, ease);
+    camera.position.copy(cameraTarget).add(cameraOffset); camera.lookAt(cameraTarget);
+    const targetZoom = activeSurface ? Math.min((camera.right-camera.left) * .84 / activeSurface.width, (camera.top-camera.bottom) * .8 / activeSurface.height) : 1;
+    camera.zoom += (targetZoom-camera.zoom) * ease; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
     const q = model.qa || {}; const target = gateX[Math.min(3, Math.max(0, Number(q.stageIndex) || 0))];
     if (q.status === 'running' || q.status === 'completed') parcel.position.x += (target - parcel.position.x) * (motion ? Math.min(1, dt * 2.7) : 1);
     if (motion && q.status === 'running') slats.forEach((s, i) => { s.position.x = -3.37 + i * .197 + (clock * .65 % .197); });
@@ -244,13 +263,22 @@ export function createOfficeScene(host, { onSelect = () => {} } = {}) {
     else { ceo.g.position.x = -.75; ceo.g.rotation.y = .35; ceo.legs.forEach(leg => leg.rotation.x = 0); }
     scene.updateMatrixWorld();
     labels.forEach(({ node, anchor: point }) => { point.getWorldPosition(v); v.project(camera); node.style.left = `${(v.x + 1) * .5 * width}px`; node.style.top = `${(-v.y + 1) * .5 * height}px`; node.hidden = !!selected || !hovered || node.dataset.station !== hovered || node.classList.contains('office-stage-label') || v.z < -1 || v.z > 1; });
+    if (activeSurface && detailElement?.open) {
+      // Orthographic projection is affine: these three corners exactly register DOM to mesh.
+      const { face, width: sw, height: sh } = activeSurface;
+      const project = (x,y) => { const point = face.localToWorld(new THREE.Vector3(x,y,0)).project(camera); const rect = host.getBoundingClientRect(); return { x:rect.left+(point.x+1)*width/2, y:rect.top+(1-point.y)*height/2 }; };
+      const origin=project(-sw/2,sh/2), right=project(sw/2,sh/2), bottom=project(-sw/2,-sh/2);
+      const dw = width < 650 ? 400 : 1000, dh = dw*sh/sw;
+      detailElement.style.width = `${dw}px`; detailElement.style.height = `${dh}px`;
+      detailElement.style.transform = `matrix(${(right.x-origin.x)/dw},${(right.y-origin.y)/dw},${(bottom.x-origin.x)/dh},${(bottom.y-origin.y)/dh},${origin.x},${origin.y})`;
+    }
     renderer.render(scene, camera);
-    const settling = cameraTarget.distanceTo(destination) > .001 || Math.abs(hinge.rotation.y - targetDoor) > .001 || Math.abs(camera.zoom - targetZoom) > .001 || ((q.status === 'running' || q.status === 'completed') && Math.abs(parcel.position.x - target) > .002);
+    const settling = cameraOffset.distanceTo(targetOffset) > .001 || cameraTarget.distanceTo(destination) > .001 || Math.abs(hinge.rotation.y - targetDoor) > .001 || Math.abs(camera.zoom - targetZoom) > .001 || ((q.status === 'running' || q.status === 'completed') && Math.abs(parcel.position.x - target) > .002);
     if (motion && (demo || q.status === 'running' || settling)) requestRender();
   }
   function visibility() { if (document.hidden) { cancelAnimationFrame(frame); frame = 0; } else { previous = 0; requestRender(); } }
   function motionChange() { previous = 0; requestRender(); }
-  function contextLost(event) { event.preventDefault(); lost = true; cancelAnimationFrame(frame); frame = 0; fallbackNode = fallback(); labels.forEach(({ node }) => node.style.display = 'none'); }
+  function contextLost(event) { event.preventDefault(); focus(null); lost = true; cancelAnimationFrame(frame); frame = 0; fallbackNode = fallback(); labels.forEach(({ node }) => node.style.display = 'none'); }
   document.addEventListener('visibilitychange', visibility); reduced.addEventListener('change', motionChange); renderer.domElement.addEventListener('webglcontextlost', contextLost);
   resize(); update({});
   return { update, focus, preview, dispose() { disposed = true; cancelAnimationFrame(frame); resizeObserver.disconnect(); document.removeEventListener('visibilitychange', visibility); reduced.removeEventListener('change', motionChange); renderer.domElement.removeEventListener('click', click); renderer.domElement.removeEventListener('pointermove', hover); renderer.domElement.removeEventListener('pointerleave', leave); renderer.domElement.removeEventListener('webglcontextlost', contextLost); labels.forEach(({ node }) => node.remove()); fallbackNode?.remove(); const geometries = new Set(), materials = new Set(); scene.traverse(o => { if (o.geometry) geometries.add(o.geometry); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materials.add(m)); }); geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => t.dispose()); renderer.dispose(); renderer.domElement.remove(); } };
