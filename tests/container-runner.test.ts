@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { ContainerRunner } from '../server/container-runner';
 const roots:string[]=[];afterEach(()=>{for(const root of roots.splice(0))rmSync(root,{recursive:true,force:true});});
 const image='node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d';
-function setup(script:string,wallMs=3000,outputBytes=4096){
+function setup(script:string,wallMs=10000,outputBytes=4096){
  const root=mkdtempSync(join(tmpdir(),'promote-container-'));roots.push(root);const artifacts=join(root,'artifacts');mkdirSync(artifacts);
  const bytes=Buffer.from('immutable input'),sha=createHash('sha256').update(bytes).digest('hex');writeFileSync(join(artifacts,sha),bytes);
  const argv=['node','-e',script];const runner=new ContainerRunner({root:join(root,'runs'),artifacts,commands:{test:{argv,image}}});
@@ -38,3 +38,24 @@ docker('blocks outbound network access',async()=>{
  const s=setup(`fetch('http://1.1.1.1',{signal:AbortSignal.timeout(500)}).then(()=>{console.log('unexpected');process.exitCode=1}).catch(()=>console.log('network blocked'));`);
  const e=await s.runner.run(s.plan,s.inputs);expect(e.exitCode).toBe(0);expect(readFileSync(join(s.artifacts,e.artifactIds[0].slice(4)),'utf8').trim()).toBe('network blocked');
 },20000);
+
+docker('exports only bounded regular files after the candidate exits',async()=>{
+ const { execFileSync }=await import('node:child_process');
+ const root=mkdtempSync(join(tmpdir(),'promote-export-image-'));roots.push(root);
+ writeFileSync(join(root,'Dockerfile'),`FROM ${image}\nRUN mkdir /exports && chmod 777 /exports\n`);
+ const exportImage=execFileSync('docker',['build','--quiet',root],{encoding:'utf8',timeout:60000}).trim();
+ try {
+  const s=setup('');
+  const argv=['node','-e',"require('fs').writeFileSync('/exports/package.bin','verified bytes')"];
+  const runner=new ContainerRunner({root:join(s.root,'exports'),artifacts:s.artifacts,commands:{test:{argv,image:exportImage,outputs:{package:'/exports/package.bin'}}}});
+  const result=await runner.run({...s.plan,argv,runtimeImage:exportImage},s.inputs);
+  expect(result.outcome).toBe('completed');expect(result.exitCode).toBe(0);
+  const artifact=result.artifactIds.find(id=>id.startsWith('output:package:'))!;
+  expect(readFileSync(join(s.artifacts,artifact.split(':')[2]),'utf8')).toBe('verified bytes');
+  const symlinkArgv=['node','-e',"require('fs').symlinkSync('/etc/passwd','/exports/package.bin')"];
+  const unsafe=new ContainerRunner({root:join(s.root,'symlink'),artifacts:s.artifacts,commands:{test:{argv:symlinkArgv,image:exportImage,outputs:{package:'/exports/package.bin'}}}});
+  const refused=await unsafe.run({...s.plan,argv:symlinkArgv,runtimeImage:exportImage},s.inputs);
+  expect(refused.outcome).toBe('infrastructure_error');
+  expect(refused.artifactIds.some(id=>id.startsWith('output:'))).toBe(false);
+ } finally {execFileSync('docker',['image','rm',exportImage],{timeout:15000,stdio:'ignore'});}
+},90000);

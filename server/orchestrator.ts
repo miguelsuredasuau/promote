@@ -1,11 +1,14 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { ControllerStore } from './store';
 import type { Proposal } from '../contracts/orchestration';
 import { hashCanonical } from '../contracts/hash';
 import { rolePrompt } from './role-prompts';
 import { loadDevin } from './devin-config';
 import { dispatchEngineering } from './engineering';
+import { DeliveryTask, runXartsDelivery } from './xarts-delivery';
 const exec=promisify(execFile);
 
 /** Versioned local rules. No model inference or paid calls are claimed by classification. */
@@ -55,6 +58,29 @@ export async function inspectCandidate(store:ControllerStore,incidentId:string,c
 }
 
 export async function runOrchestrator(store:ControllerStore,root:string,checkout?:string) {
+ const deliveryPath=join(root,'.local/delivery-task.json');
+ if(existsSync(deliveryPath)){
+  let deliveryTask=DeliveryTask.parse(JSON.parse(readFileSync(deliveryPath,'utf8')));
+  if(deliveryTask.sourceBranch){
+   const git=async(args:string[])=>(await exec('git',args,{cwd:deliveryTask.checkout,timeout:30000,maxBuffer:1024*1024})).stdout.trim();
+   const origin=await git(['remote','get-url','origin']);
+   if(![`https://github.com/${deliveryTask.repo}`,`https://github.com/${deliveryTask.repo}.git`,`git@github.com:${deliveryTask.repo}.git`].includes(origin))throw Error('repository_identity_mismatch');
+   await git(['fetch','--no-tags','origin',deliveryTask.sourceBranch]);
+   deliveryTask=DeliveryTask.parse({...deliveryTask,candidateSha:await git(['rev-parse','FETCH_HEAD'])});
+  }
+  const workId=`delivery:${hashCanonical(deliveryTask)}`;
+  if(!store.workQueue().some(work=>work.id===workId)){
+   try{
+    await exec('docker',['info','--format','{{.ServerVersion}}'],{timeout:5000,maxBuffer:1024*1024});
+    store.enqueueWork({id:workId,kind:'candidate_review',role:'qa',lane:'reliability',priority:100,
+     payload:{deliveryTask},promptHash:rolePrompt('qa').hash});
+   }catch{
+    store.deliveryStatus({status:'waiting_for_docker',candidateSha:deliveryTask.candidateSha,nextAction:'Start Docker Desktop and free disk space. The next ten-minute review checks again.'});
+    store.recordActivity('verification','Package verification is waiting for Docker',{reason:'docker_unavailable',candidateSha:deliveryTask.candidateSha,
+     nextAction:'Start Docker Desktop and free disk space. The next scheduled review will check again; no paid session is launched.'});
+   }
+  }
+ }
  const feedback=rolePrompt('feedback');let triaged=0;
  for(const source of store.untriagedRecords(100))if(store.triageRecord(source.sourceKey,classifyRecord(source.record),feedback.hash))triaged++;
  for(const proposal of store.proposals()){
@@ -75,9 +101,9 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
     if(!proposal)throw Error('proposal_missing');
     store.finishWork(work.id,work.token,'completed',{proposalId:proposal.id,category:proposal.category,confidence:'needs_validation',evidenceCount:proposal.sources.length,nextAction:proposal.nextAction,implementationAuthorized:false,executionMode:'local_rules'});
    }else if(work.kind==='candidate_review'){
-    const review=await inspectCandidate(store,String(work.payload.incidentId),checkout);
+    const review=work.payload.deliveryTask?await runXartsDelivery(store,root,work.payload.deliveryTask):await inspectCandidate(store,String(work.payload.incidentId),checkout);
     store.finishWork(work.id,work.token,review.state,review.result);
-    if(review.result.candidateSha)store.updateEngineering(String(work.payload.incidentId),{reason:review.result.reason});
+    if('candidateSha' in review.result&&review.result.candidateSha)store.updateEngineering(String(work.payload.incidentId),{reason:review.result.reason});
    }else{
     const current=loadDevin(root);
     if(!current.status.paidDispatchEnabled||!current.adapter||hashCanonical(current.task)!==work.payload.taskHash)store.finishWork(work.id,work.token,'blocked',{reason:'authorization_changed'});

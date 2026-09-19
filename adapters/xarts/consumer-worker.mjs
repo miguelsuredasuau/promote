@@ -1,0 +1,28 @@
+// Controller-owned standalone check. No source checkout or chat shims are present.
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+const standalone = spawnSync('node', ['/consumer/standalone.mjs'], { cwd: '/tmp', stdio: 'inherit' });
+if (standalone.status !== 0) process.exit(standalone.status ?? 1);
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+const input = JSON.parse(readFileSync('/inputs/request.json', 'utf8'));
+assert.ok(!Object.hasOwn(input.spec, 'data'), 'data must come from the SQL result');
+const dataHash = createHash('sha256').update(JSON.stringify(input.rows)).digest('hex');
+assert.equal(dataHash, input.dataHash);
+const { renderSvg } = await import('/consumer/node_modules/visx-render/core/runtime/node.js');
+const full = { fonts: 'embed', ...input.spec, data: input.rows, embedSpec: false };
+const { svg } = await renderSvg(full);
+assert.ok(svg.startsWith('<svg') && svg.length > 2000, 'real SVG required');
+assert.ok(!/NaN|Infinity/.test(svg), 'non-finite output');
+assert.ok(!/<script\b/i.test(svg), 'executable SVG refused');
+const changed = structuredClone(input.rows);
+let changedValue = false;
+for (const row of changed) for (const key of Object.keys(row)) if (typeof row[key] === 'number') {
+  row[key] = row[key] * 1.17 + 1;
+  changedValue = true;
+}
+assert.ok(changedValue, 'numeric counterexample required');
+assert.notEqual((await renderSvg({ ...full, data: changed })).svg, svg, 'render must respond to SQL data');
+writeFileSync('/exports/chart.svg', svg);
+writeFileSync('/exports/consumer.json', JSON.stringify({ schemaVersion: 1, shims: [], dataHash, rows: input.rows.length, svgBytes: Buffer.byteLength(svg), numericCounterexample: 'pass' }));
+console.log('Standalone package imported and original SQL-backed request regenerated without shims.');

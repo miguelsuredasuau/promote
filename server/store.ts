@@ -529,6 +529,11 @@ export class ControllerStore {
       .run(canonicalJson({ ...record, checkedAt: new Date().toISOString() }));
   }
 
+  deliveryStatus(record: Record<string, unknown>) {
+    this.db.prepare("INSERT INTO service_state VALUES ('delivery', ?) ON CONFLICT(id) DO UPDATE SET record = excluded.record")
+      .run(canonicalJson({ ...record, checkedAt: new Date().toISOString() }));
+  }
+
   serviceSnapshot() {
     const state = this.db.prepare("SELECT record FROM service_state WHERE id = 'intake'").get();
     const count = (table: string) => Number(this.db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()!.n);
@@ -537,6 +542,7 @@ export class ControllerStore {
       receivedRecords: count('inbox'), progressEvents: count('chat_progress'), incidents: count('incidents'), jobs,
       provider: (() => { const row = this.db.prepare("SELECT record FROM service_state WHERE id = 'provider'").get(); return row ? JSON.parse(String(row.record)) : { status: 'not_connected', paidDispatchEnabled: false }; })(),
       engineeringSpend: this.engineeringSpend(),
+      delivery: (() => { const row=this.db.prepare("SELECT record FROM service_state WHERE id='delivery'").get();return row?JSON.parse(String(row.record)):null; })(),
       objectives: this.db.prepare('SELECT record FROM incidents ORDER BY rowid DESC').all().map(row=>{
         const incident=Incident.parse(JSON.parse(String(row.record)));
         return {id:incident.id,title:incident.requestedOutcome.summary,status:incident.status};

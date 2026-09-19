@@ -78,7 +78,8 @@ async function heartbeat() {
   catch { console.error('Scheduled project review failed; retrying on the next check'); }
   finally { heartbeatRunning=false; }
 }
-await heartbeat();
+// Verification can take minutes; the activity server must remain observable.
+void heartbeat();
 const heartbeatTimer = setInterval(heartbeat, 30000);
 const engineeringTimer = setInterval(() => { void pollEngineering().catch(() => console.error('Engineering observation failed')); }, 15000);
 const inboxTimer = outbox ? setInterval(importFeedback, 3000) : null;

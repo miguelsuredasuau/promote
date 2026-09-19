@@ -1,0 +1,15 @@
+import { resolve, join } from 'node:path';
+import { writeFile } from 'node:fs/promises';
+import { prepareXartsImage, validateXartsBuild } from '../server/xarts-validation';
+import { execFileSync } from 'node:child_process';
+const [checkout, candidateSha] = process.argv.slice(2);
+if (!checkout || !candidateSha) throw Error('Usage: node --import tsx scripts/validate-xarts.ts <checkout> <full candidate SHA>');
+const root = resolve('.local/xarts-validation', candidateSha);
+console.log('Preparing immutable candidate dependencies');
+const image = await prepareXartsImage(resolve(checkout), candidateSha, root);
+console.log('Running offline SDK build and compiler regression tests');
+const evaluatorRevision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const evidence = await validateXartsBuild({ root, image, candidateSha, evaluatorRevision });
+await writeFile(join(root, 'build-evidence.json'), JSON.stringify(evidence, null, 2));
+console.log(JSON.stringify(evidence, null, 2));
+if (evidence.outcome !== 'completed' || evidence.exitCode !== 0) process.exitCode = 1;

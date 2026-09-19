@@ -12,6 +12,9 @@ function renderEvents(){
   const copy=eventCopy(event),li=node('li'),time=node('time',new Date(event.at).toLocaleString());time.dateTime=event.at;
   const body=node('div');body.append(node('span',words(event.category),'category'),node('span',copy.title,'event-title'));
   if(copy.detail)body.append(node('p',copy.detail,'event-detail'));
+  if(event.summary==='gate.finished'&&event.details.result?.logArtifactId?.startsWith('log:')){
+   const link=node('a','Read verification log');link.href=`/api/incidents/${encodeURIComponent(event.details.incidentId)}/gates/${encodeURIComponent(event.details.result.id)}/log`;link.target='_blank';link.rel='noopener';body.append(link);
+  }
   if(Object.keys(event.details).length){const details=node('details');details.dataset.event=String(event.sequence);details.open=open.has(String(event.sequence));details.append(node('summary','Evidence & technical details'),node('pre',JSON.stringify(event.details,null,2)));body.append(details);}
   li.append(time,body);if(event.category==='error')li.classList.add('error');$('events').append(li);
  }

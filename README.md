@@ -6,7 +6,7 @@ Learns from user feedback, finds issues and opportunities, and ships verified im
 
 A standalone foundation for an engineering control layer: receive an external request, dispatch an engineering agent, verify its candidate independently, return failures, and release only accepted artifacts.
 
-**Status:** active integration. Chat evidence intake, durable orchestration, proposal triage, scoped Devin dispatch, ACU reservations, a ten-minute heartbeat and the live office/operations journal are implemented. A real repair candidate has been returned and reviewed for scope; no repaired Xarts release has been activated. Independent candidate runtime checks, packaging and automatic release completion remain in progress. Local analyst roles use deterministic rules, not undisclosed model calls.
+**Status:** active integration. Chat evidence intake, durable orchestration, proposal triage, scoped Devin dispatch, ACU reservations, a ten-minute heartbeat and the live office/operations journal are implemented. A real repair candidate has been returned and reviewed for scope; no repaired Xarts release has been activated. Isolated build, standalone-consumer checks, original SQL-backed chart replay and guarded release activation are now wired; the first complete real run remains blocked by the local Docker environment. Local analyst roles use deterministic rules, not undisclosed model calls.
 
 ## What is in this repository?
 
@@ -62,3 +62,5 @@ Xarts is the first external project integration; its catalog is audited and its 
 The public repository contains the reusable foundation. Package publication remains disabled. An open-source license has not yet been selected; public visibility alone does not grant an open-source license. The public integration intentionally includes the Xarts name, an Anlak-inspired palette, and an audited catalog of command names and source-path references. It does not include Xarts implementation source, proprietary font files, logos, customer data, provider transcripts or credentials. Office illustrations are newly authored for Promoted.
 
 See [controller storage](docs/controller-storage.md) for the implemented interface and its boundaries. `pnpm check` includes a tracked-source credential-pattern and excluded-file check; it complements source review rather than guaranteeing secret detection.
+
+The concrete candidate-to-chat delivery setup and current validation limits are documented in [Xarts delivery](docs/xarts-delivery.md).

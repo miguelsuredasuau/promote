@@ -45,3 +45,12 @@ it('ticker and activity use the same truthful blocker and do not call local rule
  expect(story.agents.find(a=>a.id==='engineer')?.status).toBe('Stopped');expect(story.agents.find(a=>a.id==='feedback')?.mode).toBe('Local rules');
  expect(eventCopy({summary:'Role requires follow-up',details:{role:'qa',result:{reason:'candidate_scope_violation'}}}).detail).toContain('outside');
 });
+it('delivery progress replaces historical blockers and only an activated release completes the ticker',()=>{
+ const old={kind:'candidate_review',role:'qa',state:'blocked',result:{reason:'candidate_scope_violation'}};
+ const delivery={kind:'candidate_review',role:'qa',payload:{deliveryTask:{}},state:'running',result:null};
+ const running=operationsStory({workQueue:[old,delivery]});
+ expect(running.heading).toBe('QA is verifying the package');expect(running.stages.at(-1)?.state).toBe('pending');
+ const done=operationsStory({workQueue:[old,{...delivery,state:'completed',result:{reason:'verified_release_activated'}}]});
+ expect(done.heading).toBe('Verified release is active');expect(done.stages.at(-1)?.state).toBe('done');
+ expect(done.ticker).not.toContain('No release yet');
+});

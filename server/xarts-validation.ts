@@ -1,0 +1,107 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdir, readFile, writeFile, readdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { join, dirname } from 'node:path';
+import { ContainerRunner } from './container-runner';
+import { ExecutionEvidence } from '../contracts/adapters';
+const exec = promisify(execFile);
+const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+export const XARTS_NODE_IMAGE = 'node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d';
+
+/** Dependency preparation has network access but executes no repository lifecycle
+ * scripts. Actual candidate commands run separately, offline, as an unprivileged user.
+ * Only committed source enters the build context; no .env, Git config or host modules.
+ */
+export async function prepareXartsImage(checkout: string, sha: string, root: string) {
+  if (!/^[a-f0-9]{40}$/.test(sha)) throw Error('invalid_candidate_sha');
+  await mkdir(root, { recursive: true });
+  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'LICENSE', 'LICENSE-COMMERCIAL.md'], { cwd: checkout, timeout: 30000 });
+  for (const sibling of await readdir(dirname(root))) {
+    try {
+      const prior = JSON.parse(await readFile(join(dirname(root), sibling, 'identity.json'), 'utf8'));
+      if (!/^[a-f0-9]{40}$/.test(prior.candidateSha) || !/^sha256:[a-f0-9]{64}$/.test(prior.image)) continue;
+      await exec('git', ['diff', '--exit-code', prior.candidateSha, sha, '--', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages', 'vendor'], { cwd: checkout, timeout: 10000, maxBuffer: 1024 * 1024 });
+      await exec('docker', ['image', 'inspect', prior.image], { timeout: 10000 });
+      await writeFile(join(root, 'identity.json'), JSON.stringify({ candidateSha: sha, sourceHash: hash(await readFile(join(root, 'source.tar'))), image: prior.image, dependencySourceSha: prior.candidateSha }));
+      return prior.image;
+    } catch { /* A cache miss never supplies evidence or substitutes candidate source. */ }
+  }
+  await writeFile(join(root, 'Dockerfile'), `FROM ${XARTS_NODE_IMAGE}\nRUN npm install --global --ignore-scripts pnpm@10.33.0\nADD source.tar /source/\nWORKDIR /source\nRUN pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile\nRUN mkdir /exports && chmod 777 /exports\n`);
+  const result = await exec('docker', ['build', '--progress', 'plain', '--iidfile', join(root, 'image.id'), root], { timeout: 600000, maxBuffer: 8 * 1024 * 1024 });
+  await writeFile(join(root, 'preparation.log'), result.stdout + result.stderr);
+  const image = (await readFile(join(root, 'image.id'), 'utf8')).trim();
+  if (!/^sha256:[a-f0-9]{64}$/.test(image)) throw Error('invalid_image_identity');
+  await writeFile(join(root, 'identity.json'), JSON.stringify({ candidateSha: sha, sourceHash: hash(await readFile(join(root, 'source.tar'))), image }));
+  return image;
+}
+
+export async function validateXartsBuild(config: { root: string; image: string; candidateSha: string; evaluatorRevision: string }) {
+  const artifacts = join(config.root, 'artifacts');
+  await mkdir(artifacts, { recursive: true });
+  const worker = await readFile(new URL('../adapters/xarts/build-worker.mjs', import.meta.url));
+  const sha256 = hash(worker);
+  await writeFile(join(artifacts, sha256), worker);
+  const source = await readFile(join(config.root, 'source.tar'));
+  const sourceHash = hash(source);
+  await writeFile(join(artifacts, sourceHash), source);
+  const argv = ['node', '/inputs/build-worker.mjs'];
+  try {
+    const previous = ExecutionEvidence.parse(JSON.parse(await readFile(join(config.root, 'build-evidence.json'), 'utf8')));
+    const intent = JSON.parse(await readFile(join(config.root, 'runs', previous.runId, 'intent.json'), 'utf8'));
+    const exactInputs = intent.inputs.candidateSha === config.candidateSha && intent.inputs.evaluatorRevision === config.evaluatorRevision &&
+      intent.plan.runtimeImage === config.image && JSON.stringify(intent.plan.argv) === JSON.stringify(argv) &&
+      intent.inputs.artifacts.some((a: {artifactId:string;sha256:string}) => a.artifactId === 'build-worker' && a.sha256 === sha256) &&
+      intent.inputs.artifacts.some((a: {artifactId:string;sha256:string}) => a.artifactId === 'candidate-source' && a.sha256 === sourceHash);
+    if (exactInputs && previous.outcome === 'completed' && previous.exitCode === 0 && previous.isolation === 'container') {
+      for (const id of previous.artifactIds) {
+        const sha = id.split(':').at(-1)!;
+        if (!/^[a-f0-9]{64}$/.test(sha) || hash(await readFile(join(artifacts, sha))) !== sha) throw Error('cached_artifact_changed');
+      }
+      return previous;
+    }
+  } catch { /* Missing, stale or incomplete evidence is never promoted to a pass. */ }
+  const runner = new ContainerRunner({ root: join(config.root, 'runs'), artifacts, commands: {
+    'xarts-build': { argv, image: config.image, outputs: { package: '/exports/package.tgz', manifest: '/exports/build.json' } },
+  } });
+  const evidence = await runner.run({ planId: 'xarts-build-v1', commandId: 'xarts-build', argv, runtimeImage: config.image,
+    mounts: [{ artifactId: 'build-worker', sha256, target: 'build-worker.mjs', readOnly: true },
+      { artifactId: 'candidate-source', sha256: sourceHash, target: 'source.tar', readOnly: true }],
+    ceilings: { wallMs: 600000, memoryMb: 3072, outputBytes: 4 * 1024 * 1024, artifactBytes: 1024 * 1024 * 1024 }, network: 'none',
+  }, { candidateSha: config.candidateSha, evaluatorRevision: config.evaluatorRevision, artifacts: [{ artifactId: 'build-worker', sha256 }, { artifactId: 'candidate-source', sha256: sourceHash }] });
+  await writeFile(join(config.root, 'build-evidence.json'), JSON.stringify(evidence, null, 2));
+  return evidence;
+}
+
+export async function validateXartsConsumer(config: { root: string; packageBytes: Buffer; request: { spec: Record<string,unknown>; rows: unknown[]; dataHash: string }; candidateSha: string; evaluatorRevision: string; checkout: string; baselineSha: string }) {
+  const root = join(config.root, 'consumer');
+  const artifacts = join(config.root, 'artifacts');
+  await mkdir(root, { recursive: true });
+  await mkdir(artifacts, { recursive: true });
+  await writeFile(join(root, 'package.tgz'), config.packageBytes);
+  // The candidate cannot change this protected consumer test.
+  if (!/^[a-f0-9]{40}$/.test(config.baselineSha)) throw Error('invalid_baseline_sha');
+  const test = await exec('git', ['show', `${config.baselineSha}:tests/consumer/sdk/node.mjs`], { cwd: config.checkout, timeout: 10000, maxBuffer: 1024 * 1024 });
+  await writeFile(join(root, 'standalone.mjs'), test.stdout);
+  await writeFile(join(root, 'package.json'), JSON.stringify({ private: true, type: 'module', dependencies: { 'visx-render': 'file:/package.tgz', react: '18.3.1', 'react-dom': '18.3.1' } }));
+  await writeFile(join(root, 'Dockerfile'), `FROM ${XARTS_NODE_IMAGE}\nCOPY package.tgz /package.tgz\nWORKDIR /consumer\nCOPY package.json standalone.mjs ./\nRUN npm install --ignore-scripts --no-audit --no-fund\nRUN mkdir /exports && chmod 777 /exports\n`);
+  const preparation = await exec('docker', ['build', '--progress', 'plain', '--iidfile', join(root, 'image.id'), root], { timeout: 600000, maxBuffer: 8 * 1024 * 1024 });
+  await writeFile(join(root, 'preparation.log'), preparation.stdout + preparation.stderr);
+  const image = (await readFile(join(root, 'image.id'), 'utf8')).trim();
+  const files = [
+    ['consumer-worker.mjs', await readFile(new URL('../adapters/xarts/consumer-worker.mjs', import.meta.url))],
+    ['request.json', Buffer.from(JSON.stringify(config.request))],
+  ] as const;
+  const mounts = [];
+  for (const [target, bytes] of files) {
+    const sha256 = hash(bytes);await writeFile(join(artifacts, sha256), bytes);
+    mounts.push({ artifactId: target, sha256, target, readOnly: true });
+  }
+  const argv = ['node', '/inputs/consumer-worker.mjs'];
+  const runner = new ContainerRunner({ root: join(root, 'runs'), artifacts, commands: {
+    consumer: { argv, image, outputs: { svg: '/exports/chart.svg', report: '/exports/consumer.json' } },
+  } });
+  return runner.run({ planId: 'xarts-consumer-v1', commandId: 'consumer', argv, runtimeImage: image, mounts,
+    ceilings: { wallMs: 180000, memoryMb: 2048, outputBytes: 4 * 1024 * 1024, artifactBytes: 64 * 1024 * 1024 }, network: 'none',
+  }, { candidateSha: config.candidateSha, evaluatorRevision: config.evaluatorRevision, artifacts: mounts.map(({ artifactId, sha256 }) => ({ artifactId, sha256 })) });
+}

@@ -128,3 +128,17 @@ it('exposes received demo records separately from engineering incidents', async 
   expect(activity.service.incidents).toBe(0);
   expect(activity.events[0].category).toBe('intake');
 });
+it('serves only an incident-bound verification log and rejects changed bytes',async()=>{
+ const {createHash}=await import('node:crypto');
+ const {base,store,root}=await setup();
+ const incident=scenarioBuilder('gate-log','Gate log only').finish([]).incident;store.createIncident(incident);
+ const candidateSha='b'.repeat(40),bytes='Build failed: missing package export';
+ const hash=createHash('sha256').update(bytes).digest('hex');
+ const directory=join(root,'.local/xarts-validation',candidateSha,'artifacts');mkdirSync(directory,{recursive:true});writeFileSync(join(directory,hash),bytes);
+ const at=new Date().toISOString();
+ store.recordEvent(incident.id,'gate.finished',{result:{schemaVersion:1,id:'log-result',gateId:'build',gateVersion:1,candidateSha,evaluatorRevision:'a'.repeat(40),inputHash:'c'.repeat(64),outcome:'fail',reason:'build_failed',expected:null,actual:null,logArtifactId:`log:${hash}`,durationMs:1,runnerIdentity:'test',startedAt:at,finishedAt:at}});
+ const url=`${base}/api/incidents/${incident.id}/gates/log-result/log`;
+ const response=await fetch(url);expect(response.status).toBe(200);expect(await response.text()).toBe(bytes);expect(response.headers.get('content-type')).toContain('text/plain');
+ expect((await fetch(`${base}/api/incidents/${incident.id}/gates/unknown/log`)).status).toBe(404);
+ writeFileSync(join(directory,hash),'changed');expect((await fetch(url)).status).toBe(409);
+});

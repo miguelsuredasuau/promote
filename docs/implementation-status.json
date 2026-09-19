@@ -22,7 +22,7 @@
         "ambiguous provider creation persists and blocks redispatch",
         "restart preserves operation identity"
       ],
-      "completedSlice": "Durable intake, exact-task dispatch claims and budgets, local feedback triage, proposals and role work queue, ten-minute scheduler, provider observation and human-readable activity. Independent runtime verification and release automation remain pending."
+      "completedSlice": "Durable intake, scoped Devin dispatch, role queue and ten-minute scheduling. The scheduler now connects isolated Xarts verification to guarded registry activation; the live repair loop remains unverified end to end."
     },
     {
       "id": "devin-adapter",
@@ -32,12 +32,12 @@
     {
       "id": "runner",
       "status": "in_progress",
-      "completedSlice": "allowlisted Docker runner with verified immutable file inputs, no network or credentials, bounded resources/logs and confirmed cleanup; real Docker tests pass. Candidate checkout and package artifact collection remain pending."
+      "completedSlice": "Immutable git source snapshots, offline non-root Docker execution, bounded logs, named regular-file artifact collection and hash checks. Isolation tests passed; export and symlink-refusal tests passed. Latest full SDK attempt was interrupted when Docker stopped."
     },
     {
       "id": "external-project-adapter",
       "status": "in_progress",
-      "completedSlice": "audited Xarts gate catalog and frozen profile builder; runner not connected",
+      "completedSlice": "Xarts build, protected standalone consumer and original SQL request replay are wired into a frozen delivery profile. Live package acceptance remains pending.",
       "ownerRole": "project-adapter-engineer",
       "acceptance": [
         "gate inventory audit: 12 catalog entries with source revision, prerequisites, independence and self-test availability",
@@ -54,7 +54,7 @@
     {
       "id": "real-repair-loop",
       "status": "in_progress",
-      "completedSlice": "Baseline reproduced; real Devin candidate returned and session stopped. Candidate scope and independent tests pending; no repaired release activated."
+      "completedSlice": "Devin F1 candidate retained. F2 correction pushed on promote-f2-standalone-package; nine compiler regressions passed locally and in Docker. Full build interrupted by Docker shutdown; no repaired release activated."
     },
     {
       "id": "ceo-mandate-and-reporting",
@@ -72,25 +72,25 @@
   "verification": {
     "node": "22.22.1",
     "typecheck": "pass",
-    "testsPassed": 155,
+    "testsPassed": 166,
     "publicSourceCheck": "pass",
-    "observedAt": "2026-09-19T12:42:47.282915+00:00",
-    "browserQa": "Six mesh-registered non-modal surfaces captured and inspected; complete frames after whole-object foreground culling; ticker motion/reduced-motion checks; desktop/mobile and shared demo failure/recovery pass",
+    "observedAt": "2026-09-19T13:23:12.778545+00:00",
+    "browserQa": "Delivery waiting state matches Activity and office ticker; ticker opens the journal; desktop/mobile have no overflow or browser errors",
     "studioTestsPassed": 18,
-    "dockerIntegration": "4 checks timed out; docker info also timed out (local daemon unresponsive)"
+    "dockerIntegration": "Original five runner checks passed; added artifact export/symlink refusal passed. A later concurrent run had one startup timeout (3-second limit); margin increased, full rerun pending Docker recovery."
   },
   "integrationVerification": {
-    "observedAt": "2026-09-19T12:42:47.282915+00:00",
+    "observedAt": "2026-09-19T13:23:12.778545+00:00",
     "node": "22.22.1",
-    "promoteTestsPassed": 155,
+    "promoteTestsPassed": 166,
     "dockerIntegrationEnabled": true,
     "chatTestsPassed": 23,
     "crossRepositorySeams": "pass, synthetic package bytes; no install or real release",
-    "activityBrowserQa": "desktop and mobile; no overflow or browser errors; office link works",
+    "activityBrowserQa": "Delivery waiting state matches Activity and office ticker; ticker opens the journal; desktop/mobile have no overflow or browser errors",
     "paidProviderCalls": "One real engineering session; integration test itself uses zero paid calls",
-    "realRepairLoop": "candidate_scope_reviewed_release_not_completed",
+    "realRepairLoop": "delivery_wired_waiting_for_stable_docker_no_release_activated",
     "studioTestsPassed": 18,
-    "dockerIntegrationResult": "4 checks timed out in latest run"
+    "dockerIntegrationResult": "SDK candidate compiler tests 9/9; full build interrupted by Docker shutdown"
   },
   "paidDispatchNote": "Public defaults do not authorize spending. A local mandate authorized one live F1 session; credentials and mandate files are ignored."
 }
