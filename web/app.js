@@ -11,7 +11,7 @@ function record(title,text,status){const n=node('article',undefined,'record');n.
 function empty(text){return node('p',text,'empty')}
 function heading(text){return node('h3',text,'mini-heading')}
 let scene;
-try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detailElement:$('desk')})}catch{ $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
+try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detailElement:$('desk')})}catch(error){ console.error('Office initialization failed',error); $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}
 function update(force=false){
  model=createOfficeModel(snapshot,mode,demoState);
@@ -56,13 +56,13 @@ function kanban(){
  });return board;
 }
 function renderDesk(){
- const config={backlog:['PRIORITIES / THE WHITEBOARD','A board that runs the room.','The 3D whiteboard and these cards share the same state.'],engineering:['ENGINEERING / THE WORKSTATION','See the thinking turn into work.','Recorded progress and terminal content are mirrored on the workstation.'],strategy:['STRATEGY / THE IDEAS WALL','Make room for what comes next.','Feature proposals and changes that deserve the owner’s attention.'],qa:['QUALITY / THE PRODUCTION LINE','A change earns its place.','The candidate, stage lamps, terminal and backlog move together.'],finance:['FINANCE / THE SAFE','The resources behind the work.','Budget, commitments and spend stay distinct. Unknown costs stay unknown.'],briefing:['THE CEO’S BRIEFING','You make the big calls.','Mandate, integration status and the evidence behind reported progress.']};
+ const config={backlog:['PRIORITIES / THE WHITEBOARD','The work ahead.','Fixes, features and the next priorities.'],engineering:['ENGINEERING / THE WORKSTATION','The engineering desk.','Task progress and recorded terminal output.'],strategy:['STRATEGY / THE IDEAS WALL','Make room for what comes next.','Feature proposals and changes that deserve the owner’s attention.'],qa:['QUALITY / THE PRODUCTION LINE','A change earns its place.','The candidate, stage lamps, terminal and backlog move together.'],finance:['FINANCE / THE SAFE','Your project’s treasury.','Budget, commitments and the cost of progress.'],briefing:['THE CEO’S BRIEFING','You make the big calls.','Mandate, integration status and the evidence behind reported progress.']};
  const [eye,title,sub]=config[desk];setText('desk-eyebrow',eye);setText('desk-title',title);setText('desk-subtitle',sub);$('desk').classList.toggle('wide',desk==='backlog'||desk==='qa');
  const content=$('desk-content');content.replaceChildren();
  if(mode==='demo')content.append(node('p','INTERACTIVE DEMO · Cards, logs, candidates and costs are illustrative. No provider calls or stored changes.','demo-note'));
  if(desk==='backlog'){content.append(kanban());content.append(node('p',mode==='demo'?'Move proposal cards between columns by dragging or using their dropdown. The repair card follows the story to keep QA and engineering consistent.':'Live cards come from persisted incidents. Reprioritization will require an authorized controller command; this view is read-only.','facts'))}
  if(desk==='engineering'){
-  content.append(record(model.engineering.task,'The monitor and this terminal use identical recorded lines.',model.engineering.status));
+  content.append(record(model.engineering.task,'Recorded task activity.',model.engineering.status));
   const terminal=node('div',undefined,'terminal');terminal.append(node('div',mode==='demo'?'DEMO / ENGINEERING TERMINAL':'RECORDED ENGINEERING EVENTS','terminal-label'),node('div',model.engineering.lines.join('\n')||'Waiting for the engineering provider.\nNo terminal output has been recorded.'));content.append(terminal);
   if(mode==='live')list(snapshot?.operations).forEach(o=>content.append(record(o.harnessId,`Dispatch ${o.id} · Incident ${o.incidentId}`,o.status)));
  }
@@ -86,7 +86,7 @@ function renderDesk(){
   const f=model.finance;const money=v=>v==null?'Not reported':`${f.currency??'(currency unknown)'} ${v.toFixed(2)}`;
   const box=node('div',undefined,'ledger');box.append(node('span',mode==='demo'?'ILLUSTRATIVE SPEND':'OBSERVED SPEND','eyebrow'),node('div',money(f.spent),'amount'));
   const dl=node('dl');[['Approved budget',money(f.budget)],['Reserved commitments',money(f.reserved)],['Uncommitted',f.budget==null||f.spent==null||f.reserved==null?'Unknown':money(f.budget-f.spent-f.reserved)],['Burn / hour',f.burnRate==null?'Insufficient cost history':money(f.burnRate)],['Usage',model.usage==null?'Not connected':String(model.usage)]].forEach(([key,value])=>{const row=node('div');row.append(node('dt',key),node('dd',value));dl.append(row)});box.append(dl);content.append(box);
-  content.append(node('p','The safe opens when selected. Reported usage is not a price: no conversion from tokens or credits to currency is assumed. Budget changes need a versioned owner decision.','facts'));
+  content.append(node('p','Costs appear when usage reporting is connected. Budget changes require your approval.','facts'));
  }
  if(desk==='briefing'){
   const project=snapshot?.project??{};content.append(record('Xarts Office',project.repositoryAvailable?`Checkout ${project.head?.slice(0,10)} · ${project.revisionMatchesCatalog?'audit matches':'re-audit required'}`:'Checkout not available'));
