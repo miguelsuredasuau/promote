@@ -44,14 +44,14 @@ export async function inspectCandidate(store:ControllerStore,incidentId:string,c
  const reservation=store.engineeringReservation(incidentId);
  if(!checkout||!reservation?.candidateSha||reservation.state!=='stopped')return {state:'blocked' as const,result:{reason:'candidate_or_checkout_not_ready'}};
  const task=reservation.task,sha=reservation.candidateSha;
- const git=async(args:string[]) => (await exec('git',args,{cwd:checkout,timeout:30000,maxBuffer:1024*1024})).stdout.trim();
+ const git=async(args:string[]) => (await exec('git',args,{cwd:checkout,timeout:30000,killSignal:'SIGKILL',maxBuffer:1024*1024})).stdout.trim();
  const origin=await git(['remote','get-url','origin']);
  if(![ `https://github.com/${task.repo}.git`,`https://github.com/${task.repo}`,`git@github.com:${task.repo}.git`].includes(origin))return {state:'blocked' as const,result:{reason:'repository_identity_mismatch'}};
  if(!/^[a-f0-9]{40}$/.test(sha)||!/^promote\/[A-Za-z0-9._-]+$/.test(task.providerExtension.branch))throw Error('invalid_candidate_identity');
  await git(['fetch','--no-tags','origin',task.providerExtension.branch]);
  if(await git(['rev-parse','FETCH_HEAD'])!==sha)return{state:'blocked' as const,result:{reason:'candidate_branch_mismatch',candidateSha:sha}};
  try{await git(['merge-base','--is-ancestor',task.baseSha,sha]);}catch{return{state:'blocked' as const,result:{reason:'candidate_base_mismatch',candidateSha:sha}};}
- const files=(await exec('git',['diff','--no-renames','--name-only','-z',task.baseSha,sha],{cwd:checkout,timeout:10000,maxBuffer:1024*1024})).stdout.split('\0').filter(Boolean);
+ const files=(await exec('git',['diff','--no-renames','--name-only','-z',task.baseSha,sha],{cwd:checkout,timeout:10000,killSignal:'SIGKILL',maxBuffer:1024*1024})).stdout.split('\0').filter(Boolean);
  const inside=(file:string,paths:string[])=>paths.some(p=>file===p||file.startsWith(`${p}/`));
  const outside=files.filter(file=>!inside(file,task.allowedPaths)||inside(file,task.protectedPaths));
  return{state:'blocked' as const,result:{reason:outside.length?'candidate_scope_violation':'independent_runtime_checks_pending',candidateSha:sha,baseSha:task.baseSha,changedPaths:files,outsideAllowedPaths:outside,checks:{identity:'pass',ancestry:'pass',scope:outside.length?'fail':'pass',runtime:'not_run'},nextAction:outside.length?'Review the exact additional paths and authorize a revised scope, or obtain a candidate restricted to the approved paths.':'Run protected SDK build and regression gates in the isolated runner before release.'}};
@@ -62,7 +62,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
  if(existsSync(deliveryPath)){
   let deliveryTask=DeliveryTask.parse(JSON.parse(readFileSync(deliveryPath,'utf8')));
   if(deliveryTask.sourceBranch){
-   const git=async(args:string[])=>(await exec('git',args,{cwd:deliveryTask.checkout,timeout:30000,maxBuffer:1024*1024})).stdout.trim();
+   const git=async(args:string[])=>(await exec('git',args,{cwd:deliveryTask.checkout,timeout:30000,killSignal:'SIGKILL',maxBuffer:1024*1024})).stdout.trim();
    const origin=await git(['remote','get-url','origin']);
    if(![`https://github.com/${deliveryTask.repo}`,`https://github.com/${deliveryTask.repo}.git`,`git@github.com:${deliveryTask.repo}.git`].includes(origin))throw Error('repository_identity_mismatch');
    await git(['fetch','--no-tags','origin',deliveryTask.sourceBranch]);
@@ -71,7 +71,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
   const workId=`delivery:${hashCanonical(deliveryTask)}`;
   if(!store.workQueue().some(work=>work.id===workId)){
    try{
-    await exec('docker',['info','--format','{{.ServerVersion}}'],{timeout:5000,maxBuffer:1024*1024});
+    await exec('docker',['info','--format','{{.ServerVersion}}'],{timeout:5000,killSignal:'SIGKILL',maxBuffer:1024*1024});
     store.enqueueWork({id:workId,kind:'candidate_review',role:'qa',lane:'reliability',priority:100,
      payload:{deliveryTask},promptHash:rolePrompt('qa').hash});
    }catch{

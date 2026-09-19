@@ -16,19 +16,19 @@ export const XARTS_NODE_IMAGE = 'node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667a
 export async function prepareXartsImage(checkout: string, sha: string, root: string) {
   if (!/^[a-f0-9]{40}$/.test(sha)) throw Error('invalid_candidate_sha');
   await mkdir(root, { recursive: true });
-  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'LICENSE', 'LICENSE-COMMERCIAL.md'], { cwd: checkout, timeout: 30000 });
+  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'LICENSE', 'LICENSE-COMMERCIAL.md'], { cwd: checkout, timeout:30000,killSignal:'SIGKILL' });
   for (const sibling of await readdir(dirname(root))) {
     try {
       const prior = JSON.parse(await readFile(join(dirname(root), sibling, 'identity.json'), 'utf8'));
       if (!/^[a-f0-9]{40}$/.test(prior.candidateSha) || !/^sha256:[a-f0-9]{64}$/.test(prior.image)) continue;
-      await exec('git', ['diff', '--exit-code', prior.candidateSha, sha, '--', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages', 'vendor'], { cwd: checkout, timeout: 10000, maxBuffer: 1024 * 1024 });
-      await exec('docker', ['image', 'inspect', prior.image], { timeout: 10000 });
+      await exec('git', ['diff', '--exit-code', prior.candidateSha, sha, '--', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages', 'vendor'], { cwd: checkout, timeout:10000,killSignal:'SIGKILL', maxBuffer: 1024 * 1024 });
+      await exec('docker', ['image', 'inspect', prior.image], { timeout:10000,killSignal:'SIGKILL' });
       await writeFile(join(root, 'identity.json'), JSON.stringify({ candidateSha: sha, sourceHash: hash(await readFile(join(root, 'source.tar'))), image: prior.image, dependencySourceSha: prior.candidateSha }));
       return prior.image;
     } catch { /* A cache miss never supplies evidence or substitutes candidate source. */ }
   }
   await writeFile(join(root, 'Dockerfile'), `FROM ${XARTS_NODE_IMAGE}\nRUN npm install --global --ignore-scripts pnpm@10.33.0\nADD source.tar /source/\nWORKDIR /source\nRUN pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile\nRUN mkdir /exports && chmod 777 /exports\n`);
-  const result = await exec('docker', ['build', '--progress', 'plain', '--iidfile', join(root, 'image.id'), root], { timeout: 600000, maxBuffer: 8 * 1024 * 1024 });
+  const result = await exec('docker', ['build', '--progress', 'plain', '--iidfile', join(root, 'image.id'), root], { timeout:600000,killSignal:'SIGKILL', maxBuffer: 8 * 1024 * 1024 });
   await writeFile(join(root, 'preparation.log'), result.stdout + result.stderr);
   const image = (await readFile(join(root, 'image.id'), 'utf8')).trim();
   if (!/^sha256:[a-f0-9]{64}$/.test(image)) throw Error('invalid_image_identity');
@@ -81,11 +81,11 @@ export async function validateXartsConsumer(config: { root: string; packageBytes
   await writeFile(join(root, 'package.tgz'), config.packageBytes);
   // The candidate cannot change this protected consumer test.
   if (!/^[a-f0-9]{40}$/.test(config.baselineSha)) throw Error('invalid_baseline_sha');
-  const test = await exec('git', ['show', `${config.baselineSha}:tests/consumer/sdk/node.mjs`], { cwd: config.checkout, timeout: 10000, maxBuffer: 1024 * 1024 });
+  const test = await exec('git', ['show', `${config.baselineSha}:tests/consumer/sdk/node.mjs`], { cwd: config.checkout, timeout:10000,killSignal:'SIGKILL', maxBuffer: 1024 * 1024 });
   await writeFile(join(root, 'standalone.mjs'), test.stdout);
   await writeFile(join(root, 'package.json'), JSON.stringify({ private: true, type: 'module', dependencies: { 'visx-render': 'file:/package.tgz', react: '18.3.1', 'react-dom': '18.3.1' } }));
   await writeFile(join(root, 'Dockerfile'), `FROM ${XARTS_NODE_IMAGE}\nCOPY package.tgz /package.tgz\nWORKDIR /consumer\nCOPY package.json standalone.mjs ./\nRUN npm install --ignore-scripts --no-audit --no-fund\nRUN mkdir /exports && chmod 777 /exports\n`);
-  const preparation = await exec('docker', ['build', '--progress', 'plain', '--iidfile', join(root, 'image.id'), root], { timeout: 600000, maxBuffer: 8 * 1024 * 1024 });
+  const preparation = await exec('docker', ['build', '--progress', 'plain', '--iidfile', join(root, 'image.id'), root], { timeout:600000,killSignal:'SIGKILL', maxBuffer: 8 * 1024 * 1024 });
   await writeFile(join(root, 'preparation.log'), preparation.stdout + preparation.stderr);
   const image = (await readFile(join(root, 'image.id'), 'utf8')).trim();
   const files = [

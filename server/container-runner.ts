@@ -63,12 +63,12 @@ export class ContainerRunner implements ExecutionRunner {
     await writeFile(join(dir,'intent.json'),canonicalJson({runId,name,plan,inputs,startedAt}));
     let outcome: ExecutionEvidence['outcome']='infrastructure_error',exitCode:number|null=null;
     try{
-      await exec('docker',args,{timeout:15000,maxBuffer:1024*1024});
+      await exec('docker',args,{timeout:15000,killSignal:'SIGKILL',maxBuffer:1024*1024});
       const result=await new Promise<{code:number|null;outcome:ExecutionEvidence['outcome'];log:Buffer}>((resolveResult)=>{
         const child=spawn('docker',['start','--attach',name],{stdio:['ignore','pipe','pipe']});
         const chunks:Buffer[]=[];let size=0,reason:ExecutionEvidence['outcome']='completed';
         let killing:Promise<unknown>|null=null;
-        const stop=()=>{killing??=exec('docker',['kill',name],{timeout:10000}).catch(()=>{});};
+        const stop=()=>{killing??=exec('docker',['kill',name],{timeout:10000,killSignal:'SIGKILL'}).catch(()=>{});};
         const timer=setTimeout(()=>{reason='timeout';stop();},plan.ceilings.wallMs);
         const watchdog=setTimeout(()=>{reason='infrastructure_error';child.kill('SIGKILL');},plan.ceilings.wallMs+15000);
         const capture=(chunk:Buffer)=>{const remaining=Math.max(0,plan.ceilings.outputBytes-size);if(remaining)chunks.push(chunk.subarray(0,remaining));size+=chunk.length;if(size>plan.ceilings.outputBytes){reason='resource_limit';stop();}};
@@ -78,7 +78,7 @@ export class ContainerRunner implements ExecutionRunner {
       });
       outcome=result.outcome;exitCode=result.code;
       await writeFile(join(dir,'output.log'),result.log);
-      const inspection=JSON.parse((await exec('docker',['inspect',name],{timeout:10000,maxBuffer:1024*1024})).stdout)[0];
+      const inspection=JSON.parse((await exec('docker',['inspect',name],{timeout:10000,killSignal:'SIGKILL',maxBuffer:1024*1024})).stdout)[0];
       if(inspection.State.Running)throw new Error('container_still_running');
       exitCode=inspection.State.ExitCode;
       if(inspection.State.OOMKilled)outcome='resource_limit';
@@ -88,7 +88,7 @@ export class ContainerRunner implements ExecutionRunner {
         let total=0;
         for(const [key,path] of Object.entries(allowed.outputs??{})){
           const limit=Math.min(64*1024*1024,plan.ceilings.artifactBytes-total);
-          const response=await exec('docker',['cp',`${name}:${path}`,'-'],{timeout:15000,maxBuffer:limit+65536,encoding:'buffer'});
+          const response=await exec('docker',['cp',`${name}:${path}`,'-'],{timeout:15000,killSignal:'SIGKILL',maxBuffer:limit+65536,encoding:'buffer'});
           const bytes=exportedFile(response.stdout,limit);
           total+=bytes.length;
           if(total>plan.ceilings.artifactBytes){outcome='resource_limit';break;}
@@ -106,7 +106,7 @@ export class ContainerRunner implements ExecutionRunner {
     }
     finally{
       // Confirm removal before returning evidence: no lingering candidate process can keep running.
-      try{await exec('docker',['rm','--force','--volumes',name],{timeout:10000});}
+      try{await exec('docker',['rm','--force','--volumes',name],{timeout:10000,killSignal:'SIGKILL'});}
       catch{outcome='infrastructure_error';}
     }
     const evidence:ExecutionEvidence={runId,planId:plan.planId,runnerIdentity:'docker-protected-v1',isolation:'container',
@@ -119,7 +119,7 @@ export class ContainerRunner implements ExecutionRunner {
     if(!/^[a-f0-9-]{36}$/.test(runId))throw new Error('invalid_run_id');
     const intent=JSON.parse(await readFile(join(this.config.root,runId,'intent.json'),'utf8'));
     if(intent.name!==`promote-${runId}`)throw new Error('invalid_intent');
-    try{await exec('docker',['rm','--force','--volumes',intent.name],{timeout:10000});return{runId,confirmed:true,observedAt:new Date().toISOString(),reason:null};}
+    try{await exec('docker',['rm','--force','--volumes',intent.name],{timeout:10000,killSignal:'SIGKILL'});return{runId,confirmed:true,observedAt:new Date().toISOString(),reason:null};}
     catch{return{runId,confirmed:false,observedAt:new Date().toISOString(),reason:'termination_unconfirmed'};}
   }
 }
