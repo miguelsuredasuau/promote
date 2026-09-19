@@ -4,7 +4,7 @@
 
 **An engineering team for the solo developer.**
 
-[**▶ Watch the film**](https://youtu.be/4AXOMr5jjUg) &nbsp; · &nbsp; [The three layers](#the-three-layers) &nbsp; · &nbsp; [See the product](#a-workplace-for-the-work) &nbsp; · &nbsp; [Run locally](#run-locally)
+[**▶ Watch the film**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [The three layers](#the-three-layers) &nbsp; · &nbsp; [See the product](#a-workplace-for-the-work) &nbsp; · &nbsp; [Run locally](#run-locally)
 
 </div>
 
@@ -16,11 +16,11 @@ You can launch an app in a weekend. Then come the bug reports, broken builds, fe
 
 ### Meet Promote
 
-<a href="https://youtu.be/4AXOMr5jjUg">
-  <img src="docs/images/demo-video.jpg" alt="Watch the Promote film on YouTube — an isometric office showing the engineering workflow" width="100%">
+<a href="https://youtu.be/nC2f0_lAhSY">
+  <img src="docs/images/demo-video.jpg" alt="Watch the Promote promotional film for Hackbarna 2026 on YouTube" width="100%">
 </a>
 
-<p align="center"><a href="https://youtu.be/4AXOMr5jjUg"><strong>▶ Watch the film on YouTube</strong></a></p>
+<p align="center"><a href="https://youtu.be/nC2f0_lAhSY"><strong>▶ Watch the film on YouTube</strong></a></p>
 
 > **Development preview.** Real intake, orchestration and Devin dispatch are implemented. A real repair has returned a candidate. Its complete verification-to-release run is pending; the general SDK and hosting integrations are planned.
 
@@ -206,6 +206,6 @@ Credentials, customer data, provider transcripts, private chart implementation, 
 
 ### Your next launch deserves a maintenance plan.
 
-[**Watch Promote in action ↗**](https://youtu.be/4AXOMr5jjUg) &nbsp; · &nbsp; [**Run it locally →**](#run-locally)
+[**Watch Promote in action ↗**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [**Run it locally →**](#run-locally)
 
 </div>
