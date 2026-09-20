@@ -4,7 +4,7 @@
 
 **An engineering team for the solo developer.**
 
-[**▶ Watch the film**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [The three layers](#the-three-layers) &nbsp; · &nbsp; [See the product](#a-workplace-for-the-work) &nbsp; · &nbsp; [Run locally](#run-locally)
+[**▶ Watch the film**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [Xarts + Promote explained](docs/projects.md) &nbsp; · &nbsp; [The three layers](#the-three-layers) &nbsp; · &nbsp; [See the product](#a-workplace-for-the-work) &nbsp; · &nbsp; [Run locally](#run-locally)
 
 </div>
 
