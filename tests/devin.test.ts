@@ -129,3 +129,27 @@ it.each([
  const fetcher=vi.fn().mockResolvedValue(response({session_id:'s',status,status_detail}));
  expect((await adapter(fetcher).inspect('devin-s')).state).toBe(expected);
 });
+
+it.each([
+ [{status:'clean'},'clean'],
+ [{status:'clean',findings:['needs review']},'issues'],
+ [{status:'clean',findings:['needs review'],coverageReduced:true},'pending'],
+ [{status:'clean',checkedFiles:[]},'pending'],
+ [{status:'pending'},'pending'],
+ [{status:'issues',findings:['needs review']},'issues'],
+ [{candidateSha:'b'.repeat(40)},'pending'],
+ [{status:'invalid'},'pending'],
+])('never promotes incomplete or mismatched agent quality evidence: %j',async(patch,expected)=>{
+ const candidateSha='a'.repeat(40);
+ const normaReview={candidateSha,status:'clean',checkedFiles:['source.ts'],findings:[],coverageReduced:false,limitations:[],...patch};
+ const fetcher=vi.fn().mockResolvedValue(response({session_id:'s',status:'exit',structured_output:{candidateSha,normaReview}}));
+ expect((await adapter(fetcher).inspect('s')).qualityReview?.status).toBe(expected);
+});
+it('keeps missing quality evidence pending and absent candidates without a review',async()=>{
+ const candidateSha='a'.repeat(40);
+ const fetcher=vi.fn().mockResolvedValueOnce(response({session_id:'s',status:'exit',structured_output:{candidateSha}}))
+  .mockResolvedValueOnce(response({session_id:'s',status:'running'}));
+ const a=adapter(fetcher);
+ expect((await a.inspect('s')).qualityReview).toMatchObject({status:'pending',candidateSha,coverageReduced:true});
+ expect((await a.inspect('s')).qualityReview).toBeUndefined();
+});

@@ -29,7 +29,10 @@ export async function importChatCycle(store: ControllerStore, outbox: string, re
   const records = await stage('outbox', () => importChatOutbox(store, outbox, receiptRoot));
   const diagnostics = await stage('diagnostics', () => importChatDiagnostics(store, dirname(outbox)));
   const progress = await stage('progress', () => importChatProgress(store, dirname(outbox)));
-  return { status: failures.length ? 'error' : records?.quarantined ? 'attention' : 'watching',
+  let status = 'watching';
+  if (records?.quarantined) status = 'attention';
+  if (failures.length) status = 'error';
+  return { status,
     configured: true, records, diagnostics, progress, failures };
 }
 

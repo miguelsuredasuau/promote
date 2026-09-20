@@ -158,16 +158,17 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 Norma is integrated into Devin’s instructions and Promote’s independent candidate review in **advisory mode**. Candidate commits, file hashes and observed rules are recorded; incomplete coverage remains **pending**.
 
-**September 20: a live same-scope review, targeted changes, and a live recheck are complete.** Across six files, Norma reported **47 → 39 findings** after simplifying intake error classification and Devin session-state handling. Eight nested-conditional matches disappeared. New scheduler regression tests also verify recovery after orchestration failures and protection against overlapping cycles.
+**September 20: a live same-scope review, targeted changes, and a live recheck are complete.** Across six files, Norma reported **47 → 39 → 35 findings** after simplifying intake error classification and Devin session-state handling. Across two remediation rounds, all twelve nested-conditional matches disappeared. New scheduler regression tests also verify recovery after orchestration failures and protection against overlapping cycles.
 
 | Same six files | Findings | Coverage |
 | --- | ---: | --- |
 | Before · `aa0898e` | 47 | Reduced · pending |
-| After · `ff6d673` | 39 | Reduced · pending |
+| First pass · `ff6d673` | 39 | Reduced · pending |
+| Second pass · `c2c8af6` | 35 | Reduced · pending |
 
-Local validation passed: **242 tests**, 5 skipped, TypeScript and public-source checks. The remaining findings have a documented contextual triage; none is silently suppressed. All Norma responses still report an unavailable Semgrep rule. This is a bounded improvement, not a complete repository scan or release approval. Provider cost remains unknown; no paid Devin session was launched for this work.
+Local validation passed: **252 tests**, 5 skipped, TypeScript and public-source checks. The remaining findings have a documented contextual triage; none is silently suppressed. All Norma responses still report an unavailable Semgrep rule. This is a bounded improvement, not a complete repository scan or release approval. Provider cost remains unknown; no paid Devin session was launched for this work.
 
-[**Before/after evidence, fixes and remaining work →**](docs/reviews/norma-remediation-2026-09-20.md) · [Setup and limits](docs/integrations/norma.md) · [Earlier review history](docs/reviews/norma-follow-up-2026-09-20.md)
+[**Before/after evidence, fixes and remaining work →**](docs/reviews/norma-round2-2026-09-20.md) · [Setup and limits](docs/integrations/norma.md) · [Earlier review history](docs/reviews/norma-follow-up-2026-09-20.md)
 
 ## What comes next
 
