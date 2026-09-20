@@ -170,6 +170,10 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 Norma is embedded in Devin's engineering instructions and Promote's independent candidate review. The case study shows how quality findings inform repairs, behavioral tests and documented engineering decisions in a real library.
 
+**A substantial real-world codebase:** Xarts contains **702,433 physical source lines across 3,789 tracked source files**, measured at commit `6318ac21`. This includes 68,869 test lines and 28,609 historical-analysis source lines; comments, blank lines and generated source are included, while JSON, Markdown, SVG, dependencies and binary assets are excluded. [Reproducible size breakdown →](docs/reviews/xarts-source-size-2026-09-20.json)
+
+**653 reported occurrences assessed as false positives:** 236 security matches and 417 async-forEach matches. Examples include ordinary array mutations flagged as redirects and synchronous callbacks flagged as asynchronous. Three further async-forEach cases remain unresolved. These are documented source-review assessments—not provider-confirmed dismissals, 653 bugs fixed, or a completed review of all 3,004 findings. [Triage evidence and repairs →](docs/reviews/xarts-security-runtime-remediation-2026-09-20.md)
+
 **Xarts interim result:** 63/100 · 3,004 reported issues · Security 6%, from the supplied dashboard dated September 20, 2026, 11:23. The remediation batch is published to Xarts `main` at `ea935d03`: **6,415 tests and 66 SDK tests passed**, with 23 tests skipped. A fresh Norma scan is pending; test results and our documented false-positive assessments do not change the provider score by themselves.
 
 [**Defend your code — one fix, one deliberate non-fix, and the evidence →**](defense.md) · [Xarts remediation report](docs/reviews/xarts-security-runtime-remediation-2026-09-20.md) · [Integration and limits](docs/integrations/norma.md)
