@@ -13,9 +13,11 @@
     "test": "vitest run",
     "check": "pnpm check:public && pnpm typecheck && pnpm test",
     "check:public": "node scripts/check-public-source.mjs",
-    "dev": "tsx server/main.ts"
+    "dev": "tsx server/main.ts",
+    "norma:review": "tsx scripts/norma-review.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.17.4",
     "three": "0.185.1",
     "zod": "3.25.76"
   },

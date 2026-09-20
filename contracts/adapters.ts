@@ -75,6 +75,13 @@ export type ReconciliationOutcome = z.infer<typeof ReconciliationOutcome>;
 const _reconciliationLockstep: ReconciliationOutcome['result'] extends z.infer<typeof ReconciliationResult> ? true : never = true;
 void _reconciliationLockstep;
 
+/** Agent-reported diagnostics only; never release gate evidence. */
+export const AgentQualityReview = z.object({
+  provider:z.literal('norma'), status:z.enum(['clean','issues','pending']), candidateSha:GitSha,
+  checkedFiles:z.array(z.string().max(512)).max(100), findings:z.array(z.string().max(2000)).max(100),
+  coverageReduced:z.boolean(), limitations:z.array(z.string().max(2000)).max(30),
+}).strict();
+
 export const SessionObservation = z
   .object({
     remoteId: z.string().min(1),
@@ -85,6 +92,7 @@ export const SessionObservation = z
     providerTime: Timestamp.nullable(),
     candidateSha: GitSha.nullable(),
     usage: BudgetObservation.nullable(),
+    qualityReview: AgentQualityReview.optional(),
   })
   .strict();
 export type SessionObservation = z.infer<typeof SessionObservation>;

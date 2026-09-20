@@ -43,6 +43,7 @@ export async function observeEngineering(store:ControllerStore, adapter:HarnessA
       const observation=await adapter.inspect(reservation.remoteId);
       store.updateEngineering(reservation.incidentId,{usageAcu:observation.usage?.amount??null,usageObservedAt:observation.observedAt,
         candidateSha:observation.candidateSha,state:observation.state==='unknown'?'held':'running'});
+      if(observation.qualityReview)store.recordActivity('verification','Devin reported Norma diagnostics (not independent acceptance)',{incidentId:reservation.incidentId,review:observation.qualityReview,evidenceSource:'engineering_agent'});
       if(observation.candidateSha || ['finished','failed','cancelled'].includes(observation.state)){
         const termination=await adapter.cancel(reservation.remoteId,`stop:${reservation.incidentId}`);
         store.updateEngineering(reservation.incidentId,{state:termination.kind==='confirmed'?'stopped':'held',reason:observation.candidateSha?'candidate_awaiting_independent_evaluation':'session_ended_without_candidate'});

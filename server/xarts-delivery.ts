@@ -15,6 +15,7 @@ import type { GateProfile } from '../contracts/profile';
 import type { ExecutionEvidence } from '../contracts/adapters';
 import { publishLocalRelease } from './registry';
 import { originMatchesRepo } from './repo-identity';
+import { runNormaReview } from './norma-review';
 const exec = promisify(execFile);
 const digest = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
 export const DeliveryTask = z.object({
@@ -95,6 +96,9 @@ export async function runXartsDelivery(store: ControllerStore, controllerRoot: s
     store.recordActivity('verification',summary,{incidentId:id,candidateSha:task.candidateSha,executionMode:'isolated_local',nextAction:gateId});
   };
   try {
+    await runNormaReview(store,controllerRoot,task,id).catch(() => {
+      store.recordActivity('verification','Norma advisory review — pending: evidence could not be persisted',{incidentId:id,candidateSha:task.candidateSha,mode:'advisory',status:'pending'});
+    });
     stage('xarts.sdkBuild','QA is building the candidate package and checking compiler regressions');
     const image=await prepareXartsImage(task.checkout,task.candidateSha,root);
     const build=await validateXartsBuild({root,image,candidateSha:task.candidateSha,evaluatorRevision});

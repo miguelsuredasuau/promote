@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EngineeringTask, RepairFeedback, SessionObservation, type HarnessAdapter, type StartOutcome, type FeedbackOutcome, type CancelOutcome } from '../../contracts/adapters';
+import { EngineeringTask, RepairFeedback, SessionObservation, AgentQualityReview, type HarnessAdapter, type StartOutcome, type FeedbackOutcome, type CancelOutcome } from '../../contracts/adapters';
 import { GitSha, Id } from '../../contracts/primitives';
 import { ExplorationSpec, ExplorationReport } from '../../contracts/exploration';
 import { readFileSync } from 'node:fs';
@@ -39,7 +39,7 @@ export class DevinAdapter implements HarnessAdapter {
     try {
       const response=await this.request('','POST',{prompt, repos:[`https://github.com/${task.repo}`],max_acu_limit:extension.maxAcu,
         resumable:true,structured_output_required:true,tags:[`promote-operation:${operationId}`,`promote-incident:${task.incidentId}`],
-        title:`Promoted: ${task.incidentId}`,structured_output_schema:{type:'object',properties:{candidateSha:{type:'string'},branch:{type:'string'},summary:{type:'string'}},required:['candidateSha','branch','summary'],additionalProperties:false}});
+        title:`Promoted: ${task.incidentId}`,structured_output_schema:{type:'object',properties:{candidateSha:{type:'string'},branch:{type:'string'},summary:{type:'string'},normaReview:{type:'object',properties:{status:{type:'string',enum:['clean','issues','pending']},candidateSha:{type:'string'},checkedFiles:{type:'array',items:{type:'string'}},findings:{type:'array',items:{type:'string'}},coverageReduced:{type:'boolean'},limitations:{type:'array',items:{type:'string'}}},required:['status','candidateSha','checkedFiles','findings','coverageReduced','limitations'],additionalProperties:false}},required:['candidateSha','branch','summary','normaReview'],additionalProperties:false}});
       if (!response.ok) return response.status>=400 && response.status<500 && response.status!==408
         ? {kind:'rejected',reason:`provider_http_${response.status}`} : {kind:'unknown_outcome',reason:'create_response_uncertain'};
       const result=Session.safeParse(await response.json());
@@ -85,7 +85,12 @@ export class DevinAdapter implements HarnessAdapter {
       s.status_detail==='finished'?'finished':['waiting_for_user','waiting_for_approval'].includes(s.status_detail??'')?'waiting':
       ['running','resuming','claimed'].includes(s.status)?'running':s.status==='new'?'queued':'unknown';
     const output=z.object({candidateSha:GitSha}).passthrough().safeParse(s.structured_output);
-    return SessionObservation.parse({remoteId:remote(remoteId),state,rawStatusArtifactId:null,observedAt:now,
+    const proposed=output.success?(s.structured_output as {normaReview?:object}).normaReview:undefined;
+    const quality=AgentQualityReview.safeParse({...proposed,provider:'norma'});
+    const qualityReview=output.success?(quality.success&&quality.data.candidateSha===output.data.candidateSha
+      ? {...quality.data,status:quality.data.coverageReduced||!quality.data.checkedFiles.length?'pending' as const:quality.data.status==='clean'&&quality.data.findings.length?'issues' as const:quality.data.status}
+      : {provider:'norma' as const,status:'pending' as const,candidateSha:output.data.candidateSha,checkedFiles:[],findings:[],coverageReduced:true,limitations:['Agent review missing, invalid or bound to a different commit.']}):undefined;
+    return SessionObservation.parse({qualityReview,remoteId:remote(remoteId),state,rawStatusArtifactId:null,observedAt:now,
       providerTime:s.updated_at && Number.isFinite(new Date(s.updated_at*1000).getTime())?new Date(s.updated_at*1000).toISOString():null,
       candidateSha:output.success?output.data.candidateSha:null,
       usage:{schemaVersion:1,provider:'devin',amount:s.acus_consumed??null,unit:'ACU',observedAt:now,source:'provider_api',reliability:s.acus_consumed==null?'unknown':'reported'}});

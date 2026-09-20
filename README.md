@@ -148,6 +148,9 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 ## Live quality review · Norma
 
+Norma is now wired into future Devin task instructions and Promote’s independent candidate review, in **advisory mode**. Results are bound to commits and file hashes; incomplete coverage remains pending. Devin needs its own authenticated MCP connection. [Setup, behavior and limits →](docs/integrations/norma.md)
+
+
 We ran [Norma MCP](https://github.com/qualityclouds/norma-mcp) against **three critical files** at commit [`464acab`](https://github.com/miguelsuredasuau/promote/tree/464acab3ba54b17c0622203aed8c5051b98e90df), on September 19, 2026.
 
 | Reviewed component | High | Medium | Findings |

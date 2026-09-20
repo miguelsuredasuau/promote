@@ -109,3 +109,14 @@ it('recognizes observed termination when an already exited session rejects DELET
  const fetcher=vi.fn().mockResolvedValueOnce(response({},409)).mockResolvedValueOnce(response({session_id:'s',status:'exit'}));
  expect((await adapter(fetcher).cancel('devin-s','stop:test')).kind).toBe('confirmed');
 });
+
+it('requires a Norma report in new task output and includes the advisory workflow',async()=>{
+ const s=setup();const fetcher=vi.fn(async(_url:unknown,init:RequestInit)=>{const body=JSON.parse(String(init.body));
+ expect(body.prompt).toContain('Norma quality review (advisory)');expect(body.structured_output_schema.required).toContain('normaReview');
+ return Response.json({session_id:'new-review',status:'new'});
+ });await adapter(fetcher).start(s.task,'test-review');
+});
+it('marks a reduced-coverage agent claim pending and binds it to the candidate',async()=>{
+ const candidateSha='a'.repeat(40);const fetcher=vi.fn(async()=>Response.json({session_id:'review',status:'exit',structured_output:{candidateSha,normaReview:{candidateSha,status:'clean',checkedFiles:['a.ts'],findings:[],coverageReduced:true,limitations:[]}}}));
+ const observation=await adapter(fetcher).inspect('review');expect(observation.qualityReview?.status).toBe('pending');expect(observation.qualityReview?.candidateSha).toBe(candidateSha);
+});
