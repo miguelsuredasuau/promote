@@ -65,6 +65,7 @@ describe('independent maintenance evaluation', () => {
     expect(plan.mounts.map((mount: any) => mount.target)).toContain('baseline-tests.tar');
     expect(inputs.candidateSha).toBe(candidate);
     expect(mocks.git.mock.calls.some(([args]) => args[0] === 'archive' && args.includes(base))).toBe(true);
+    expect(mocks.run.mock.calls[0][2].commands.maintenance.diagnosticOutputs).toEqual({report:'/exports/maintenance.json'});
   });
   it('never accepts a nonzero result', async () => {
     const original = mocks.run.getMockImplementation()!;
@@ -98,7 +99,7 @@ describe('independent maintenance evaluation', () => {
     mocks.run.mockImplementation(async (...args)=>{
       const evidence=await original(...args);
       await writeFile(join(args[2].artifacts,reportDigest),JSON.stringify({candidateSha:candidate,tests:input().tests,stages:[],infrastructureFailure:reason}));
-      return {...evidence,exitCode:78};
+      return {...evidence,exitCode:78,artifactIds:[`log:${digest}`,`diagnostic:report:${reportDigest}`]};
     });
     expect(await evaluateMaintenance(input())).toMatchObject({status:'blocked',reason:`maintenance_${reason}`});
   });
@@ -111,12 +112,17 @@ describe('independent maintenance evaluation', () => {
     });
     expect((await evaluateMaintenance(input())).status).toBe('failed');
   });
+  it('never substitutes a diagnostic artifact for a successful acceptance report', async () => {
+    const original=mocks.run.getMockImplementation()!;
+    mocks.run.mockImplementation(async (...args)=>({...await original(...args),artifactIds:[`log:${digest}`,`diagnostic:report:${reportDigest}`]}));
+    expect(await evaluateMaintenance(input())).toMatchObject({status:'blocked',reason:'maintenance_report_missing'});
+  });
   it('preserves an actual failed check even if the report also claims an infrastructure fault', async () => {
     const original=mocks.run.getMockImplementation()!;
     mocks.run.mockImplementation(async (...args)=>{
       const evidence=await original(...args);
       await writeFile(join(args[2].artifacts,reportDigest),JSON.stringify({candidateSha:candidate,tests:input().tests,stages:[{name:'typecheck',exitCode:1}],infrastructureFailure:'command_unavailable'}));
-      return {...evidence,exitCode:78};
+      return {...evidence,exitCode:78,artifactIds:[`log:${digest}`,`diagnostic:report:${reportDigest}`]};
     });
     expect((await evaluateMaintenance(input())).status).toBe('failed');
   });

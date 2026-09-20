@@ -2,7 +2,7 @@ import { afterEach, expect, it } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { ContainerRunner } from '../server/container-runner';
 const roots:string[]=[];afterEach(()=>{for(const root of roots.splice(0))rmSync(root,{recursive:true,force:true});});
 const image='node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d';
@@ -58,4 +58,26 @@ docker('exports only bounded regular files after the candidate exits',async()=>{
   expect(refused.outcome).toBe('infrastructure_error');
   expect(refused.artifactIds.some(id=>id.startsWith('output:'))).toBe(false);
  } finally {execFileSync('docker',['image','rm',exportImage],{timeout:15000,stdio:'ignore'});}
+},90000);
+
+docker('exports exit-78 diagnostics without exporting a failed package',async()=>{
+ const {execFileSync}=await import('node:child_process');
+ const root=mkdtempSync(join(tmpdir(),'promote-diagnostic-image-'));roots.push(root);
+ // A unique label ensures cleanup removes only this test-created image.
+ writeFileSync(join(root,'Dockerfile'),`FROM ${image}\nLABEL promote.test="${randomUUID()}"\nRUN mkdir /exports && chmod 777 /exports\n`);
+ const diagnosticImage=execFileSync('docker',['build','--quiet',root],{encoding:'utf8',timeout:60000}).trim();
+ try{
+  const s=setup('');
+  const argv=['node','-e',"const fs=require('fs');fs.writeFileSync('/exports/report.json',JSON.stringify({infrastructureFailure:'command_unavailable'}));fs.writeFileSync('/exports/package.bin','must never release');process.exit(78)"];
+  const runner=new ContainerRunner({root:join(s.root,'diagnostics'),artifacts:s.artifacts,commands:{test:{argv,image:diagnosticImage,outputs:{package:'/exports/package.bin'},diagnosticOutputs:{report:'/exports/report.json'}}}});
+  const result=await runner.run({...s.plan,argv,runtimeImage:diagnosticImage},s.inputs);
+  expect(result).toMatchObject({outcome:'completed',exitCode:78});
+  expect(result.artifactIds.some(id=>id.startsWith('output:'))).toBe(false);
+  const report=result.artifactIds.find(id=>id.startsWith('diagnostic:report:'))!;
+  expect(JSON.parse(readFileSync(join(s.artifacts,report.split(':')[2]),'utf8'))).toEqual({infrastructureFailure:'command_unavailable'});
+  const ordinary=new ContainerRunner({root:join(s.root,'ordinary-failure'),artifacts:s.artifacts,commands:{test:{argv,image:diagnosticImage,outputs:{package:'/exports/package.bin'}}}});
+  const failed=await ordinary.run({...s.plan,argv,runtimeImage:diagnosticImage},s.inputs);
+  expect(failed).toMatchObject({outcome:'completed',exitCode:78});
+  expect(failed.artifactIds.every(id=>id.startsWith('log:'))).toBe(true);
+ }finally{execFileSync('docker',['image','rm',diagnosticImage],{timeout:15000,stdio:'ignore'});}
 },90000);

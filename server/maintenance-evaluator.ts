@@ -93,7 +93,7 @@ export async function evaluateMaintenance(raw: MaintenanceInput, onProgress?: (s
     const evaluatorRevision = (await exec('git', ['rev-parse', 'HEAD'], { cwd: input.root, timeout: 10000 })).stdout.trim();
     const argv = ['node', '/inputs/maintenance-worker.mjs'];
     const runner = new ContainerRunner({ root: join(root, 'runs'), artifacts, commands: {
-      maintenance: { argv, image, outputs: { report: '/exports/maintenance.json' } },
+      maintenance: { argv, image, outputs: { report: '/exports/maintenance.json' },diagnosticOutputs:{report:'/exports/maintenance.json'} },
     } });
     let stageOutput='';
     const evidence = await runner.run({ planId: 'maintenance-v1', commandId: 'maintenance', argv, runtimeImage: image, mounts,
@@ -102,7 +102,7 @@ export async function evaluateMaintenance(raw: MaintenanceInput, onProgress?: (s
     await writeFile(join(root, 'evidence.json'), JSON.stringify({ ...input, evidence }, null, 2));
     const logId = evidence.artifactIds.find(id => /^log:[a-f0-9]{64}$/.test(id));
     const log = logId ? (await readFile(join(artifacts, logId.slice(4)), 'utf8')).slice(-12000) : undefined;
-    const reportId = evidence.artifactIds.find(id => /^output:report:[a-f0-9]{64}$/.test(id));
+    const reportId = evidence.artifactIds.find(id => evidence.exitCode===0?/^output:report:[a-f0-9]{64}$/.test(id):/^diagnostic:report:[a-f0-9]{64}$/.test(id));
     if (evidence.isolation !== 'container' || evidence.outcome !== 'completed' || !logId) return { ...blocked('isolated_execution_incomplete'), evidence, log };
     const report = reportId ? WorkerReport.safeParse(JSON.parse(await readFile(join(artifacts, reportId.split(':').at(-1)!), 'utf8'))) : null;
     if(report?.success && report.data.candidateSha===input.candidateSha && JSON.stringify(report.data.tests)===JSON.stringify(input.tests)

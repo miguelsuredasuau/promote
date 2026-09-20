@@ -28,13 +28,13 @@ export function exportedFile(tar: Buffer, maxBytes: number): Buffer {
 
 /** Container execution with trusted exact command allowlists and content-addressed file mounts. */
 export class ContainerRunner implements ExecutionRunner {
-  constructor(private config: { root: string; artifacts: string; commands: Record<string,{argv:string[];image:string; outputs?: Record<string,string>}> }) {}
+  constructor(private config: { root: string; artifacts: string; commands: Record<string,{argv:string[];image:string; outputs?: Record<string,string>;diagnosticOutputs?:Record<string,string>}> }) {}
   async run(raw: ExecutionPlan, rawInputs: ImmutableInputs, onOutput?: (chunk:string)=>void): Promise<ExecutionEvidence> {
     const plan=ExecutionPlan.parse(raw),inputs=ImmutableInputs.parse(rawInputs);
     const allowed=this.config.commands[plan.commandId];
     if (!allowed || canonicalJson(allowed.argv)!==canonicalJson(plan.argv) || allowed.image!==plan.runtimeImage ||
       !/^(?:[^\s]+@)?sha256:[a-f0-9]{64}$/.test(plan.runtimeImage) || plan.network!=='none') throw new Error('untrusted_execution_plan');
-    for(const [key,path] of Object.entries(allowed.outputs??{})) {
+    for(const [key,path] of [...Object.entries(allowed.outputs??{}),...Object.entries(allowed.diagnosticOutputs??{})]) {
       if(!/^[a-z][a-z0-9-]*$/.test(key)||!/^\/exports\/[A-Za-z0-9._-]+$/.test(path))throw new Error('invalid_output_path');
     }
     const collected:string[]=[];
@@ -46,7 +46,7 @@ export class ContainerRunner implements ExecutionRunner {
       '--workdir','/tmp'];
     // An anonymous volume survives process exit for collection, is never mounted
     // into another job, and is removed with the container. No host write mount.
-    if(Object.keys(allowed.outputs??{}).length)args.push('--mount','type=volume,dst=/exports',
+    if(Object.keys(allowed.outputs??{}).length||Object.keys(allowed.diagnosticOutputs??{}).length)args.push('--mount','type=volume,dst=/exports',
       '--ulimit',`fsize=${plan.ceilings.artifactBytes}:${plan.ceilings.artifactBytes}`);
     const targets=new Set<string>();
     for(const mount of plan.mounts){
@@ -84,9 +84,13 @@ export class ContainerRunner implements ExecutionRunner {
       if(inspection.State.OOMKilled)outcome='resource_limit';
       // Export only trusted, named paths after the process has stopped. Never extract
       // an arbitrary candidate archive into the controller's filesystem.
-      if(outcome==='completed'&&exitCode===0){
+      if(outcome==='completed'){
+        // Failed commands can emit controller-selected diagnostics, never successful
+        // package artifacts. The distinct prefix cannot satisfy a release output.
+        const exports=exitCode===0?allowed.outputs:allowed.diagnosticOutputs;
+        const prefix=exitCode===0?'output':'diagnostic';
         let total=0;
-        for(const [key,path] of Object.entries(allowed.outputs??{})){
+        for(const [key,path] of Object.entries(exports??{})){
           const limit=Math.min(64*1024*1024,plan.ceilings.artifactBytes-total);
           const response=await exec('docker',['cp',`${name}:${path}`,'-'],{timeout:15000,killSignal:'SIGKILL',maxBuffer:limit+65536,encoding:'buffer'});
           const bytes=exportedFile(response.stdout,limit);
@@ -95,7 +99,7 @@ export class ContainerRunner implements ExecutionRunner {
           const sha=hash(bytes);
           await mkdir(this.config.artifacts,{recursive:true});
           await writeFile(join(this.config.artifacts,sha),bytes);
-          collected.push(`output:${key}:${sha}`);
+          collected.push(`${prefix}:${key}:${sha}`);
         }
       }
     }catch(error){
@@ -110,7 +114,7 @@ export class ContainerRunner implements ExecutionRunner {
       catch{outcome='infrastructure_error';}
     }
     const evidence:ExecutionEvidence={runId,planId:plan.planId,runnerIdentity:'docker-protected-v1',isolation:'container',
-      exitCode,outcome,durationMs:Date.now()-start,artifactIds:outcome==='completed'&&exitCode===0?collected:[],startedAt,finishedAt:new Date().toISOString()};
+      exitCode,outcome,durationMs:Date.now()-start,artifactIds:outcome==='completed'?collected:[],startedAt,finishedAt:new Date().toISOString()};
     const log=await readFile(join(dir,'output.log')).catch(()=>null);
     if(log){const sha=hash(log);await mkdir(this.config.artifacts,{recursive:true});await writeFile(join(this.config.artifacts,sha),log);evidence.artifactIds.push(`log:${sha}`);}
     await writeFile(join(dir,'evidence.json'),canonicalJson(evidence));return evidence;
