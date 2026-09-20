@@ -176,20 +176,10 @@ The bounded remediation remains useful and passed 274 tests (5 skipped) at its r
 
 [**Reconciled scopes, counts and priorities →**](docs/reviews/norma-scope-reconciliation-2026-09-20.md) · [Bounded code-review evidence](docs/reviews/norma-zero-findings-2026-09-20.md) · [Integration and limits](docs/integrations/norma.md)
 
-## What comes next
-
-The next milestones turn a concrete integration into a reusable product:
-
-- [ ] **Close the real repair loop.** Complete isolated verification and activate the first repaired Xarts release.
-- [ ] **Extract the project SDK.** Package event capture, feedback, progress and remote connectivity.
-- [ ] **Connect a second project.** Prove the integration works beyond charts.
-- [ ] **Expand discovery.** Add model-backed research and feature assessment.
-- [ ] **Extend delivery.** Connect verified changes to application hosting workflows.
-
-[Implementation evidence](docs/implementation-status.json) · [Acceptance plan](docs/implementation-plan.md) · [Integration progress](docs/integration-progress.md)
-
 <details>
 <summary><strong>Developer map</strong></summary>
+
+[Implementation evidence](docs/implementation-status.json) · [Acceptance plan](docs/implementation-plan.md) · [Integration progress](docs/integration-progress.md)
 
 | Component | Source | Guide |
 | --- | --- | --- |
