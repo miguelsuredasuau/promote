@@ -166,6 +166,8 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 ## Quality review · Norma
 
+[**Defend your code — two-minute explanation and scan/fix/rescan evidence**](defense.md)
+
 **Repository-wide findings remain unresolved.** A user-provided Norma dashboard summary reports **450 issues and a 55/100 score**. A supplied export contains **121 unique findings**: 118 from Prompts Analysis and 3 from Agentic Rules Analyzer. The export and dashboard have different category totals and cannot yet be reconciled to one scan; the export contains no commit SHA or scan ID.
 
 The earlier **zero findings** result applies only to a ten-file code Livecheck with incomplete rule coverage. It does **not** clear the repository scan, prompt analysis, agentic review or production-readiness score. The 121 exported findings concern 15 other paths, none of which was in that ten-file review.
