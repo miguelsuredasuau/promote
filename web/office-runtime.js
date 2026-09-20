@@ -27,13 +27,13 @@ export function applyOfficeRuntime(model, policy, maintenance) {
   if (active) {
     model.engineering = {...model.engineering, status:'engineering',
       task:jobs.find(job=>job.state==='running')?.title??`${model.runtime.engineering} engineering · ${model.runtime.testing} sandbox tests`,
-      lines:[`Live provider sessions · ${active} running`, ...model.runtime.sessions.filter(job=>job.state==='running').map(job=>`${job.remoteId??job.id} · running`), ...model.engineering.lines]};
+      lines:[`Live provider sessions · ${active} running`, ...model.runtime.sessions.filter(job=>job.state==='running').map(job=>`${job.remoteId??job.id} · running`), `Independent QA: ${model.runtime.qaJobs??'unknown'} verifying · ${jobs.filter(job=>job.state==='verified').length} verified candidates`, 'Returned candidates require independent checks before release.']};
   } else {
-    model.engineering = {...model.engineering,status:'idle',task:'No active Devin task',lines:['No active Devin task recorded.',...model.engineering.lines]};
+    model.engineering = {...model.engineering,status:'idle',task:'No active Devin task',lines:['No active Devin task recorded.',`Independent QA: ${model.runtime.qaJobs??'unknown'} verifying · ${jobs.filter(job=>job.state==='verified').length} verified candidates`, 'Returned candidates require independent checks before release.']};
   }
   return model;
 }
 export function officeTickerValues(model) {
-  if (model.runtime) return [['ENGINEERING',model.runtime.engineering],['TESTING',model.runtime.testing],['HELD / RESERVED',model.runtime.held],['QA RUNNING',model.runtime.qaJobs??'—'],['ACU AVAILABLE',model.finance.remaining??'—'],['REVIEW',model.runtime.paused?'PAUSED':model.runtime.heartbeat?.status??'NOT RECORDED']];
-  return [['XARTS / OPS',model.mode==='demo'?'DEMO':'LIVE'],['USAGE',model.usage??'—'],['ERRORS',model.errors??'—'],['BACKLOG',(model.kanban?.columns??[]).reduce((n,c)=>n+c.cards.length,0)],['QA',model.qa?.status??'idle'],['SPEND',model.finance.spent==null?'—':`${model.finance.currency??'?'} ${model.finance.spent}`]];
+  if (model.runtime) return [['ENGINEERING',model.runtime.engineering],['TESTING',model.runtime.testing],['HELD / RESERVED',model.runtime.held],['QA RUNNING',model.runtime.qaJobs??'—'],['ACU AVAILABLE',model.finance?.remaining??'—'],['REVIEW',model.runtime.paused?'PAUSED':model.runtime.heartbeat?.status??'NOT RECORDED']];
+  return [['XARTS / OPS',model.mode==='demo'?'DEMO':'LIVE'],['USAGE',model.usage??'—'],['ERRORS',model.errors??'—'],['BACKLOG',(model.kanban?.columns??[]).reduce((n,c)=>n+c.cards.length,0)],['QA',model.qa?.status??'idle'],['SPEND',model.finance?.spent==null?'—':`${model.finance?.currency??'?'} ${model.finance?.spent}`]];
 }

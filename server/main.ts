@@ -32,6 +32,7 @@ async function pollEngineering() {
   observing = true;
   try {
     const config = loadDevin(root);
+    if (config.adapter) { await observeEngineering(store, config.adapter); await observeExplorations(store,config.adapter); }
     const running=store.engineeringReservations().filter(r=>r.state==='running');
     const candidate=executionBindings(root).some(b=>store.engineeringReservation(b.task.incidentId)?.candidateSha);
     const operating = store.operatingPolicy()?.policy;
@@ -44,12 +45,13 @@ async function pollEngineering() {
         explanation:'Promote reviews scoped maintenance work and sandbox tests within the saved operating limits.'}
       : candidate ? {...config.status,status:'candidate_returned',explanation:'A historical candidate is recorded; no new autonomous session is running.'}
       : config.status;
+    status.connectionVerified=store.engineeringReservations().some(r=>r.usageObservedAt && Date.now()-Date.parse(r.usageObservedAt)<60000);
     store.providerStatus(status);
     if (providerState !== status.status) {
       providerState = status.status;
       store.recordActivity('provider', 'Engineering provider readiness changed', status);
     }
-    if (config.adapter) { await observeEngineering(store, config.adapter); await observeExplorations(store,config.adapter); }
+
     if(executionBindings(root).some(b=>{const r=store.engineeringReservation(b.task.incidentId);return r?.state==='stopped'&&r.candidateSha&&!store.workQueue().some(w=>w.payload?.proposalId===b.proposalId&&w.payload?.deliveryTask?.candidateSha===r.candidateSha&&w.payload?.deliveryTask?.attempt===b.delivery.attempt);}))void orchestrate().catch(()=>console.error('Proposal delivery scheduling failed; evidence retained'));
   } finally { observing = false; }
 }

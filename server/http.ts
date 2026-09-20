@@ -52,7 +52,7 @@ export function createOperatorServer(options: { root: string; store: ControllerS
     return {configured:!!saved, revision:saved?.revision??0, policy:saved?.policy??defaultOperatingPolicy(),
       updatedAt:saved?.updatedAt??null, budget:options.store.operatingBudget(),
       runtime:{heartbeat:options.store.orchestratorHeartbeat(), provider:options.store.serviceSnapshot().provider,
-        engineering:options.store.engineeringReservations().map(r=>({id:r.id,state:r.state,remoteId:r.remoteId??null,reason:r.reason??null})),
+        engineering:options.store.engineeringReservations().map(r=>({id:r.incidentId,state:r.state,remoteId:r.remoteId??null,observedAt:r.usageObservedAt??null,reason:r.reason??null})),
         explorations:options.store.explorations().map(r=>({id:r.spec.id,state:r.state,remoteId:r.remoteId??null,reason:r.reason??null}))}};
   };
   const ownerToken = randomBytes(32).toString('hex');

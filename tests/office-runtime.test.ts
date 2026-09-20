@@ -18,3 +18,13 @@ it('keeps demo fixtures separate from real budgets and work',()=>{
  const model=createOfficeModel(null,'demo',createDemoState());const before=JSON.stringify(model);
  applyOfficeRuntime(model,policy,{jobs:[{state:'verifying'}]});expect(JSON.stringify(model)).toBe(before);
 });
+it('never shows a historical completed release as current engineering work',()=>{
+ const model=createOfficeModel(null,'live');model.engineering.lines=['Verified release is active'];
+ applyOfficeRuntime(model,policy,{jobs:[{state:'running',title:'Current maintenance'}]});
+ expect(model.engineering.task).toBe('Current maintenance');
+ expect(model.engineering.lines.join(' ')).not.toContain('Verified release is active');
+});
+it('renders the empty native scene before the first controller snapshot arrives',()=>{
+ expect(()=>officeTickerValues({})).not.toThrow();
+ expect(officeTickerValues({})).toContainEqual(['SPEND','—']);
+});
