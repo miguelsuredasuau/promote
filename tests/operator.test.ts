@@ -141,6 +141,8 @@ it('serves only an incident-bound verification log and rejects changed bytes',as
  const response=await fetch(url);expect(response.status).toBe(200);expect(await response.text()).toBe(bytes);expect(response.headers.get('content-type')).toContain('text/plain');
  expect((await fetch(`${base}/api/incidents/${incident.id}/gates/unknown/log`)).status).toBe(404);
  writeFileSync(join(directory,hash),'changed');expect((await fetch(url)).status).toBe(409);
+ writeFileSync(join(directory,'..','expunged.json'),JSON.stringify({schemaVersion:1,policy:'immutable-evidence',candidateSha,entries:[{expungedAt:at,reason:'test',files:[{path:`artifacts/${hash}`,sha256:hash,bytes:bytes.length}]}]}));
+ const gone=await fetch(url);expect(gone.status).toBe(410);expect(JSON.parse(await gone.text())).toMatchObject({expunged:true,sha256:hash,bytes:bytes.length});
 });
 
 it('persists exact owner decisions, queues planning only, and refuses stale or conflicting approval',async()=>{
