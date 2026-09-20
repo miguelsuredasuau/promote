@@ -15,6 +15,7 @@ const exec=promisify(execFile);
 /** Versioned local rules. No model inference or paid calls are claimed by classification. */
 export function classifyRecord(record:any):Proposal[] {
  const proposals:Proposal[]=[];
+ if(record.testMode==='ui-fixture'||record.release?.kind==='fixture')return proposals;
  const add=(category:Proposal['category'],key:unknown,title:string,priority:number,nextAction:string)=>{
   const evidenceKey=hashCanonical(key);
   proposals.push({id:`proposal-${evidenceKey.slice(0,24)}`,category,evidenceKey,title:title.slice(0,500),priority,nextAction});
@@ -24,7 +25,9 @@ export function classifyRecord(record:any):Proposal[] {
   for(const finding of record.report?.findings??[])add('feedback',{repository:record.repository,baseSha:record.baseSha,title:finding.title,steps:finding.steps},`Investigate: ${finding.title}`,finding.severity==='high'?85:60,'Independently reproduce this exploratory observation at the recorded commit; preserve evidence and obtain repair scope before implementation.');
  }else if(record.schema==='xarts-chat/run-record@1'){
   for(const signal of record.signals??[]){
-   if(signal.recovered&&signal.kind!=='packaging_workaround')continue;
+   // A recovered library/transport failure is still a defect worth investigating.
+   // Successful recovery only removes ordinary corrected input errors from triage.
+   if(signal.recovered&&signal.kind==='input_error')continue;
    const category=signal.kind==='possible_library_defect'||signal.kind==='packaging_workaround'?'bug':signal.kind==='tool_delivery_error'?'infrastructure':'feedback';
    add(category,{kind:signal.kind,code:signal.code,source:record.release?.sourceSha??null},`${signal.kind}: ${signal.code}`,category==='bug'?85:60,reproduction);
   }

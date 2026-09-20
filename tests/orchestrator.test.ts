@@ -67,3 +67,9 @@ it('turns an owner commission into a durable planning brief without granting eng
  expect(work).toMatchObject({state:'completed',result:{implementationAuthorized:false,planningBrief:{ownerFeedback:'Keep the current palette',evidence:['owner-evidence'],costEstimate:null}}});
  expect(reopened.engineeringReservations()).toHaveLength(0);
 });
+
+it('keeps recovered library defects visible without promoting corrected input mistakes',()=>{
+ const proposals=classifyRecord({schema:'xarts-chat/run-record@1',release:{sourceSha:'a'.repeat(40)},signals:[{kind:'possible_library_defect',code:'RENDER_FAILED',recovered:true},{kind:'input_error',code:'INVALID_BINDING',recovered:true}]});
+ expect(proposals).toHaveLength(1);expect(proposals[0].category).toBe('bug');
+ expect(classifyRecord({schema:'xarts-chat/run-record@1',testMode:'ui-fixture',signals:[{kind:'possible_library_defect',code:'FAKE'}]})).toEqual([]);
+});

@@ -1,4 +1,5 @@
 import { ControllerStore } from './store';
+import {rolePrompt} from './role-prompts';
 import type { HarnessAdapter } from '../contracts/adapters';
 
 /** Reservations and intent commit before a network call. This boundary does not authorize release. */
@@ -6,7 +7,8 @@ export async function dispatchEngineering(store:ControllerStore, adapter:Harness
   const reservation=store.reserveEngineering(mandate,task);
   const claim=store.claimOperation(reservation.operationId,'engineering-dispatch');
   if(!claim)return {status:'already_dispatched_or_held',incidentId:reservation.incidentId};
-  store.recordActivity('provider','Sending Devin session creation',{incidentId:reservation.incidentId,operationId:reservation.operationId});
+  const prompt=rolePrompt('engineer');
+  store.recordActivity('provider','Sending Devin session creation',{incidentId:reservation.incidentId,operationId:reservation.operationId,promptVersion:prompt.version,promptHash:prompt.hash});
   let outcome;
   try{outcome=await adapter.start(reservation.task,reservation.operationId);}
   catch{outcome={kind:'unknown_outcome' as const,reason:'transport_unknown'};}
