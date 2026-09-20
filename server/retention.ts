@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, readlinkSync, statSync, writeFileSync, renameSync, rmSync, lstatSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, readlinkSync, statSync, writeFileSync, renameSync, rmSync, rmdirSync, lstatSync, mkdirSync, openSync, fsyncSync, closeSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { z } from 'zod';
 
@@ -62,10 +62,24 @@ export function planExpunge(workspace: string) {
   return payload.map(path => relative(workspace, path).split(sep).join('/')).sort();
 }
 
+const fsyncPath = (path: string) => { const fd = openSync(path, 'r'); try { fsyncSync(fd); } finally { closeSync(fd); } };
+
+/** Same lock `publishLocalRelease` takes, so the active pointer cannot move while a workspace is judged and expunged. */
+function withReleaseLock<T>(registry: string, work: () => T): T {
+  mkdirSync(registry, { recursive: true });
+  const lock = join(registry, '.release-lock');
+  try { mkdirSync(lock); } catch { throw Error('registry_busy'); }
+  try { return work(); } finally { rmdirSync(lock); }
+}
+
 export function expungeCandidateWorkspace(root: string, candidateSha: string, options: { registry: string; reason: string; now?: () => Date }) {
   if (!/^[a-f0-9]{40}$/.test(candidateSha)) throw Error('invalid_candidate_sha');
   const workspace = join(root, '.local/xarts-validation', candidateSha);
   if (!existsSync(workspace)) throw Error('candidate_workspace_missing');
+  return withReleaseLock(options.registry, () => expungeLocked(workspace, candidateSha, options));
+}
+
+function expungeLocked(workspace: string, candidateSha: string, options: { registry: string; reason: string; now?: () => Date }) {
   if (protectedCandidateShas(options.registry).has(candidateSha)) throw Error('active_release_protected');
   const previous = readExpungeReceipt(workspace) ?? { schemaVersion: 1 as const, policy: RETENTION_POLICY, candidateSha, entries: [] };
   const files = planExpunge(workspace).map(path => {
@@ -75,9 +89,10 @@ export function expungeCandidateWorkspace(root: string, candidateSha: string, op
   });
   if (files.length === 0) return { workspace, receipt: previous, expunged: [] as typeof files };
   const receipt: ExpungeReceipt = { ...previous, entries: [...previous.entries, { expungedAt: (options.now ?? (() => new Date()))().toISOString(), reason: options.reason, files }] };
-  // The receipt lands before any byte disappears: a crash leaves extra files, never unexplained gaps.
+  // The receipt is durable before any byte disappears: a crash leaves extra files, never unexplained gaps.
   const tmp = join(workspace, `expunged.${process.pid}.tmp`);
-  writeFileSync(tmp, JSON.stringify(receipt, null, 2)); renameSync(tmp, join(workspace, 'expunged.json'));
+  writeFileSync(tmp, JSON.stringify(receipt, null, 2)); fsyncPath(tmp);
+  renameSync(tmp, join(workspace, 'expunged.json')); fsyncPath(workspace);
   for (const file of files) rmSync(join(workspace, file.path), { force: true });
   for (const name of PAYLOAD_DIRS) rmSync(join(workspace, name), { recursive: true, force: true });
   return { workspace, receipt, expunged: files };

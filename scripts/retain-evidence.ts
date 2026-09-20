@@ -9,7 +9,11 @@ import { expungeCandidateWorkspace, planExpunge, protectedCandidateShas, readExp
 const args = process.argv.slice(2);
 const option = (name: string) => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
 const registry = resolve(option('--registry') ?? '.local/registry');
-const olderThanDays = Number(option('--older-than-days') ?? 0);
+const olderThanDays = parseDays(option('--older-than-days') ?? '0');
+function parseDays(raw: string): number {
+  if (!/^\d{1,5}$/.test(raw)) { console.error(`--older-than-days must be a non-negative integer, got ${JSON.stringify(raw)}`); process.exit(2); }
+  return Number(raw);
+}
 const apply = args.includes('--apply');
 const reason = option('--reason') ?? `retention sweep (older than ${olderThanDays} days)`;
 const root = process.cwd();

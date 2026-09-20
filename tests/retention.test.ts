@@ -46,6 +46,16 @@ it('never expunges the workspace behind the active release', () => {
   expect(() => expungeCandidateWorkspace(w.root, '../x', { registry: w.registry, reason: 'test' })).toThrow('invalid_candidate_sha');
 });
 
+it('refuses while a release is being published and releases the lock afterwards', () => {
+  const w = workspace();
+  mkdirSync(join(w.registry, '.release-lock'));
+  expect(() => expungeCandidateWorkspace(w.root, w.candidateSha, { registry: w.registry, reason: 'test' })).toThrow('registry_busy');
+  expect(existsSync(join(w.dir, 'source.tar'))).toBe(true);
+  rmSync(join(w.registry, '.release-lock'), { recursive: true });
+  expect(expungeCandidateWorkspace(w.root, w.candidateSha, { registry: w.registry, reason: 'test' }).expunged.length).toBeGreaterThan(0);
+  expect(existsSync(join(w.registry, '.release-lock'))).toBe(false);
+});
+
 it('a second sweep appends to the receipt instead of rewriting history', () => {
   const w = workspace();
   const first = expungeCandidateWorkspace(w.root, w.candidateSha, { registry: w.registry, reason: 'first', now: () => new Date('2026-01-01T00:00:00Z') });
