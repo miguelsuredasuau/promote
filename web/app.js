@@ -1,4 +1,5 @@
 import { createDecisionDesk } from '/decision-desk.js';
+import { createPullRequestDesk } from '/pull-requests.js';
 import { createOfficeScene } from '/office-scene.js';
 import { createDemoState, advanceDemo, moveDemoCard, createOfficeModel, qaStageCopy } from '/office-model.js';
 const $=id=>document.getElementById(id);
@@ -13,7 +14,8 @@ function empty(text){return node('p',text,'empty')}
 function heading(text){return node('h3',text,'mini-heading')}
 const nativeSurfaces={};
 for(const key of ['backlog','engineering','strategy','qa','finance','ticker']){const surface=node('section',undefined,'world-surface native-office-surface');surface.dataset.station=key;surface.setAttribute('aria-label',key+' workspace');surface.innerHTML=$('desk').innerHTML;surface.querySelectorAll('[id]').forEach(n=>{n.dataset.field=n.id;n.removeAttribute('id');});surface.querySelector('[data-field="close-desk"]').onclick=()=>closeOfficeDesk();surface.inert=true;$('scene-stage').append(surface);nativeSurfaces[key]=surface;}
-const decisions=createDecisionDesk({onSaved:async()=>{const r=await fetch('/api/overview');if(r.ok){snapshot=await r.json();update(true);}}});
+const pullRequests=createPullRequestDesk();
+const decisions=createDecisionDesk({pullRequests,onSaved:async()=>{const r=await fetch('/api/overview');if(r.ok){snapshot=await r.json();update(true);}}});
 let scene;
 try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detailElement:$('desk'),nativeSurfaces})}catch(error){ console.error('Office initialization failed',error); $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}

@@ -129,7 +129,7 @@ PROMOTE_CHAT_OUTBOX=/absolute/path/to/xarts-chat/runs/outbox \
 pnpm dev
 ```
 
-Store `DEVIN_API_KEY` and `DEVIN_ORG_ID` in an ignored `.env` file. `FAL_KEY` is used by the optional asset Studio. Follow [Devin configuration and spending](docs/devin-operations.md) to configure the task mandate and budget before dispatch.
+Store `DEVIN_API_KEY` and `DEVIN_ORG_ID` in an ignored `.env` file. `FAL_KEY` is used by the optional asset Studio. To merge pull requests from the owner's desk, add `PROMOTE_GITHUB_TOKEN` (a fine-grained token with *Contents: read/write* and *Pull requests: read/write* on the listed repositories; merges are attributed to it) and `PROMOTE_MERGE_REPOS` (comma-separated `owner/repo` allowlist). The desk merges only at the exact reviewed head, only when every check on it passed (or none is configured); when a branch conflicts with its base it merges the base into the branch in an isolated clone, takes the base's version of clerical files (lockfiles, snapshots, goldens, generated schemas) for the branch's QA to regenerate, pushes, and leaves any overlapping source conflict to you. Follow [Devin configuration and spending](docs/devin-operations.md) to configure the task mandate and budget before dispatch.
 
 The chat and Promote currently exchange files through configured local paths. Remote hosting requires shared storage or an authenticated transport; cloning the repositories does not copy the running system's evidence or credentials. See the chat's [hosting handoff](https://github.com/miguelsuredasuau/xarts-chat/blob/main/docs/HOSTING.md).
 
