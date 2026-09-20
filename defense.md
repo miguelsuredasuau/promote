@@ -1,3 +1,17 @@
+# Defend the code — the short answer
+
+**Fixed:** `js-no-error-handling-async-1.0` in `render-cli/render.ts` — failed server startup now clears the rejected cached promise, allowing a later attempt to recover; failure/retry behavior is tested.
+
+**Left:** `rct-open-redirect-1.0` in `charts/BarChartRace/BarChartRace.data.ts:232` — retained the array `.push()` operation.
+
+**Why:** It appends a diagnostic to an array rather than navigating a browser, so changing it would not fix an open redirect.
+
+Implementation: [Xarts remediation commit ea935d03](https://github.com/miguelsuredasuau/visx-anlak/commit/ea935d03). These are code-review outcomes; Norma confirmation awaits the next scan.
+
+**Interim provider result:** 63/100 · 3,004 issues · Security 6%, scan displayed September 20, 2026, 11:23. **Post-remediation rescan: pending.** When received, we will add its source commit, score, coverage and comparable issue delta here; no result is inferred in advance.
+
+---
+
 # Promote × Norma — quality inside the agent loop
 
 **An audit tells you what needs fixing. Promote puts an engineering team on it.**
@@ -65,9 +79,11 @@ This count includes comments, blank lines and generated source; it excludes JSON
 
 ## The dashboard
 
-![Norma dashboard for visx-anlak: 81/100, partial coverage, 2,324 issues](docs/images/norma-visx-anlak-2026-09-20.png)
+![Interim Norma dashboard for visx-anlak: 63/100, 3,004 issues, Security 6%; scan displayed September 20 at 11:23](docs/images/norma-visx-anlak-interim-2026-09-20.png)
 
-The image above is **historical**: the supplied partial scan displayed **81/100 and 2,324 issues** at September 20, 2026, 10:48. The **newer supplied dashboard** displays **63/100 and 3,004 issues**, with **Security at 6% (241 entries)**, at 11:23. We have not independently retrieved a newer score. The drop is not presented as improvement, and the totals alone do not establish which code changes or scan differences caused it.
+[Earlier partial dashboard: 81/100, 2,324 issues](docs/images/norma-visx-anlak-2026-09-20.png)
+
+The earlier partial scan displayed **81/100 and 2,324 issues** at September 20, 2026, 10:48. The **interim dashboard shown above** displays **63/100 and 3,004 issues**, with **Security at 6% (241 entries)**, at 11:23. We have not independently retrieved a newer score. The drop is not presented as improvement, and the totals alone do not establish which code changes or scan differences caused it.
 
 ### Current investigation: fix the causes, verify the signal
 
