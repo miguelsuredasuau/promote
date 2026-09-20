@@ -117,7 +117,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
    }
   }
  }
- for(const binding of executionBindings(root)){
+ await serialWork(executionBindings(root), async binding => {
   const reservation=store.engineeringReservation(binding.task.incidentId);
   if(reservation?.state==='stopped'&&reservation.candidateSha){
    const deliveryTask=DeliveryTask.parse({...binding.delivery,candidateSha:reservation.candidateSha,sourceBranch:binding.task.providerExtension.branch});
@@ -127,7 +127,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
     if(inspection.result.reason==='independent_runtime_checks_pending')store.enqueueWork({id:workId,kind:'candidate_review',role:'qa',lane:'reliability',priority:100,payload:{deliveryTask,proposalId:binding.proposalId},promptHash:rolePrompt('qa').hash});
    }
   }
- }
+ });
  const feedback=rolePrompt('feedback');let triaged=0;
  for(const source of store.untriagedRecords(100)){
   // One malformed record must not wedge the scheduler: quarantine it and keep triaging the rest.

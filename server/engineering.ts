@@ -1,4 +1,4 @@
-import { serialWork } from './serial-work';
+import { serialWork, markFailure } from './serial-work';
 import { ControllerStore } from './store';
 import {rolePrompt} from './role-prompts';
 import type { HarnessAdapter } from '../contracts/adapters';
@@ -20,6 +20,7 @@ export async function dispatchEngineering(store:ControllerStore, adapter:Harness
 }
 
 export async function observeEngineering(store:ControllerStore, adapter:HarnessAdapter) {
+  try {
   await serialWork(store.engineeringReservations(), async reservation => {
     if(!reservation.remoteId){
       const operation=store.getOperation(reservation.operationId);
@@ -54,4 +55,5 @@ export async function observeEngineering(store:ControllerStore, adapter:HarnessA
       if(reservation.state!=='stopped')store.updateEngineering(reservation.incidentId,{state:'held',reason:'provider_observation_unavailable'});
     }
   });
+  } catch(error) { throw markFailure(error, 'observeEngineering'); }
 }
