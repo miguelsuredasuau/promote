@@ -1,0 +1,305 @@
+{
+  "commit": "c2c8af617fa2addab31511e9bbcf0b44390d6c2f",
+  "startedAt": "2026-09-20T07:34:58.083Z",
+  "finishedAt": "2026-09-20T07:36:02.974Z",
+  "costUsd": null,
+  "status": "pending",
+  "mode": "advisory",
+  "sourceReportSha256": "dc8bd83594748763ebcdb70ad64ebaeb638de0d0f6647e7b4b58c1fb6cb560c4",
+  "files": [
+    {
+      "path": "server/chat-intake.ts",
+      "sha256": "78db7d895b82a1e62bcafe58d0a803802bcfe2001d107422c19297e7fe3fa2d4",
+      "outcome": "issues",
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "totalIssues": 14,
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "findings": [
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 29,
+          "column": 19
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 30,
+          "column": 23
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 31,
+          "column": 20
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 41,
+          "column": 3
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 43,
+          "column": 17
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 69,
+          "column": 5
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 70,
+          "column": 5
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 83,
+          "column": 57
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 97,
+          "column": 16
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 102,
+          "column": 19
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 48,
+          "column": 20
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 50,
+          "column": 30
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 81,
+          "column": 18
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 100,
+          "column": 18
+        }
+      ]
+    },
+    {
+      "path": "adapters/devin/client.ts",
+      "sha256": "593e6d55d4ae3ae7d1d703048816f39123345ccc08be6c4f5904e3868b2478b2",
+      "outcome": "issues",
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "totalIssues": 4,
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "findings": [
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 84,
+          "column": 19
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 90,
+          "column": 20
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 92,
+          "column": 33
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 97,
+          "column": 13
+        }
+      ]
+    },
+    {
+      "path": "server/registry.ts",
+      "sha256": "ad813efb35ec41a087bd17e4099daaf1cacb8909c36d6851089d1ce756f12c34",
+      "outcome": "clean",
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "totalIssues": 0,
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "findings": []
+    },
+    {
+      "path": "server/engineering.ts",
+      "sha256": "8a5442d8641a84e12a92643ab11d75b670a383f6aa16b632ba049a1f5d07ebce",
+      "outcome": "issues",
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "totalIssues": 4,
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "findings": [
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 33,
+          "column": 27
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 39,
+          "column": 22
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 43,
+          "column": 25
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 48,
+          "column": 27
+        }
+      ]
+    },
+    {
+      "path": "server/orchestrator.ts",
+      "sha256": "8cc8e164436b5afdd8a87eb12e12b694be813cabe3df03d09209223a8f709895",
+      "outcome": "issues",
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "totalIssues": 13,
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "findings": [
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 58,
+          "column": 36
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 59,
+          "column": 6
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 61,
+          "column": 2
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 62,
+          "column": 5
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 64,
+          "column": 14
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 75,
+          "column": 36
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 76,
+          "column": 8
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 77,
+          "column": 4
+        },
+        {
+          "rule_id": "js-no-error-handling-async",
+          "line": 78,
+          "column": 66
+        },
+        {
+          "rule_id": "ts-any-type-usage",
+          "line": 17,
+          "column": 38
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 117,
+          "column": 44
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 117,
+          "column": 105
+        },
+        {
+          "rule_id": "js-scl-await-in-loop",
+          "line": 123,
+          "column": 23
+        }
+      ]
+    },
+    {
+      "path": "tests/orchestrator.test.ts",
+      "sha256": "9cd59bd99dc330d608423754b9410713a2b07e85f464c2a0de1d87073c9f50ec",
+      "outcome": "clean",
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "totalIssues": 0,
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "findings": []
+    }
+  ],
+  "totalIssues": 35
+}
