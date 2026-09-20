@@ -1,4 +1,86 @@
-# Defend your code — Promote × Norma
+# Defend your code — Promote improving Xarts
+
+**Submission: Promote. Maintained project: Xarts (`visx-anlak`).** Hackbarna 2026, September 19–20.
+
+Promote turns user feedback and errors into scoped engineering work, dispatches Devin, independently checks candidates, and delivers accepted packages. This defense shows both the real Xarts repair loop and how Norma findings guide improvements to the maintained repository.
+
+## Norma dashboard evidence
+
+![User-supplied Norma dashboard for visx-anlak: 81/100, partial scan, 2,324 issues, and a failing security area](docs/images/norma-visx-anlak-2026-09-20.png)
+
+**Latest supplied dashboard snapshot: 81/100, 2,324 issues, 9 rulesets and 192 rules.** The screenshot displays a scan time of **September 20, 2026, 10:48**, with **PARTIAL** coverage. Its timezone, scan ID and source SHA are not visible. This is user-supplied evidence, not a fresh API retrieval.
+
+| Area | Score | Issues |
+| --- | ---: | ---: |
+| Architecture | 100% | 0 |
+| Maintainability | 89% | 450 |
+| Manageability | 83% | 559 |
+| Performance | 99% | 44 |
+| Scalability | 86% | 1,267 |
+| Security | 59% · FAIL | 4 high |
+
+The provider displays a “CERTIFIED” badge, but also partial coverage and a security failure. We reproduce the screenshot faithfully; we do not interpret the badge as zero risk or complete acceptance. **This snapshot predates the remediation below; the post-remediation score is pending.**
+
+## What was already delivered
+
+| Work | Evidence | Attribution and limits |
+| --- | --- | --- |
+| Waterfall currency signs: `€-110.3k` → `-€110.3k` | Candidate `cde20023`; merged as `c95e48bd`. [Recorded delivery and replay](docs/xarts-video-loop.md) | Real Promote → Devin → independent verification → local package registry → Xarts Chat replay. Same data; corrected labels. Norma was unavailable in that Devin session. |
+| Restrict renderer output directories to the permitted root | [Commit 9ec151f4](https://github.com/miguelsuredasuau/visx-anlak/commit/9ec151f4), merged through PR #45 | Existing repository hardening, with containment tests; not newly fixed by this batch or proven to close one of the four dashboard security findings. |
+| Host/origin checks on render requests | [Commit 97d714d1](https://github.com/miguelsuredasuau/visx-anlak/commit/97d714d1) | Existing repository hardening. No same-scan Norma closure claimed. |
+| Restrict card illustrations to allowed assets/data URIs | [Commit 5fd4a5a7](https://github.com/miguelsuredasuau/visx-anlak/commit/5fd4a5a7) | Existing repository hardening; distinct from the new PDF error-context change. |
+| Bound editorial input and improve line-wrapping complexity | [Commit 428ece5d](https://github.com/miguelsuredasuau/visx-anlak/commit/428ece5d) | Existing bounded-input/performance work. Do not attribute the screenshot's score to this change without comparable scans. |
+
+Xarts is a separate private repository; its commit links require access. This public defense contains summaries and the supplied dashboard, not the private source.
+
+## Latest remediation: the supplied 20-finding batch
+
+**Implemented in Xarts commit [4de83485](https://github.com/miguelsuredasuau/visx-anlak/commit/4de83485)** by GPT-6 via Codex, following the user-supplied Norma recommendations. This batch was handled directly in the coding assistant, not dispatched through a new Promote/Devin session. Each implementation change includes the requested `Recommended by Norma — fixed with GPT-6 via Codex` comment.
+
+The 20 entries cover 13 files. **17 entries received contextual fixes; three were reviewed and consciously retained because their errors already reach an owning failure boundary.** This is implementation triage, not 17 provider-confirmed issue closures.
+
+| File | Entries | Disposition |
+| --- | ---: | --- |
+| `docs/analysis/evidence/2026-09-09-contract-coverage/check-report.mjs` | 2 | Added a CLI failure boundary and guaranteed browser cleanup after browser creation. |
+| `cards/export/pdf.ts` | 2 | Page/navigation/font-readiness failures reject with a useful operation message and the original cause. No incomplete output is returned. |
+| `core/layout/medirTexto.ts` | 1 | Failed CSS lookup emits a bounded, once-per-module warning while preserving the fallback measurement path. |
+| `docs/analysis/evidence/2026-09-09-contract-coverage/inspection.mjs` | 2 | Added contextual CLI reporting and a nonzero failure exit. |
+| `docs/analysis/evidence/tooltip-installed-negative.mjs` | 4 | Added a CLI failure boundary; initialization is inside cleanup protection; nested cleanup restores globals even if unmount/close fails. |
+| `docs/analysis/evidence/2026-09-09-contract-coverage/roundtrip.mjs` | 1 | Added an outer failure boundary for setup and persistence; expected per-fixture rejections remain recorded as diagnostic outcomes. |
+| `playground/PlaygroundPage.tsx` | 2 | Export/capture errors reach the existing visible alert; failed capture does not navigate. |
+| `core/runtime/cli.ts` | 1 | Accepted: existing `main().catch(...)` reports failure and sets exit code 1. A regression check confirms missing input fails. |
+| `render-cli/qa-html.ts` | 1 | Accepted: existing top-level catch reports failure; `finally` closes the Vite server. Missing-input failure is regression-tested. |
+| `docs/analysis/probes/react-interaction-preparation.mjs` | 1 | Added an outer CLI failure boundary; expected preparation/render rejections remain in the diagnostic report. |
+| `docs/analysis/probes/symbolmap-external.mjs` | 1 | Added a CLI failure boundary; missing-package failure is regression-tested. |
+| `docs/analysis/probes/icicle-presentation-golden.ts` | 1 | Added a CLI failure boundary and guaranteed Happy DOM cleanup after creation. |
+| `cards/__tests__/pdf.test.ts` | 1 | Accepted: Vitest owns rejected async test promises and fails the test. Catching and continuing would weaken the gate. |
+
+**Validation:** 58 passing tests across `normaErrorBoundaries`, `medirTexto`, and the existing card PDF suite. Checks exercise rejected and synchronously thrown UI actions, success continuation, page/font failure causes, fallback diagnostics, CLI failure exits, and physical PDF behavior. Modified `.mjs` files pass syntax checks. Historical evidence scripts depending on an external installed consumer/catalog were not rerun against their full datasets; their archived result files were not rewritten.
+
+## Two-minute defense
+
+> Promote is the project we are submitting. Xarts is the charting library it maintains. The useful outcome is working software: Promote dispatched a real chart-label repair to Devin, independently verified the returned package, delivered it to a local registry and replayed the original chart with identical data and corrected signs.
+>
+> We also use Norma to guide code review. The supplied Xarts scan shows 81 out of 100, but it is partial and still reports security findings. We do not call that a clean bill of health.
+>
+> In the latest 20-finding batch, one issue we fixed was missing error feedback in the Playground. Export or annotation capture could reject without a useful message. We added a shared UI error boundary, retained diagnostic logging, and only perform success actions after the operation completes. Failed capture no longer navigates away. Tests verify both rejected promises and synchronous throws, and that a successful action can still proceed.
+>
+> One finding we consciously accepted was an await inside a PDF test. Vitest already catches rejected test promises and marks the test as failed. Adding a catch that logs and continues could turn a real failure into a passing test. Similarly, two CLI findings already have a top-level handler and nonzero exit; we verified their failure behavior instead of adding redundant catches around every await.
+>
+> The batch has 17 entries with contextual changes and three documented exceptions. Fifty-eight targeted tests pass. These are implemented improvements, not a claimed reduction of 17 in Norma's dashboard. A fresh comparable scan must establish the new score and issue delta.
+
+## Remaining challenge evidence
+
+- **Final post-fix Xarts score:** pending. The saved Norma OAuth access token was expired when inspected; no new Xarts scan is claimed here.
+- **Issue delta for this Xarts batch:** pending a rescan tied to the candidate SHA and the same rule/scope configuration. Preserve issue IDs and disposition; do not subtract local triage from the dashboard count.
+- **Four high security findings:** still require their actual finding details and contextual review. This supplied batch does not identify them.
+- **Full historical probes:** require their installed SDK/catalog/browser fixtures; syntax and failure-path tests do not substitute for those runs.
+- **Existing scan/fix/rescan evidence on Promote itself:** retained below, separately scoped. It demonstrates use of Norma during the event, but does not establish a Xarts rescan or combine the two projects' scores.
+
+<details>
+<summary>Earlier scan → fix → rescan evidence: Promote's own controller</summary>
+
+# Earlier evidence: Norma reviewing Promote itself
 
 Hackbarna 2026 · September 19–20 · Prepared from retained evidence on September 20, 2026.
 
@@ -83,3 +165,5 @@ The Xarts currency-sign repair is separate product evidence. It completed verifi
 4. Show the coverage warning and the outstanding full-scan score honestly.
 
 Prepared by the project from retained Norma evidence. This is not a Quality Clouds-issued verdict, a security certification or a fresh scan. No secrets, raw private prompts or local database contents are included.
+
+</details>
