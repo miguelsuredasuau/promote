@@ -25,7 +25,7 @@ function setup(){
  const sha=git(['rev-parse','HEAD']);const store=new ControllerStore(join(root,'controller.sqlite'));stores.push(store);
  const task={schemaVersion:1,checkout:root,repo:'fixture/library',candidateSha:sha,baseSha:sha,chatRoot:root,runId:'run-1',chartId:'chart-1',registry:join(root,'registry'),allowedPaths:['core'],protectedPaths:['docs']};
  const evidence=(outputs:Record<string,string>)=>{
-  const dir=join(root,'.local/xarts-validation',sha,'artifacts');mkdirSync(dir,{recursive:true});
+  const dir=join(root,'.local/xarts-validation',task.candidateSha,'artifacts');mkdirSync(dir,{recursive:true});
   const artifactIds=Object.entries({log:'test log',...outputs}).map(([key,bytes])=>{const digest=hash(bytes);writeFileSync(join(dir,digest),bytes);return key==='log'?`log:${digest}`:`output:${key}:${digest}`;});
   return{runId:'fixture-run',planId:'fixture-plan',runnerIdentity:'fixture-isolation-port',isolation:'container' as const,exitCode:0,outcome:'completed' as const,durationMs:1,artifactIds,startedAt:new Date().toISOString(),finishedAt:new Date().toISOString()};
  };
@@ -68,4 +68,32 @@ it('an unavailable advisory review is recorded without replacing required delive
  const result=await runXartsDelivery(s.store,s.root,s.task);expect(result.state).toBe('completed');
  const reports=readdirSync(join(s.root,'.local/norma-reviews'));const report=JSON.parse(readFileSync(join(s.root,'.local/norma-reviews',reports[0]),'utf8'));
  expect(report.status).toBe('pending');expect(report.mode).toBe('advisory');expect(validateXartsBuild).toHaveBeenCalledTimes(1);expect(validateXartsConsumer).toHaveBeenCalledTimes(1);
+});
+
+/** A local bare "GitHub" behind the configured origin URL, reached through the same
+ * `url.<base>.insteadOf` rewrite a credential proxy would use. */
+function trunkFixture(){
+ const s=setup();
+ const git=(args:string[],cwd=s.root)=>execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
+ const bare=mkdtempSync(join(tmpdir(),'delivery-bare-'));roots.push(bare);git(['init','--bare','-b','main'],bare);
+ git(['config',`url.${bare}.insteadOf`,'https://github.com/fixture/library']);
+ git(['branch','-M','main']);
+ mkdirSync(join(s.root,'docs'),{recursive:true});writeFileSync(join(s.root,'docs/guide.md'),'owner-merged doc');mkdirSync(join(s.root,'core'),{recursive:true});writeFileSync(join(s.root,'core/index.ts'),'export {}');
+ git(['add','docs','core']);git(['commit','-m','merged by owner']);git(['push','origin','main']);
+ s.task.candidateSha=git(['rev-parse','HEAD']);
+ return{...s,git,bare};
+}
+it('releasing the trunk records owner-merged protected paths as evidence instead of refusing them',async()=>{
+ const f=trunkFixture();
+ await expect(runXartsDelivery(f.store,f.root,f.task)).rejects.toThrow('candidate_scope_violation');
+ const result=await runXartsDelivery(f.store,f.root,{...f.task,trunk:'main'});
+ expect(result).toMatchObject({state:'completed'});
+ const gates=f.store.incidentEvents(result.result.incidentId).filter(e=>e.type==='gate.finished');
+ expect(gates[0].payload).toMatchObject({result:{gateId:'protected.sourceAndSql',reason:'trunk_head_and_original_sql_verified'}});
+});
+it('a trunk release is refused when the remote already serves a different head',async()=>{
+ const f=trunkFixture();
+ writeFileSync(join(f.root,'core/later.ts'),'export {}');f.git(['add','core']);f.git(['commit','-m','later']);f.git(['push','origin','main']);
+ await expect(runXartsDelivery(f.store,f.root,{...f.task,trunk:'main'})).rejects.toThrow('trunk_head_mismatch');
+ expect(validateXartsBuild).not.toHaveBeenCalled();
 });
