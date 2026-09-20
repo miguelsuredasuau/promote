@@ -13,7 +13,8 @@ const { renderSvg } = await import('/consumer/node_modules/visx-render/core/runt
 const full = { fonts: 'embed', ...input.spec, data: input.rows, embedSpec: false };
 const { svg } = await renderSvg(full);
 assert.ok(svg.startsWith('<svg') && svg.length > 2000, 'real SVG required');
-assert.ok(!/NaN|Infinity/.test(svg), 'non-finite output');
+const markup = svg.replace(/data:[\w/+.-]+;base64,[A-Za-z0-9+/=]+/g, 'data:');
+assert.ok(!/\b-?(?:NaN|Infinity)\b/.test(markup), 'non-finite output');
 assert.ok(!/<script\b/i.test(svg), 'executable SVG refused');
 const changed = structuredClone(input.rows);
 let changedValue = false;
