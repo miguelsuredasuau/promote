@@ -41,3 +41,18 @@ it('serves reports without allowing an unauthenticated paid launch',async()=>{
  expect(await fetch(base+'/api/explorations').then(r=>r.json())).toEqual({target:null,runs:[]});
  }finally{server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));}
 });
+it('counts exploratory ceilings and reported usage in the office finances',()=>{
+ const {store}=setup(),s=spec();store.reserveExploration(s);expect(store.engineeringSpend().committedCeilings).toBe(2);expect(store.engineeringSpend().reportedUsage).toBeNull();
+ store.updateExploration(s.id,{usageAcu:1.2});store.updateExploration(s.id,{usageAcu:0.8});expect(store.engineeringSpend().reportedUsage).toBe(1.2);
+});
+
+it('test findings enter discovery as unverified observations, never candidate acceptance',async()=>{
+ const {classifyRecord}=await import('../server/orchestrator');
+ const proposals=classifyRecord({schema:'promote/exploration@1',repository:'example/app',baseSha:'a'.repeat(40),report:{findings:[{title:'History loses selection',severity:'high',steps:['Open','Reload']}]}});
+ expect(proposals[0].category).toBe('feedback');expect(proposals[0].nextAction).toContain('Independently reproduce');
+});
+it('deadline termination proceeds even when report retrieval fails',async()=>{
+ const {store}=setup(),s={...spec(),deadline:new Date(Date.now()-1000).toISOString()};store.reserveExploration(s);store.updateExploration(s.id,{state:'running',remoteId:'devin-abc'});
+ const fetcher=vi.fn().mockResolvedValueOnce(response({session_id:'abc',status:'running'})).mockRejectedValueOnce(Error('report unavailable')).mockResolvedValueOnce(response({})).mockResolvedValueOnce(response({session_id:'abc',status:'exit'}));
+ await observeExplorations(store,adapter(fetcher));expect(store.explorations()[0].state).toBe('stopped');
+});

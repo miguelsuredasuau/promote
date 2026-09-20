@@ -4,6 +4,9 @@ let target=null,requestId=crypto.randomUUID(),pending=false;
 function renderRun(run){
  const box=node('article',null,'report');box.append(node('span',run.state==='stopped'?'Test ended · report unverified':run.state,'badge'),node('h3',run.report?.summary || run.spec.focus),node('p',`${run.spec.repository} · ${run.spec.baseSha.slice(0,12)} · ceiling ${run.spec.maxAcu} ACU · reported ${run.usageAcu??'unknown'} ACU`,'meta'));
  if(run.remoteId){const a=node('a','Open Devin session ↗');a.href='https://app.devin.ai/sessions/'+encodeURIComponent(run.remoteId.replace(/^devin-/,''));a.target='_blank';a.rel='noopener noreferrer';box.append(a);}
+ if(!['stopped','rejected'].includes(run.state)){
+  const stop=node('button','Stop test');stop.type='button';stop.addEventListener('click',async()=>{stop.disabled=true;try{const session=await fetch('/api/owner-session').then(r=>r.json());const response=await fetch('/api/explorations/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Owner-Token':session.token},body:JSON.stringify({id:run.spec.id})});if(!response.ok)throw Error('Stop request failed');await refresh();}catch(e){$('#message').textContent=e.message;stop.disabled=false;}});box.append(stop);
+ }
  if(run.reason)box.append(node('p',run.reason.replaceAll('_',' '),'meta'));
  if(run.report){
   box.append(node('p',`${run.report.findings.length} findings · ${run.report.coverage.length} scenarios reported. Independent reproduction required.`));

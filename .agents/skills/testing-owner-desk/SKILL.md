@@ -7,8 +7,8 @@ description: Browser and local API smoke testing of Promote's owner merge desk w
 
 ## Setup and safety
 - Use Node 22 and the repo's existing pnpm dependencies.
-- Before owner decisions, use SQLite's backup API to copy the controller database into a temporary file. Run `PORT=4310 PROMOTE_DATABASE=<temporary database> PROMOTE_CHAT_OUTBOX='' pnpm dev` to avoid changing the normal database or ingesting additional consumer records.
-- Record whether `.env` exists before changing it. Preserve existing content; remove only test-created configuration afterward.
+- Create an empty temporary SQLite database and start `createOperatorServer` directly, as tests/operator.test.ts does. Do not run server/main.ts against a copied live database: it can observe or cancel real sessions and dispatch configured work.
+- Use an isolated temporary root with synthetic `.env` and records. Never edit the operator's real `.env`, copy real credentials, or reuse its port. Listen on port 0 and read the allocated address.
 - No real GitHub token is required for the unconfigured and fake-token rejection checks. Never substitute a real credential or perform a real merge as part of these negative checks.
 
 ## Devin Secrets Needed
@@ -18,7 +18,7 @@ description: Browser and local API smoke testing of Promote's owner merge desk w
 ## UI path and lifecycle checks
 - Open **Your CEO's briefing**, then **Pull requests** in the decision rail.
 - Check actual screenshot visibility, not only DOM presence: this is a Three.js/CSS surface.
-- Verify the configuration hint, then configure `PROMOTE_GITHUB_TOKEN=fake` and a valid `PROMOTE_MERGE_REPOS=owner/repo` in `.env`. These values are read per request; no backend restart is normally required.
+- Verify the configuration hint, then in the isolated root configure `PROMOTE_GITHUB_TOKEN=fake` and a valid `PROMOTE_MERGE_REPOS=owner/repo` in `.env`. These values are read per request; no backend restart is normally required.
 - Switch For you → Pull requests without reloading to check that a failed fetch replaces any cached configuration hint. Verify Refresh, close/reopen, and five-second overview polling.
 - Test Demo exclusion and return to Live mode.
 - Software WebGL can make transitions slow and trigger temporary snapshot timeout indicators. Wait for the visible surface to settle; Escape can return from a workstation. Do not mistake semantic offscreen workspace text for visible UI.

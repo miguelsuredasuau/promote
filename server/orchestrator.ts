@@ -20,7 +20,9 @@ export function classifyRecord(record:any):Proposal[] {
   proposals.push({id:`proposal-${evidenceKey.slice(0,24)}`,category,evidenceKey,title:title.slice(0,500),priority,nextAction});
  };
  const reproduction='Reproduce against the recorded release and original inputs; define independent acceptance checks before authorizing implementation.';
- if(record.schema==='xarts-chat/run-record@1'){
+ if(record.schema==='promote/exploration@1'){
+  for(const finding of record.report?.findings??[])add('feedback',{repository:record.repository,baseSha:record.baseSha,title:finding.title,steps:finding.steps},`Investigate: ${finding.title}`,finding.severity==='high'?85:60,'Independently reproduce this exploratory observation at the recorded commit; preserve evidence and obtain repair scope before implementation.');
+ }else if(record.schema==='xarts-chat/run-record@1'){
   for(const signal of record.signals??[]){
    if(signal.recovered&&signal.kind!=='packaging_workaround')continue;
    const category=signal.kind==='possible_library_defect'||signal.kind==='packaging_workaround'?'bug':signal.kind==='tool_delivery_error'?'infrastructure':'feedback';

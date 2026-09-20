@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { projectEnvironment } from './environment.mjs';
 import type { ControllerStore } from './store';
@@ -54,17 +54,12 @@ interface GitHubPull {
 
 /** Files whose merge conflicts are clerical: the base's version wins and the
  * branch's QA regenerates them. Anything else is a decision for the owner. */
-const CLERICAL = [
-  /(^|\/)(pnpm-lock\.yaml|package-lock\.json|yarn\.lock)$/,
-  /(^|\/)__snapshots__\/.+\.snap$/,
-  /(^|\/)__golden__\//,
-  /\.schema\.json$/,
-];
-export const isClerical = (path: string) => CLERICAL.some(rx => rx.test(path));
+// Lockfiles, schemas and golden images are acceptance inputs, not clerical files.
+export const isClerical = (_path: string) => false;
 
 const api = (config: PullRequestConfig, fetchImpl: Fetch) => async <T>(path: string, init: RequestInit = {}): Promise<T> => {
   const response = await fetchImpl(`https://api.github.com${path}`, {
-    ...init,
+    ...init, redirect:'error', signal:AbortSignal.timeout(15000),
     headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${config.token}`, 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'promote', ...(init.headers ?? {}) },
   });
   if (!response.ok) throw new Error(`github_${response.status}:${path}`);
@@ -82,7 +77,7 @@ async function checksFor(call: ReturnType<typeof api>, repo: string, sha: string
   const runs = await call<{ check_runs: { name: string; status: string; conclusion: string | null; html_url: string | null }[] }>(`/repos/${repo}/commits/${sha}/check-runs?per_page=100`);
   const status = await call<{ statuses: { context: string; state: string; target_url: string | null }[] }>(`/repos/${repo}/commits/${sha}/status`);
   const fromRun = (r: { status: string; conclusion: string | null }): QaState =>
-    r.status !== 'completed' ? 'pending' : ['success', 'neutral', 'skipped'].includes(r.conclusion ?? '') ? 'passed' : 'failed';
+    r.status !== 'completed' ? 'pending' : r.conclusion === 'success' ? 'passed' : 'failed';
   const fromStatus = (s: string): QaState => s === 'success' ? 'passed' : s === 'pending' ? 'pending' : 'failed';
   return [
     ...runs.check_runs.map(r => ({ name: r.name, state: fromRun(r), url: r.html_url })),
@@ -94,20 +89,20 @@ function view(repo: string, pull: GitHubPull, checks: PullRequestView['checks'])
   const qa = qaOf(checks);
   const mergeable: PullRequestView['mergeable'] = pull.mergeable === false || pull.mergeable_state === 'dirty' ? 'conflicts'
     : pull.mergeable === null || pull.mergeable_state === 'unknown' ? 'unknown'
-    : pull.mergeable_state === 'blocked' ? 'blocked' : 'clean';
+    : pull.mergeable_state !== 'clean' ? 'blocked' : 'clean';
   const fork = pull.head.repo?.full_name !== repo;
-  const reason = pull.draft ? 'Draft pull request.'
+  const reason = pull.base.ref !== 'main' ? 'Only the main branch is an authorized merge destination.' : pull.draft ? 'Draft pull request.'
     : fork ? 'Branch lives in a fork; Promote only resolves conflicts on branches of this repository.'
     : qa === 'failed' ? 'QA failed on the head commit.'
     : qa === 'pending' ? 'QA is still running.'
-    : mergeable === 'conflicts' ? 'Conflicts with the base branch; Promote will rebase and resolve clerical ones.'
+    : mergeable === 'conflicts' ? 'Conflicts need reviewed resolution and a fresh CI run.'
     : mergeable === 'unknown' ? 'GitHub has not computed mergeability yet.'
     : mergeable === 'blocked' ? 'Branch protection blocks this merge.'
-    : qa === 'none' ? 'No checks configured; merges on your authority.' : 'QA passed.';
+    : qa === 'none' ? 'No executed checks. Add validation before merging.' : 'QA passed.';
   return {
     repo, number: pull.number, title: pull.title, url: pull.html_url, author: pull.user?.login ?? 'unknown',
     base: pull.base.ref, head: pull.head.ref, headSha: pull.head.sha, draft: pull.draft, mergeable, qa, checks,
-    canMerge: !pull.draft && !fork && (qa === 'passed' || qa === 'none') && (mergeable === 'clean' || mergeable === 'conflicts'), reason,
+    canMerge: pull.base.ref === 'main' && !pull.draft && !fork && qa === 'passed' && (mergeable === 'clean' || mergeable === 'conflicts'), reason,
   };
 }
 
@@ -131,13 +126,14 @@ const defaultRun: Run = async (file, args, options) =>
  * conflicts take the base's version (the PR's QA regenerates them); any other
  * conflict aborts and is reported for the owner. Nothing is force-pushed. */
 export async function resolveConflicts(config: PullRequestConfig, pull: PullRequestView, run: Run = defaultRun): Promise<MergeOutcome> {
-  const dir = join(config.workRoot, createHash('sha256').update(`${pull.repo}#${pull.number}`).digest('hex').slice(0, 16));
+  const dir = join(config.workRoot, createHash('sha256').update(`${pull.repo}#${pull.number}`).digest('hex').slice(0, 16)+'-'+randomUUID());
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
   const auth = Buffer.from(`x-access-token:${config.token}`).toString('base64');
   const env = {
     GIT_TERMINAL_PROMPT: '0',
-    GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'http.extraHeader', GIT_CONFIG_VALUE_0: `Authorization: Basic ${auth}`,
+    GIT_CONFIG_COUNT: '3', GIT_CONFIG_KEY_0: 'http.https://github.com/.extraHeader', GIT_CONFIG_VALUE_0: `Authorization: Basic ${auth}`,
+    GIT_CONFIG_KEY_1:'core.hooksPath', GIT_CONFIG_VALUE_1:'/dev/null', GIT_CONFIG_KEY_2:'http.followRedirects', GIT_CONFIG_VALUE_2:'false',
     GIT_AUTHOR_NAME: 'Promote', GIT_AUTHOR_EMAIL: 'promote@localhost', GIT_COMMITTER_NAME: 'Promote', GIT_COMMITTER_EMAIL: 'promote@localhost',
   };
   const git = async (args: string[], cwd = dir) => (await run('git', args, { cwd, env })).stdout.trim();
@@ -147,20 +143,15 @@ export async function resolveConflicts(config: PullRequestConfig, pull: PullRequ
     await git(['fetch', '--quiet', 'origin', pull.base]);
     let conflicted: string[] = [];
     try {
-      await git(['merge', '--no-edit', '-Xignore-space-change', '-m', `Merge ${pull.base} into ${pull.head}`, `origin/${pull.base}`]);
+      await git(['merge', '--no-edit', '-m', `Merge ${pull.base} into ${pull.head}`, `origin/${pull.base}`]);
     } catch {
       conflicted = (await git(['diff', '--name-only', '--diff-filter=U', '-z'])).split('\0').filter(Boolean);
       if (!conflicted.length) { await git(['merge', '--abort']).catch(() => {}); throw new Error('merge_failed'); }
     }
-    const substantive = conflicted.filter(f => !isClerical(f));
+    const substantive = conflicted;
     if (substantive.length) {
       await git(['merge', '--abort']);
       return { state: 'conflicts_need_owner', files: substantive, detail: `${substantive.length} file(s) changed on both sides in overlapping places.` };
-    }
-    if (conflicted.length) {
-      await git(['checkout', '--theirs', '--', ...conflicted]);
-      await git(['add', '--', ...conflicted]);
-      await git(['commit', '--no-edit', '-m', `Merge ${pull.base} into ${pull.head}\n\nClerical conflicts took ${pull.base}'s version; QA regenerates:\n${conflicted.map(f => `- ${f}`).join('\n')}`]);
     }
     const head = await git(['rev-parse', 'HEAD']);
     if (head === pull.headSha) return { state: 'refused', reason: 'nothing_to_merge', detail: 'The branch was already up to date.' };

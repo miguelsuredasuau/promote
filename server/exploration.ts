@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {ExplorationSpec} from '../contracts/exploration';
 import {ControllerStore} from './store';
+import {hashCanonical} from '../contracts/hash';
 import {loadDevin} from './devin-config';
 import type {DevinAdapter} from '../adapters/devin/client';
 const exec=promisify(execFile);
@@ -48,10 +49,12 @@ export async function observeExplorations(store:ControllerStore,adapter:DevinAda
    const finished=['finished','failed','cancelled'].includes(observation.state);
    const expired=Date.parse(row.spec.deadline)<=Date.now();
    if(finished||expired||row.state==='stopping'){
-    const report=await adapter.explorationReport(row.remoteId);
+    let report=row.report;
+    if(!report)try{report=await adapter.explorationReport(row.remoteId);}catch{/* Report transport cannot prevent termination. */}
     const bound=report?.baseSha===row.spec.baseSha&&report?.mode===row.spec.mode;
     const stop=await adapter.cancel(row.remoteId,`stop:test:${row.spec.id}`);
     store.updateExploration(row.spec.id,{state:stop.kind==='confirmed'?'stopped':'stopping',report:bound?report:null,reason:bound?'report_received_unverified':expired?'deadline_reached':'report_missing_or_wrong_commit'});
+    if(bound){const record={schema:'promote/exploration@1',runId:row.spec.id,repository:row.spec.repository,baseSha:row.spec.baseSha,summary:report!.summary,report,verification:'unverified'};store.ingest('exploration:'+row.spec.id,hashCanonical(record),record,null);}
    }
   }catch{store.updateExploration(row.spec.id,{reason:'provider_observation_unavailable'});}
  }

@@ -41,8 +41,8 @@ describe('configuration', () => {
     expect(loadPullRequestConfig('/x', { PROMOTE_GITHUB_TOKEN: 't', PROMOTE_MERGE_REPOS: 'bad repo' })).toBeNull();
     expect(loadPullRequestConfig('/x', { PROMOTE_GITHUB_TOKEN: 't', PROMOTE_MERGE_REPOS: 'o/r, o/s' })).toMatchObject({ repos: ['o/r', 'o/s'] });
   });
-  it('treats lockfiles, snapshots, goldens and generated schemas as clerical', () => {
-    for (const f of ['pnpm-lock.yaml', 'tests/unit/__snapshots__/x.test.ts.snap', 'tests/__golden__/bar.svg', 'docs/chartspec.schema.json']) expect(isClerical(f)).toBe(true);
+  it('never treats lockfiles, snapshots, goldens or schemas as disposable', () => {
+    for (const f of ['pnpm-lock.yaml', 'tests/unit/__snapshots__/x.test.ts.snap', 'tests/__golden__/bar.svg', 'docs/chartspec.schema.json']) expect(isClerical(f)).toBe(false);
     for (const f of ['server/store.ts', 'charts/Bar/Bar.tsx', 'README.md', 'snap.ts']) expect(isClerical(f)).toBe(false);
   });
 });
@@ -104,7 +104,7 @@ describe('resolveConflicts', () => {
     mergeable: 'conflicts' as const, qa: 'passed' as const, checks: [], canMerge: true, reason: '', workRoot: join(remote, '..', 'merges'),
   });
 
-  it('takes the base version of clerical conflicts, pushes to the branch and never touches the base', async () => {
+  it('refuses conflicting lockfiles and preserves both branches', async () => {
     const { remote, work, git } = repos();
     writeFileSync(join(work, 'pnpm-lock.yaml'), 'lock from fix\n'); writeFileSync(join(work, 'feature.ts'), 'f\n');
     git(['add', '.']); git(['commit', '-q', '-m', 'fix']); git(['push', '-q', 'origin', 'fix']);
@@ -112,12 +112,12 @@ describe('resolveConflicts', () => {
     const mainSha = git(['rev-parse', 'HEAD']); git(['checkout', '-q', 'fix']);
     const { workRoot, ...view } = viewFor(git, remote);
     const out = await resolveConflicts({ ...config, workRoot }, view, runFor(remote));
-    expect(out).toMatchObject({ state: 'conflicts_resolved', regenerated: ['pnpm-lock.yaml'] });
+    expect(out).toMatchObject({ state: 'conflicts_need_owner', files: ['pnpm-lock.yaml'] });
     expect(git(['rev-parse', 'origin/main'], work) === mainSha || git(['ls-remote', remote, 'main']).startsWith(mainSha)).toBe(true);
     git(['pull', '-q', 'origin', 'fix']);
-    expect(readFileSync(join(work, 'pnpm-lock.yaml'), 'utf8')).toBe('lock from main\n');
+    expect(readFileSync(join(work, 'pnpm-lock.yaml'), 'utf8')).toBe('lock from fix\n');
     expect(readFileSync(join(work, 'feature.ts'), 'utf8')).toBe('f\n');
-    expect(git(['log', '--oneline', '-1'])).toMatch(/Merge main into fix/);
+    expect(git(['rev-parse','HEAD'])).toBe(view.headSha);
   });
 
   it('aborts and names the files when source conflicts overlap', async () => {
@@ -138,4 +138,15 @@ describe('resolveConflicts', () => {
     writeFileSync(join(work, 'feature.ts'), 'g\n'); git(['commit', '-q', '-am', 'more']); git(['push', '-q', 'origin', 'fix']);
     expect(await resolveConflicts({ ...config, workRoot }, view, runFor(remote))).toMatchObject({ state: 'refused', reason: 'pr_changed' });
   });
+});
+
+it.each(['skipped','neutral',null])('does not merge when checks did not execute successfully: %s',async conclusion=>{
+ const calls:{url:string;init?:RequestInit}[]=[];
+ const fetchImpl=github({'GET /repos/o/r/pulls/7':pull(),[`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100`]:{check_runs:[{name:'ci',status:'completed',conclusion,html_url:null}]},[`GET /repos/o/r/commits/${sha('a')}/status`]:{statuses:[]}},calls);
+ expect(await mergePullRequest(config,store(),{repo:'o/r',number:7,headSha:sha('a')},{fetchImpl})).toMatchObject({state:'refused'});
+ expect(calls.some(c=>c.init?.method==='PUT')).toBe(false);
+});
+it('refuses a clean PR with no checks',async()=>{
+ const fetchImpl=github({'GET /repos/o/r/pulls/7':pull(),[`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100`]:{check_runs:[]},[`GET /repos/o/r/commits/${sha('a')}/status`]:{statuses:[]}});
+ expect(await mergePullRequest(config,store(),{repo:'o/r',number:7,headSha:sha('a')},{fetchImpl})).toMatchObject({state:'refused'});
 });

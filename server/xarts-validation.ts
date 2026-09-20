@@ -51,7 +51,7 @@ export async function prepareXartsImage(checkout: string, sha: string, root: str
   if (!/^[a-f0-9]{40}$/.test(sha)) throw Error('invalid_candidate_sha');
   await mkdir(root, { recursive: true });
   const git = async (args: string[]) => (await exec('git', args, { cwd: checkout, timeout:30000,killSignal:'SIGKILL', maxBuffer: 16 * 1024 * 1024 })).stdout;
-  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, ...await archivePaths(git, sha)], { cwd: checkout, timeout:30000,killSignal:'SIGKILL' });
+  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, '--', ...await archivePaths(git, sha)], { cwd: checkout, env:{...process.env,GIT_LITERAL_PATHSPECS:'1'}, timeout:30000,killSignal:'SIGKILL' });
   for (const sibling of await readdir(dirname(root))) {
     try {
       const prior = JSON.parse(await readFile(join(dirname(root), sibling, 'identity.json'), 'utf8'));

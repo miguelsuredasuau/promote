@@ -439,7 +439,7 @@ export class ControllerStore {
   }
 
   explorations(): any[] {
-    return this.db.prepare('SELECT record FROM explorations ORDER BY rowid DESC LIMIT 100').all().map(r=>JSON.parse(String(r.record)));
+    return this.db.prepare('SELECT record FROM explorations ORDER BY rowid DESC').all().map(r=>JSON.parse(String(r.record)));
   }
   reserveExploration(spec: import('../contracts/exploration').ExplorationSpec) {
     return this.transaction(()=>{
@@ -521,7 +521,7 @@ export class ControllerStore {
   }
 
   engineeringSpend() {
-    const records = this.engineeringReservations();
+    const records = [...this.engineeringReservations(),...this.explorations().filter(r=>r.state!=='rejected').map(r=>({incidentId:'exploration:'+r.spec.id,remoteId:r.remoteId,state:r.state,maxAcu:r.spec.maxAcu,usageAcu:r.usageAcu,usageObservedAt:r.observedAt??null,candidateSha:null,reason:r.reason}))];
     const providerRow = this.db.prepare("SELECT record FROM service_state WHERE id = 'provider'").get();
     const provider = providerRow ? JSON.parse(String(providerRow.record)) : {};
     const usage = records.some(r => r.usageAcu === null) ? null : records.reduce((n, r) => n + r.usageAcu, 0);

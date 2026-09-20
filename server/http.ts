@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
 import { ControllerStore, StoreConflictError } from './store';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 import { explorationTarget, launchExploration } from './exploration';
 import { overview } from './overview';
 import { GateResult } from '../contracts/records';
@@ -46,13 +46,22 @@ export function createOperatorServer(options: { root: string; store: ControllerS
     if (!allowedHost || (origin && origin !== `http://${host}`)) {
       res.writeHead(403).end('Forbidden'); return;
     }
-    if(req.method==='POST' && req.url==='/api/explorations') {
+    if(req.method==='POST' && (req.url==='/api/explorations'||req.url==='/api/explorations/stop')) {
       if(origin!==`http://${host}` || req.headers['x-owner-token']!==ownerToken){res.writeHead(403).end('Owner session required');return;}
       if(req.headers['content-type']!=='application/json'){res.writeHead(415).end('JSON required');return;}
       try {
-        if(!options.testCheckout)throw Error('Test checkout is not configured');
+
         let body='';for await(const chunk of req){body+=chunk.toString();if(Buffer.byteLength(body)>12000){res.writeHead(413).end('Request too large');return;}}
-        const record=await launchExploration(options.store,options.root,options.testCheckout,JSON.parse(body));
+        let record;
+        if(req.url==='/api/explorations/stop'){
+          const {id}=z.object({id:z.string().uuid()}).strict().parse(JSON.parse(body));
+          record=options.store.explorations().find(r=>r.spec.id===id);
+          if(!record)throw Error('Unknown test');
+          if(!['stopped','rejected'].includes(record.state))record=options.store.updateExploration(id,{state:'stopping',reason:'owner_requested_stop'});
+        }else{
+          if(!options.testCheckout)throw Error('Test checkout is not configured');
+          record=await launchExploration(options.store,options.root,options.testCheckout,JSON.parse(body));
+        }
         res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(record));
       }catch(error){res.writeHead(error instanceof ZodError||error instanceof SyntaxError?400:409,{'Content-Type':'application/json'}).end(JSON.stringify({error:error instanceof Error?error.message:'Test unavailable'}));}
       return;
