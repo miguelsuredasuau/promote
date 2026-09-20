@@ -1,3 +1,4 @@
+import { markFailure } from '../../server/serial-work';
 import { z } from 'zod';
 import { EngineeringTask, RepairFeedback, SessionObservation, AgentQualityReview, type HarnessAdapter, type StartOutcome, type FeedbackOutcome, type CancelOutcome } from '../../contracts/adapters';
 import { GitSha, Id } from '../../contracts/primitives';
@@ -81,19 +82,24 @@ export class DevinAdapter implements HarnessAdapter {
     }catch{return{kind:'unknown_outcome',reason:'create_transport_uncertain'};}
   }
   async explorationReport(remoteId:string) {
+    try {
     const session=await this.read(remoteId);
     const report=ExplorationReport.safeParse(session.structured_output);
     return report.success?report.data:null;
+    } catch (error) { throw markFailure(error, 'devin_report'); }
   }
   async reconcile(_operationId: string) { return {result:'unsupported' as const}; }
   private async read(remoteId:string) {
+    try {
     const response=await this.request(`/${remote(remoteId)}`,'GET');
     if(!response.ok)throw new Error(`devin_inspect_http_${response.status}`);
     const session=Session.parse(await response.json());
     if(remote(session.session_id)!==remote(remoteId))throw new Error('session_identity_mismatch');
     return session;
+    } catch (error) { throw markFailure(error, 'devin_read'); }
   }
   async inspect(remoteId: string): Promise<SessionObservation> {
+    try {
     const s=await this.read(remoteId),now=new Date().toISOString();
     const state = sessionState(s);
     const output=z.object({candidateSha:GitSha}).passthrough().safeParse(s.structured_output);
@@ -113,6 +119,7 @@ export class DevinAdapter implements HarnessAdapter {
       providerTime:s.updated_at && Number.isFinite(new Date(s.updated_at*1000).getTime())?new Date(s.updated_at*1000).toISOString():null,
       candidateSha:output.success?output.data.candidateSha:null,
       usage:{schemaVersion:1,provider:'devin',amount:s.acus_consumed??null,unit:'ACU',observedAt:now,source:'provider_api',reliability:s.acus_consumed==null?'unknown':'reported'}});
+    } catch (error) { throw markFailure(error, 'devin_inspect'); }
   }
   async feedback(remoteId:string,input:RepairFeedback,operationId:string):Promise<FeedbackOutcome>{
     const feedback=RepairFeedback.parse(input);Id.parse(operationId);

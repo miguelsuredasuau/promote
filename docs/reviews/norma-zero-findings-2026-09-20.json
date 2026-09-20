@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "mode": "advisory",
+  "status": "pending",
+  "reason": "coverage_incomplete",
+  "candidateSha": "caa1e9872234d0b46d943dd27ec5d51b6f399efb",
+  "scope": "Six previously reviewed files plus the serial-work helper and three additional test files",
+  "totalIssues": 0,
+  "costUsd": null,
+  "files": [
+    {
+      "path": "server/chat-intake.ts",
+      "sha256": "a7b5d00b2f8f05a3a4ff9f08f453dd9dcbbcc3e3fdf6489233549b6b73909b37",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "adapters/devin/client.ts",
+      "sha256": "0d9ba818c196f43d368b765ebd4e6fc3c30afeb8f6587c30a485c2617d319f78",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "server/registry.ts",
+      "sha256": "ad813efb35ec41a087bd17e4099daaf1cacb8909c36d6851089d1ce756f12c34",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "server/engineering.ts",
+      "sha256": "0140e566cc2654bd356ef08dd0edf940d1a8f96cedf8ff4686b973befaef308b",
+      "reviewCommit": "caa1e9872234d0b46d943dd27ec5d51b6f399efb",
+      "finishedAt": "2026-09-20T07:53:15.884Z",
+      "sourceReportSha256": "9a949546842d389825b598ef7643602f0d22ec70b99e8b7f81e69eed064b49e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "server/orchestrator.ts",
+      "sha256": "44c431c8a59c5b0753783eafef11624bdc0fb20f0eb1eafa20b74df20d5afa8e",
+      "reviewCommit": "caa1e9872234d0b46d943dd27ec5d51b6f399efb",
+      "finishedAt": "2026-09-20T07:53:15.884Z",
+      "sourceReportSha256": "9a949546842d389825b598ef7643602f0d22ec70b99e8b7f81e69eed064b49e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "tests/orchestrator.test.ts",
+      "sha256": "b170724143661970642cb9d5f2be6e3e36f5d80f64930609f8b3ac2291646a5f",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "server/serial-work.ts",
+      "sha256": "66db82e249c174eb4b67fba3f364a36266cf3360dfdff14ece77d2b42a72ba87",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "tests/serial-work.test.ts",
+      "sha256": "ab5f5b2ab56dc444a6eaf8aa978b22bd69359d511380cc28cb227580c1107c8a",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "tests/chat-intake.test.ts",
+      "sha256": "6d27155008308d219f6bf1fdf1fc25d1555885e182e643481b071aaab57db02c",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    },
+    {
+      "path": "tests/devin.test.ts",
+      "sha256": "7e2a7d9c1e77b131c3b93c6310da1992cac12f824628a11058084f74aab9a8d7",
+      "reviewCommit": "4acc4757f538ac7d72997c489306e4b230d2058f",
+      "finishedAt": "2026-09-20T07:52:27.368Z",
+      "sourceReportSha256": "0c699da420e5145298682d6457db6c288b4869b06dffa33d7085ded3458f84e8",
+      "outcome": "clean",
+      "totalIssues": 0,
+      "coverage": {
+        "reduced": true,
+        "reason": "1 semgrep rule(s) could not be evaluated (invalid, or not validated before the fault-isolation budget was exhausted); coverage was reduced."
+      },
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ]
+    }
+  ]
+}

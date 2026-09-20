@@ -153,3 +153,10 @@ it('keeps missing quality evidence pending and absent candidates without a revie
  expect((await a.inspect('s')).qualityReview).toMatchObject({status:'pending',candidateSha,coverageReduced:true});
  expect((await a.inspect('s')).qualityReview).toBeUndefined();
 });
+
+it('propagates inspection failures with safe boundary context and no implicit retry',async()=>{
+ const {failureBoundaries}=await import('../server/serial-work');
+ const failure=new Error('private transport details');const fetcher=vi.fn().mockRejectedValue(failure);
+ await expect(adapter(fetcher).inspect('s')).rejects.toBe(failure);
+ expect(failureBoundaries(failure)).toEqual(['devin_read','devin_inspect']);expect(fetcher).toHaveBeenCalledTimes(1);
+});

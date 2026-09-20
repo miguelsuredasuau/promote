@@ -94,3 +94,17 @@ it('prepares routine planning without creating owner approvals or paid engineeri
  expect(s.store.ownerDecisions()).toHaveLength(0);expect(s.store.engineeringReservations()).toHaveLength(0);
  await runOrchestrator(s.store,s.root);expect(s.store.workQueue().filter(w=>w.kind==='proposal_assessment')).toHaveLength(1);
 });
+
+it('validates the historical classification projection without requiring modern producer fields',()=>{
+ const legacy={schema:'xarts-chat/run-record@1',signals:[{kind:'possible_library_defect',code:'legacy'}],extra:{retained:true}};
+ expect(classifyRecord(legacy)[0]).toMatchObject({category:'bug',title:'possible_library_defect: legacy'});
+ expect(legacy.extra).toEqual({retained:true});
+ expect(()=>classifyRecord({...legacy,signals:[{kind:'possible_library_defect',code:42}]})).toThrow();
+ expect(()=>classifyRecord({schema:'xarts-chat/feedback@1',reasons:17})).toThrow();
+ expect(classifyRecord({schema:'future-record@1',extra:'preserved'})).toEqual([]);
+});
+
+it('triages the quality producer string release label without inventing package workarounds',()=>{
+ const result=classifyRecord({schema:'xarts-chat/quality-snapshot@1',kind:'quality',observations:{summary:{release:'Baseline documented release'},results:[{id:'alluvial',status:'fail'}]}});
+ expect(result).toHaveLength(1);expect(result[0].title).toBe('quality failure: alluvial');
+});

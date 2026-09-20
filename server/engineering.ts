@@ -1,3 +1,4 @@
+import { serialWork, markFailure } from './serial-work';
 import { ControllerStore } from './store';
 import {rolePrompt} from './role-prompts';
 import type { HarnessAdapter } from '../contracts/adapters';
@@ -19,26 +20,27 @@ export async function dispatchEngineering(store:ControllerStore, adapter:Harness
 }
 
 export async function observeEngineering(store:ControllerStore, adapter:HarnessAdapter) {
-  for(const reservation of store.engineeringReservations()){
+  try {
+  await serialWork(store.engineeringReservations(), async reservation => {
     if(!reservation.remoteId){
       const operation=store.getOperation(reservation.operationId);
       if(operation?.outcome?.kind==='created'){
         reservation.remoteId=operation.outcome.remoteId;
         store.updateEngineering(reservation.incidentId,{remoteId:reservation.remoteId,state:'running'});
-      }else continue;
+      }else return;
     }
     try{
       if(reservation.state==='stopped'){
         // Billing may arrive after termination. Read it without resuming work.
         const observation=await adapter.inspect(reservation.remoteId);
         store.updateEngineering(reservation.incidentId,{usageAcu:observation.usage?.amount??null,usageObservedAt:observation.observedAt});
-        continue;
+        return;
       }
       const incident=store.getIncident(reservation.incidentId)!;
       if(incident.cancellation || Date.parse(reservation.task.deadline)<=Date.now()){
         const result=await adapter.cancel(reservation.remoteId,`cancel:${reservation.incidentId}`);
         store.updateEngineering(reservation.incidentId,{state:result.kind==='confirmed'?'stopped':'held',reason:result.kind==='confirmed'?'termination_confirmed':'termination_pending'});
-        continue;
+        return;
       }
       const observation=await adapter.inspect(reservation.remoteId);
       store.updateEngineering(reservation.incidentId,{usageAcu:observation.usage?.amount??null,usageObservedAt:observation.observedAt,
@@ -52,5 +54,6 @@ export async function observeEngineering(store:ControllerStore, adapter:HarnessA
     }catch{
       if(reservation.state!=='stopped')store.updateEngineering(reservation.incidentId,{state:'held',reason:'provider_observation_unavailable'});
     }
-  }
+  });
+  } catch(error) { throw markFailure(error, 'observeEngineering'); }
 }
