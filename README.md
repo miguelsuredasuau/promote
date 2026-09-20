@@ -6,7 +6,7 @@
 
 Built for **Hackbarna 2026**, during the weekend of **September 19–20, 2026**, with **Devin, OpenAI Codex and Claude Code**, under human direction and review. [MIT licensed](LICENSE).
 
-[**▶ Watch the film**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [Xarts + Promote explained](docs/projects.md) &nbsp; · &nbsp; [The three layers](#the-three-layers) &nbsp; · &nbsp; [See the product](#a-workplace-for-the-work) &nbsp; · &nbsp; [Run locally](#run-locally)
+[**▶ Watch the film**](https://www.youtube.com/watch?v=8T7RxbxjJbU) &nbsp; · &nbsp; [Xarts + Promote explained](docs/projects.md) &nbsp; · &nbsp; [The three layers](#the-three-layers) &nbsp; · &nbsp; [See the product](#a-workplace-for-the-work) &nbsp; · &nbsp; [Run locally](#run-locally)
 
 </div>
 
@@ -18,11 +18,11 @@ You can launch an app in a weekend. Then come the bug reports, broken builds, fe
 
 ### Meet Promote
 
-<a href="https://youtu.be/nC2f0_lAhSY">
+<a href="https://www.youtube.com/watch?v=8T7RxbxjJbU">
   <img src="docs/images/demo-video.jpg" alt="Watch the Promote promotional film for Hackbarna 2026 on YouTube" width="100%">
 </a>
 
-<p align="center"><a href="https://youtu.be/nC2f0_lAhSY"><strong>▶ Watch the film on YouTube</strong></a></p>
+<p align="center"><a href="https://www.youtube.com/watch?v=8T7RxbxjJbU"><strong>▶ Watch the film on YouTube</strong></a></p>
 
 > **Development preview.** Real intake, orchestration and Devin dispatch are implemented. One bounded Xarts repair completed independent verification, local registry activation and deterministic chat replay; the general SDK and hosting integrations are planned.
 
@@ -209,7 +209,7 @@ Credentials, customer data, provider transcripts, private chart implementation, 
 
 ### Your next launch deserves a maintenance plan.
 
-[**Watch Promote in action ↗**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [**Run it locally →**](#run-locally)
+[**Watch Promote in action ↗**](https://www.youtube.com/watch?v=8T7RxbxjJbU) &nbsp; · &nbsp; [**Run it locally →**](#run-locally)
 
 </div>
 
