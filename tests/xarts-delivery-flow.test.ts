@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -61,4 +61,11 @@ it('changed SQL data is refused before building or creating a release',async()=>
  const s=setup();writeFileSync(join(s.root,'runs/run-1/chart-1.data.json'),JSON.stringify({sql:'SELECT 99 AS value',rowCount:1,dataHash:'a'.repeat(64)}));
  await expect(runXartsDelivery(s.store,s.root,s.task)).rejects.toThrow('original_sql_data_changed');
  expect(validateXartsBuild).not.toHaveBeenCalled();
+});
+
+it('an unavailable advisory review is recorded without replacing required delivery gates',async()=>{
+ const s=setup();mkdirSync(join(s.root,'.local'),{recursive:true});writeFileSync(join(s.root,'.local/norma.json'),'invalid configuration');
+ const result=await runXartsDelivery(s.store,s.root,s.task);expect(result.state).toBe('completed');
+ const reports=readdirSync(join(s.root,'.local/norma-reviews'));const report=JSON.parse(readFileSync(join(s.root,'.local/norma-reviews',reports[0]),'utf8'));
+ expect(report.status).toBe('pending');expect(report.mode).toBe('advisory');expect(validateXartsBuild).toHaveBeenCalledTimes(1);expect(validateXartsConsumer).toHaveBeenCalledTimes(1);
 });
