@@ -3,13 +3,13 @@ const qaLabel={passed:'QA passed',failed:'QA failed',pending:'QA running',none:'
 const mergeLabel={clean:'Up to date',conflicts:'Conflicts',unknown:'Computing…',blocked:'Blocked'};
 export function createPullRequestDesk(){
  let root,data,busy=null,notice='',loading=false;
- async function load(){
+ async function load(keepNotice=false){
   loading=true;render();
-  try{const r=await fetch('/api/pull-requests',{cache:'no-store'});if(!r.ok){const e=await r.json().catch(()=>({}));throw Error(e.error??'Pull requests unavailable.');}data=await r.json();}
-  catch(error){notice=error.message;}
+  try{const r=await fetch('/api/pull-requests',{cache:'no-store'});if(!r.ok){const e=await r.json().catch(()=>({}));throw Error(e.error??'Pull requests unavailable.');}data=await r.json();if(!keepNotice)notice='';}
+  catch(error){data={configured:true,repos:[],items:[],failed:true};notice=error.message;}
   loading=false;render();
  }
- function mount(container){root=container;notice='';load();}
+ function mount(container){root=container;data=null;notice='';load();}
  async function merge(item){
   busy=`${item.repo}#${item.number}`;notice=item.mergeable==='conflicts'?'Resolving conflicts in an isolated clone…':'Merging…';render();
   try{
@@ -23,7 +23,7 @@ export function createPullRequestDesk(){
     :outcome.state==='conflicts_need_owner'?`${busy} needs you: ${outcome.detail} ${outcome.files.join(', ')}`
     :`${busy} not merged: ${outcome.detail}`;
   }catch(error){notice=error.message;}
-  busy=null;await load();
+  busy=null;await load(true);
  }
  function render(){
   if(!root)return;root.replaceChildren();root.classList.add('pr-desk');
@@ -31,7 +31,7 @@ export function createPullRequestDesk(){
   if(!data&&loading){root.append(el('p','Asking GitHub…','decision-empty'));return;}
   if(data&&!data.configured){root.append(el('p','Add PROMOTE_GITHUB_TOKEN (a token that acts as you) and PROMOTE_MERGE_REPOS (owner/repo, comma-separated) to Promote’s .env to merge from the office.','decision-empty'));return;}
   const items=data?.items??[];
-  if(data&&!items.length)root.append(el('p','No open pull requests in '+data.repos.join(', ')+'.','decision-empty'));
+  if(data&&!items.length)root.append(el('p',data.failed?'GitHub could not be asked; the notice below says why.':'No open pull requests in '+data.repos.join(', ')+'.','decision-empty'));
   const list=el('ul',undefined,'pr-list');
   for(const item of items){
    const key=`${item.repo}#${item.number}`;const li=el('li',undefined,'pr-item');
@@ -43,7 +43,7 @@ export function createPullRequestDesk(){
    list.append(li);
   }
   root.append(list);
-  const refresh=el('button',loading?'Refreshing…':'Refresh');refresh.disabled=loading||busy!==null;refresh.onclick=load;root.append(refresh);
+  const refresh=el('button',loading?'Refreshing…':'Refresh');refresh.disabled=loading||busy!==null;refresh.onclick=()=>load();root.append(refresh);
   root.append(el('p','Merges run as the configured GitHub token, only after QA passes on the exact head commit. Clerical conflicts (lockfiles, snapshots, goldens, generated schemas) take the base’s version and are pushed to the branch for QA to regenerate; other conflicts are left for you.','decision-consent'));
   const status=el('p',notice,'decision-notice');status.setAttribute('role','status');root.append(status);
  }

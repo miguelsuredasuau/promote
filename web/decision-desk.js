@@ -3,7 +3,7 @@ const actions={approve_plan:'Planning commissioned',request_changes:'Changes req
 export function createDecisionDesk({onSaved,pullRequests}){
  let root,data,mode,selected,tab='pending',stamp='',busy=false,notice='';const drafts=new Map();
  const items=()=>data?.ownerReport?.decisions??[];
- function mount(container,snapshot,currentMode){root=container;stamp='';update(snapshot,currentMode);}
+ function mount(container,snapshot,currentMode){root=container;data=snapshot;mode=currentMode;stamp=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);render();}
  function update(snapshot,currentMode){if(busy||root?.querySelector('textarea')===document.activeElement)return;data=snapshot;mode=currentMode;const next=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);if(next===stamp||busy)return;stamp=next;if(tab==='prs')return;render();}
  async function decide(item,action){
   const feedback=drafts.get(item.id)??'';
