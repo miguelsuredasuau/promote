@@ -52,8 +52,8 @@ describe('mergePullRequest', () => {
     const calls: { url: string; init?: RequestInit }[] = [];
     const fetchImpl = github({
       'GET /repos/o/r/pulls/7': pull(),
-      [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100`]: { check_runs: [{ name: 'ci', status: 'completed', conclusion: 'success', html_url: null }] },
-      [`GET /repos/o/r/commits/${sha('a')}/status`]: { statuses: [] },
+      [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100&page=1`]: { check_runs: [{ name: 'ci', status: 'completed', conclusion: 'success', html_url: null }] },
+      [`GET /repos/o/r/commits/${sha('a')}/status?per_page=100&page=1`]: { statuses: [] },
       'PUT /repos/o/r/pulls/7/merge': { merged: true, sha: sha('c') },
     }, calls);
     const s = store();
@@ -68,8 +68,8 @@ describe('mergePullRequest', () => {
     const s = store();
     const at = (checks: unknown[], headSha = sha('a')) => github({
       'GET /repos/o/r/pulls/7': pull(),
-      [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100`]: { check_runs: checks },
-      [`GET /repos/o/r/commits/${sha('a')}/status`]: { statuses: [] },
+      [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100&page=1`]: { check_runs: checks },
+      [`GET /repos/o/r/commits/${sha('a')}/status?per_page=100&page=1`]: { statuses: [] },
       'PUT /repos/o/r/pulls/7/merge': { merged: true, sha: sha('c') },
     });
     const input = (headSha = sha('a')) => ({ repo: 'o/r', number: 7, headSha });
@@ -77,7 +77,19 @@ describe('mergePullRequest', () => {
     expect(await mergePullRequest(config, s, input(), { fetchImpl: at([{ name: 'ci', status: 'in_progress', conclusion: null, html_url: null }]) })).toMatchObject({ state: 'refused', reason: 'qa_pending' });
     expect(await mergePullRequest(config, s, input(sha('9')), { fetchImpl: at([]) })).toMatchObject({ state: 'refused', reason: 'pr_changed' });
     expect(await mergePullRequest(config, s, { repo: 'o/other', number: 7, headSha: sha('a') }, { fetchImpl: at([]) })).toMatchObject({ state: 'refused', reason: 'repo_not_allowed' });
-    expect(await mergePullRequest(config, s, input(), { fetchImpl: github({ 'GET /repos/o/r/pulls/7': pull({ draft: true }), [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100`]: { check_runs: [] }, [`GET /repos/o/r/commits/${sha('a')}/status`]: { statuses: [] } }) })).toMatchObject({ state: 'refused', reason: 'not_mergeable' });
+    expect(await mergePullRequest(config, s, input(), { fetchImpl: github({ 'GET /repos/o/r/pulls/7': pull({ draft: true }), [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100&page=1`]: { check_runs: [] }, [`GET /repos/o/r/commits/${sha('a')}/status?per_page=100&page=1`]: { statuses: [] } }) })).toMatchObject({ state: 'refused', reason: 'not_mergeable' });
+  });
+
+  it('reads every page of checks, so a red run beyond the first page still blocks the merge', async () => {
+    const green = Array.from({ length: 100 }, (_, i) => ({ name: `ci-${i}`, status: 'completed', conclusion: 'success', html_url: null }));
+    const fetchImpl = github({
+      'GET /repos/o/r/pulls/7': pull(),
+      [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100&page=1`]: { check_runs: green },
+      [`GET /repos/o/r/commits/${sha('a')}/check-runs?per_page=100&page=2`]: { check_runs: [{ name: 'late', status: 'completed', conclusion: 'failure', html_url: null }] },
+      [`GET /repos/o/r/commits/${sha('a')}/status?per_page=100&page=1`]: { statuses: [] },
+      'PUT /repos/o/r/pulls/7/merge': { merged: true, sha: sha('c') },
+    });
+    expect(await mergePullRequest(config, store(), { repo: 'o/r', number: 7, headSha: sha('a') }, { fetchImpl })).toMatchObject({ state: 'refused', reason: 'qa_failed' });
   });
 });
 

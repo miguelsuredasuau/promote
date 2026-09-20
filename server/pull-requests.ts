@@ -71,6 +71,17 @@ const api = (config: PullRequestConfig, fetchImpl: Fetch) => async <T>(path: str
   return response.json() as Promise<T>;
 };
 
+/** Walks every page of a paginated endpoint; a partial view of QA is no view at all. */
+async function allPages<T>(call: ReturnType<typeof api>, path: string, pick: (page: unknown) => T[], perPage = 100): Promise<T[]> {
+  const out: T[] = [];
+  for (let page = 1; page <= 50; page++) {
+    const items = pick(await call<unknown>(`${path}${path.includes('?') ? '&' : '?'}per_page=${perPage}&page=${page}`));
+    out.push(...items);
+    if (items.length < perPage) return out;
+  }
+  throw new Error('github_pagination_exhausted');
+}
+
 function qaOf(checks: PullRequestView['checks']): QaState {
   if (!checks.length) return 'none';
   if (checks.some(c => c.state === 'failed')) return 'failed';
@@ -79,14 +90,16 @@ function qaOf(checks: PullRequestView['checks']): QaState {
 }
 
 async function checksFor(call: ReturnType<typeof api>, repo: string, sha: string): Promise<PullRequestView['checks']> {
-  const runs = await call<{ check_runs: { name: string; status: string; conclusion: string | null; html_url: string | null }[] }>(`/repos/${repo}/commits/${sha}/check-runs?per_page=100`);
-  const status = await call<{ statuses: { context: string; state: string; target_url: string | null }[] }>(`/repos/${repo}/commits/${sha}/status`);
+  type CheckRun = { name: string; status: string; conclusion: string | null; html_url: string | null };
+  type Status = { context: string; state: string; target_url: string | null };
+  const checkRuns = await allPages<CheckRun>(call, `/repos/${repo}/commits/${sha}/check-runs`, p => (p as { check_runs: CheckRun[] }).check_runs);
+  const statuses = await allPages<Status>(call, `/repos/${repo}/commits/${sha}/status`, p => (p as { statuses: Status[] }).statuses);
   const fromRun = (r: { status: string; conclusion: string | null }): QaState =>
     r.status !== 'completed' ? 'pending' : ['success', 'neutral', 'skipped'].includes(r.conclusion ?? '') ? 'passed' : 'failed';
   const fromStatus = (s: string): QaState => s === 'success' ? 'passed' : s === 'pending' ? 'pending' : 'failed';
   return [
-    ...runs.check_runs.map(r => ({ name: r.name, state: fromRun(r), url: r.html_url })),
-    ...status.statuses.map(s => ({ name: s.context, state: fromStatus(s.state), url: s.target_url })),
+    ...checkRuns.map(r => ({ name: r.name, state: fromRun(r), url: r.html_url })),
+    ...statuses.map(s => ({ name: s.context, state: fromStatus(s.state), url: s.target_url })),
   ];
 }
 
@@ -115,7 +128,7 @@ export async function listPullRequests(config: PullRequestConfig, fetchImpl: Fet
   const call = api(config, fetchImpl);
   const out: PullRequestView[] = [];
   for (const repo of config.repos) {
-    const pulls = await call<GitHubPull[]>(`/repos/${repo}/pulls?state=open&per_page=50`);
+    const pulls = await allPages<GitHubPull>(call, `/repos/${repo}/pulls?state=open`, p => p as GitHubPull[]);
     for (const summary of pulls) {
       const pull = await call<GitHubPull>(`/repos/${repo}/pulls/${summary.number}`);
       out.push(view(repo, pull, await checksFor(call, repo, pull.head.sha)));
@@ -130,8 +143,16 @@ const defaultRun: Run = async (file, args, options) =>
 /** Bring the branch up to date with its base in an isolated clone. Clerical
  * conflicts take the base's version (the PR's QA regenerates them); any other
  * conflict aborts and is reported for the owner. Nothing is force-pushed. */
+const inFlight = new Set<string>();
 export async function resolveConflicts(config: PullRequestConfig, pull: PullRequestView, run: Run = defaultRun): Promise<MergeOutcome> {
-  const dir = join(config.workRoot, createHash('sha256').update(`${pull.repo}#${pull.number}`).digest('hex').slice(0, 16));
+  const key = `${pull.repo}#${pull.number}`;
+  if (inFlight.has(key)) return { state: 'refused', reason: 'in_progress', detail: 'Promote is already resolving this pull request.' };
+  inFlight.add(key);
+  try { return await resolveConflictsExclusively(config, pull, run, key); } finally { inFlight.delete(key); }
+}
+
+async function resolveConflictsExclusively(config: PullRequestConfig, pull: PullRequestView, run: Run, key: string): Promise<MergeOutcome> {
+  const dir = join(config.workRoot, createHash('sha256').update(key).digest('hex').slice(0, 16));
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
   const auth = Buffer.from(`x-access-token:${config.token}`).toString('base64');
