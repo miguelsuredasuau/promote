@@ -80,3 +80,12 @@ it('prioritizes an importer failure over quarantine attention, then recovers to 
  writeFileSync(join(s.root,'quality.json'),JSON.stringify({summary:{},results:[]}));
  expect(await importChatCycle(s.store,s.outbox,s.receipts)).toMatchObject({status:'attention',records:{quarantined:1},failures:[]});
 });
+
+it('accepts the quality producer release label and coverage release object without inventing shims',async()=>{
+ const {importChatDiagnostics}=await import('../server/chat-intake');const s=setup();
+ writeFileSync(join(s.root,'quality.json'),JSON.stringify({summary:{total:1,release:'Baseline documented release'},results:[{id:'alluvial',status:'fail'}]}));
+ writeFileSync(join(s.root,'coverage.json'),JSON.stringify({summary:{total:1,release:{shims:[{id:'ts-loader'}]}},results:[]}));
+ expect(await importChatDiagnostics(s.store,s.root)).toBe(2);
+ expect(await importChatDiagnostics(s.store,s.root)).toBe(0);
+ expect(s.store.inboxSnapshot()).toHaveLength(2);
+});

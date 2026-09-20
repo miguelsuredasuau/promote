@@ -24,7 +24,7 @@ export type ChatRunRecord = z.infer<typeof ChatRunRecord>;
 export const ChatDiagnostics = z.object({
   summary: z.object({
     total: z.number().int().nonnegative().optional(), fail: z.number().int().nonnegative().optional(), error: z.number().int().nonnegative().optional(),
-    release: z.object({ shims: z.array(z.object({ id: z.string().min(1).max(200) }).passthrough()).max(1000).optional() }).passthrough().nullable().optional(),
+    release: z.union([z.string().min(1).max(2000), z.object({ shims: z.array(z.object({ id: z.string().min(1).max(200) }).passthrough()).max(1000).optional() }).passthrough()]).nullable().optional(),
   }).passthrough(),
   results: z.array(z.object({ id: z.string().min(1).max(500), status: z.string().min(1).max(50) }).passthrough()).max(10000),
 }).passthrough();

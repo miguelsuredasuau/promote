@@ -16,13 +16,8 @@ assert.ok(svg.startsWith('<svg') && svg.length > 2000, 'real SVG required');
 const markup = svg.replace(/data:[\w/+.-]+;base64,[A-Za-z0-9+/=]+/g, 'data:');
 assert.ok(!/(?:NaN|[+-]?Infinity)/.test(markup), 'non-finite output');
 assert.ok(!/<script\b/i.test(svg), 'executable SVG refused');
-const changed = structuredClone(input.rows);
-let changedValue = false;
-for (const row of changed) for (const key of Object.keys(row)) if (typeof row[key] === 'number') {
-  row[key] = row[key] * 1.17 + 1;
-  changedValue = true;
-}
-assert.ok(changedValue, 'numeric counterexample required');
+const {scaleNumericRows}=await import('/inputs/counterexample.mjs');
+const changed=scaleNumericRows(input.rows);
 assert.notEqual((await renderSvg({ ...full, data: changed })).svg, svg, 'render must respond to SQL data');
 if(input.requiredTextFormat==='negative_currency_sign_before_prefix'){
  const {checkNegativeCurrency}=await import('/inputs/currency-check.mjs');

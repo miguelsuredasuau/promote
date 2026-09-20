@@ -34,7 +34,7 @@ export function improvementExecution(root:string,store:ControllerStore,proposal:
  if(!binding)return {status:'scope_required',canExecute:false,reason:'Falta una tarea acotada con reproducción, pruebas y presupuesto.',taskHash:null,maxAcu:null};
  const reservation=store.engineeringReservation(binding.task.incidentId);
  if(reservation){
-  const work=store.workQueue().find(w=>w.payload?.proposalId===proposal.id&&w.payload?.deliveryTask?.candidateSha===reservation.candidateSha);
+  const work=store.workQueue().find(w=>w.payload?.proposalId===proposal.id&&w.payload?.deliveryTask?.candidateSha===reservation.candidateSha&&w.payload?.deliveryTask?.attempt===binding.delivery.attempt);
   const delivered=work?.state==='completed'&&work.result?.reason==='verified_release_activated';
   const reason=delivered?'Paquete verificado y activado. Falta confirmar su uso en un nuevo turno del chat.':work?.state==='blocked'?'La verificación bloqueó la entrega. Consulta el registro.':reservation.candidateSha?'Candidato recibido; verificación y entrega pendientes.':reservation.state==='running'?'Devin está trabajando en la reparación.':'Trabajo retenido; consulta el registro del proveedor.';
   return{status:delivered?'active':work?.state??reservation.state,canExecute:false,reason,taskHash:hashCanonical(binding.task),maxAcu:reservation.maxAcu,incidentId:binding.task.incidentId,remoteId:reservation.remoteId,candidateSha:reservation.candidateSha,usageAcu:reservation.usageAcu,releaseId:delivered?work.result.releaseId:null,scope:binding.incident.requestedOutcome.summary};

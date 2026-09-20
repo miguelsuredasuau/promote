@@ -63,7 +63,7 @@ export async function runXartsDelivery(store: ControllerStore, controllerRoot: s
   const request = {spec,rows,dataHash,requiredTextFormat:task.requiredTextFormat};
   const evaluatorRevision = (await exec('git',['rev-parse','HEAD'],{cwd:controllerRoot})).stdout.trim();
   const codeHashes: Record<string,string> = {};
-  for (const file of ['server/xarts-delivery.ts','server/xarts-validation.ts','server/container-runner.ts','adapters/xarts/build-worker.mjs','adapters/xarts/consumer-worker.mjs','adapters/xarts/currency-check.mjs']) codeHashes[file]=digest(await readFile(join(controllerRoot,file)));
+  for (const file of ['server/xarts-delivery.ts','server/xarts-validation.ts','server/container-runner.ts','adapters/xarts/build-worker.mjs','adapters/xarts/consumer-worker.mjs','adapters/xarts/currency-check.mjs','adapters/xarts/counterexample.mjs']) codeHashes[file]=digest(await readFile(join(controllerRoot,file)));
   const input = {task,request,codeHashes,changedPaths:changed};
   const profile: GateProfile = {schemaVersion:1,profileId:'xarts-delivery-v1',libraryId:'xarts',evaluatorRevision,
     gates:['protected.sourceAndSql','xarts.sdkBuild','xarts.standaloneAndRegeneration'].map(gateId=>({gateId,gateVersion:1,requirement:'required' as const,notApplicableAllowed:false}))};

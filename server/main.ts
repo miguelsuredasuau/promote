@@ -34,7 +34,7 @@ async function pollEngineering() {
       store.recordActivity('provider', 'Engineering provider readiness changed', config.status);
     }
     if (config.adapter) { await observeEngineering(store, config.adapter); await observeExplorations(store,config.adapter); }
-    if(executionBindings(root).some(b=>{const r=store.engineeringReservation(b.task.incidentId);return r?.state==='stopped'&&r.candidateSha&&!store.workQueue().some(w=>w.payload?.proposalId===b.proposalId&&w.payload?.deliveryTask?.candidateSha===r.candidateSha);}))void orchestrate().catch(()=>console.error('Proposal delivery scheduling failed; evidence retained'));
+    if(executionBindings(root).some(b=>{const r=store.engineeringReservation(b.task.incidentId);return r?.state==='stopped'&&r.candidateSha&&!store.workQueue().some(w=>w.payload?.proposalId===b.proposalId&&w.payload?.deliveryTask?.candidateSha===r.candidateSha&&w.payload?.deliveryTask?.attempt===b.delivery.attempt);}))void orchestrate().catch(()=>console.error('Proposal delivery scheduling failed; evidence retained'));
   } finally { observing = false; }
 }
 let importing = false;
