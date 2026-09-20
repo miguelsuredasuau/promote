@@ -13,10 +13,45 @@ export const XARTS_NODE_IMAGE = 'node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667a
  * scripts. Actual candidate commands run separately, offline, as an unprivileged user.
  * Only committed source enters the build context; no .env, Git config or host modules.
  */
+const ARCHIVE_BASE = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'LICENSE', 'LICENSE-COMMERCIAL.md'];
+
+/** The SDK build snapshots every path the candidate's package.json publishes (`files`
+ * and `exports` targets) plus the top-level docs/*.md it bundles as READMEs, so the
+ * archive must carry them too; committed paths only. */
+export async function archivePaths(git: (args: string[]) => Promise<string>, sha: string) {
+  const pkg = JSON.parse(await git(['show', `${sha}:package.json`])) as { files?: unknown; exports?: unknown };
+  const declared = [...ARCHIVE_BASE];
+  if (Array.isArray(pkg.files)) for (const path of pkg.files) if (typeof path === 'string' && !path.startsWith('!')) declared.push(path);
+  const exports = (value: unknown): void => {
+    if (typeof value === 'string') declared.push(value);
+    else if (value && typeof value === 'object') Object.values(value).forEach(exports);
+  };
+  exports(pkg.exports);
+  const patterns = declared.map(p => p.replace(/^\.\//, '').replace(/\/$/, ''))
+    .filter(p => p && !p.split('/').includes('..') && !p.startsWith('/'));
+  // Enumerate files, never directories: a declared directory must not smuggle
+  // a nested credential, local database or symlink into the build context.
+  const sensitive = /(^|\/)(?:\.env(?:[.-][^/]*)?|\.git|\.local|node_modules|\.npmrc|\.pnpmfile\.[^/]+|id_rsa|id_ed25519|credentials(?:\.[^/]+)?)(\/|$)|\.(?:pem|key|p12|sqlite|sqlite3|db)$/i;
+  const matches = (file: string, pattern: string) => {
+    if (!pattern.includes('*')) return file === pattern || file.startsWith(pattern + '/');
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\u0000/g, '.*');
+    return new RegExp('^' + escaped + '$').test(file);
+  };
+  const entries = (await git(['ls-tree', '-rz', sha])).split('\0').filter(Boolean);
+  return entries.flatMap(entry => {
+    const match = /^(\d+) \w+ [a-f0-9]+\t([\s\S]+)$/.exec(entry);
+    if (!match || !['100644','100755'].includes(match[1])) return [];
+    const file = match[2];
+    if (sensitive.test(file)) return [];
+    return /^docs\/[^/]+\.md$/.test(file) || patterns.some(p => matches(file, p)) ? [file] : [];
+  }).sort();
+}
+
 export async function prepareXartsImage(checkout: string, sha: string, root: string) {
   if (!/^[a-f0-9]{40}$/.test(sha)) throw Error('invalid_candidate_sha');
   await mkdir(root, { recursive: true });
-  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'LICENSE', 'LICENSE-COMMERCIAL.md'], { cwd: checkout, timeout:30000,killSignal:'SIGKILL' });
+  const git = async (args: string[]) => (await exec('git', args, { cwd: checkout, timeout:30000,killSignal:'SIGKILL', maxBuffer: 16 * 1024 * 1024 })).stdout;
+  await exec('git', ['archive', '--format=tar', `--output=${join(root, 'source.tar')}`, sha, '--', ...await archivePaths(git, sha)], { cwd: checkout, env:{...process.env,GIT_LITERAL_PATHSPECS:'1'}, timeout:30000,killSignal:'SIGKILL' });
   for (const sibling of await readdir(dirname(root))) {
     try {
       const prior = JSON.parse(await readFile(join(dirname(root), sibling, 'identity.json'), 'utf8'));

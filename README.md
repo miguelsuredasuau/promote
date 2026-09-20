@@ -209,3 +209,7 @@ Credentials, customer data, provider transcripts, private chart implementation, 
 [**Watch Promote in action ↗**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [**Run it locally →**](#run-locally)
 
 </div>
+
+### Exploratory application testing
+
+**Office menu → Explore & test** commissions one bounded Devin sandbox session at a reviewed commit. Reports, coverage, findings and reported ACU persist in SQLite; findings feed discovery for independent reproduction. The first profile tests xarts-chat's UI with synthetic fixtures and no paid chat calls. See [the workflow and its limits](docs/EXPLORATORY-TESTING.md).

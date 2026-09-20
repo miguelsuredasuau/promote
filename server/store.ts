@@ -11,6 +11,8 @@ import { hashCanonical } from '../contracts/hash';
 import { isTerminal } from '../contracts/lifecycle';
 import { OwnerDecisionInput, decisionRevision } from './owner-decisions';
 import { Proposal, WorkItem } from '../contracts/orchestration';
+import { migrate } from './sqlite-migrations.mjs';
+import { CONTROLLER_MIGRATIONS } from './controller-schema';
 
 const OperationIntent = z.object({ id: Id, incidentId: Id, harnessId: Id }).strict();
 export const OperationOutcome = z.discriminatedUnion('kind', [
@@ -58,45 +60,8 @@ export class ControllerStore {
         PRAGMA foreign_keys = ON;
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = FULL;
-        CREATE TABLE IF NOT EXISTS incidents (
-          id TEXT PRIMARY KEY, idempotency_key TEXT NOT NULL UNIQUE,
-          canonical_request TEXT NOT NULL, record TEXT NOT NULL
-        ) STRICT;
-        CREATE TABLE IF NOT EXISTS events (
-          sequence INTEGER PRIMARY KEY AUTOINCREMENT,
-          incident_id TEXT NOT NULL REFERENCES incidents(id), record TEXT NOT NULL
-        ) STRICT;
-        CREATE TABLE IF NOT EXISTS operations (
-          id TEXT PRIMARY KEY, incident_id TEXT NOT NULL REFERENCES incidents(id),
-          record TEXT NOT NULL
-        ) STRICT;
-        CREATE TABLE IF NOT EXISTS inbox (
-          source_key TEXT PRIMARY KEY, digest TEXT NOT NULL, record TEXT NOT NULL,
-          incident_id TEXT REFERENCES incidents(id), disposition TEXT NOT NULL, received_at TEXT NOT NULL
-        ) STRICT;
-        CREATE TABLE IF NOT EXISTS engineering_mandates (id TEXT PRIMARY KEY, record TEXT NOT NULL) STRICT;
-        CREATE TABLE IF NOT EXISTS engineering_reservations (
-          incident_id TEXT PRIMARY KEY REFERENCES incidents(id), mandate_id TEXT NOT NULL REFERENCES engineering_mandates(id),
-          task_hash TEXT NOT NULL, max_acu INTEGER NOT NULL, state TEXT NOT NULL, record TEXT NOT NULL
-        ) STRICT;
-        CREATE TABLE IF NOT EXISTS service_events (
-          sequence INTEGER PRIMARY KEY AUTOINCREMENT, occurred_at TEXT NOT NULL,
-          category TEXT NOT NULL, summary TEXT NOT NULL, details TEXT NOT NULL
-        ) STRICT;
-        CREATE TABLE IF NOT EXISTS owner_decisions (proposal_id TEXT NOT NULL, revision TEXT NOT NULL, record TEXT NOT NULL, PRIMARY KEY(proposal_id, revision)) STRICT;
-        CREATE TABLE IF NOT EXISTS service_state (id TEXT PRIMARY KEY, record TEXT NOT NULL) STRICT;
-        CREATE TABLE IF NOT EXISTS proposals (id TEXT PRIMARY KEY, record TEXT NOT NULL) STRICT;
-        CREATE TABLE IF NOT EXISTS proposal_sources (proposal_id TEXT NOT NULL REFERENCES proposals(id), source_key TEXT NOT NULL REFERENCES inbox(source_key), PRIMARY KEY(proposal_id,source_key)) STRICT;
-        CREATE TABLE IF NOT EXISTS work_queue (id TEXT PRIMARY KEY, state TEXT NOT NULL, token TEXT, record TEXT NOT NULL) STRICT;
-        CREATE TABLE IF NOT EXISTS chat_progress (
-          source_key TEXT PRIMARY KEY, run_id TEXT NOT NULL, ordinal INTEGER NOT NULL,
-          digest TEXT NOT NULL, record TEXT NOT NULL
-        ) STRICT;
-        CREATE TABLE IF NOT EXISTS jobs (
-          incident_id TEXT PRIMARY KEY REFERENCES incidents(id), state TEXT NOT NULL,
-          token TEXT, record TEXT NOT NULL
-        ) STRICT;
       `);
+      migrate(this.db, CONTROLLER_MIGRATIONS);
     } catch (error) {
       this.db.close();
       throw error;
@@ -473,6 +438,32 @@ export class ControllerStore {
     return this.db.prepare('SELECT run_id, MAX(ordinal) AS events FROM chat_progress GROUP BY run_id ORDER BY run_id DESC LIMIT 30').all();
   }
 
+  explorations(): any[] {
+    return this.db.prepare('SELECT record FROM explorations ORDER BY rowid DESC').all().map(r=>JSON.parse(String(r.record)));
+  }
+  reserveExploration(spec: import('../contracts/exploration').ExplorationSpec) {
+    return this.transaction(()=>{
+      const prior=this.db.prepare('SELECT record FROM explorations WHERE id=?').get(spec.id);
+      if(prior) { const record=JSON.parse(String(prior.record)); if(canonicalJson(record.spec)!==canonicalJson(spec)) throw new StoreConflictError('Test request changed');return {claimed:false,record}; }
+      if(this.db.prepare("SELECT id FROM explorations WHERE state NOT IN ('stopped','rejected') LIMIT 1").get() || this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Devin capacity occupied or unresolved');
+      const record={spec,state:'dispatching',remoteId:null,usageAcu:null,report:null,reason:null};
+      this.db.prepare('INSERT INTO explorations VALUES (?,?,?)').run(spec.id,record.state,canonicalJson(record));
+      this.recordActivity('provider','Exploratory test budget reserved',{id:spec.id,maxAcu:spec.maxAcu,repository:spec.repository,baseSha:spec.baseSha});
+      return {claimed:true,record};
+    });
+  }
+  updateExploration(id:string,patch:Record<string,unknown>) {
+    return this.transaction(()=>{
+      const row=this.db.prepare('SELECT record FROM explorations WHERE id=?').get(id);if(!row)throw new StoreConflictError('Unknown test');
+      const prior=JSON.parse(String(row.record));const record={...prior,...patch};
+      if(typeof patch.usageAcu==='number' && Number.isFinite(patch.usageAcu) && patch.usageAcu>=0) record.usageAcu=Math.max(prior.usageAcu??0,patch.usageAcu);
+      else record.usageAcu=prior.usageAcu;
+      this.db.prepare('UPDATE explorations SET state=?,record=? WHERE id=?').run(record.state,canonicalJson(record),id);
+      if(record.state!==prior.state || record.reason!==prior.reason)this.recordActivity('provider','Exploratory test status',{id,state:record.state,reason:record.reason});
+      return record;
+    });
+  }
+
   reserveEngineering(mandateInput: unknown, taskInput: unknown) {
     const { mandate, task } = authorizeEngineering(mandateInput, taskInput);
     return this.transaction(() => {
@@ -483,7 +474,7 @@ export class ControllerStore {
       if (prior) { if (prior.taskHash !== taskHash || prior.mandateId !== mandate.id) throw new StoreConflictError('Reservation scope changed'); return prior; }
       const oldMandate = this.db.prepare('SELECT record FROM engineering_mandates WHERE id = ?').get(mandate.id);
       if (oldMandate && oldMandate.record !== canonicalJson(mandate)) throw new StoreConflictError('Mandate revision changed');
-      if (this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Engineering slot occupied or unresolved');
+      if (this.db.prepare("SELECT id FROM explorations WHERE state NOT IN ('stopped','rejected') LIMIT 1").get() || this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Engineering slot occupied or unresolved');
       const committed = Number(this.db.prepare('SELECT COALESCE(SUM(max_acu), 0) AS n FROM engineering_reservations WHERE mandate_id = ?').get(mandate.id)!.n);
       if (committed + mandate.maxSessionAcu > mandate.totalAcu) throw new StoreConflictError('Mandate budget exhausted');
       this.db.prepare('INSERT OR IGNORE INTO engineering_mandates VALUES (?, ?)').run(mandate.id, canonicalJson(mandate));
@@ -530,7 +521,7 @@ export class ControllerStore {
   }
 
   engineeringSpend() {
-    const records = this.engineeringReservations();
+    const records = [...this.engineeringReservations(),...this.explorations().filter(r=>r.state!=='rejected').map(r=>({incidentId:'exploration:'+r.spec.id,remoteId:r.remoteId,state:r.state,maxAcu:r.spec.maxAcu,usageAcu:r.usageAcu,usageObservedAt:r.observedAt??null,candidateSha:null,reason:r.reason}))];
     const providerRow = this.db.prepare("SELECT record FROM service_state WHERE id = 'provider'").get();
     const provider = providerRow ? JSON.parse(String(providerRow.record)) : {};
     const usage = records.some(r => r.usageAcu === null) ? null : records.reduce((n, r) => n + r.usageAcu, 0);
