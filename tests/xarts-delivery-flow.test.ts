@@ -15,7 +15,7 @@ afterEach(()=>{stores.splice(0).forEach(s=>s.close());roots.splice(0).forEach(r=
 function setup(){
  const root=mkdtempSync(join(tmpdir(),'delivery-flow-'));roots.push(root);
  const write=(path:string,value:string)=>{mkdirSync(join(root,path,'..'),{recursive:true});writeFileSync(join(root,path),value);};
- for(const file of ['server/xarts-delivery.ts','server/xarts-validation.ts','server/container-runner.ts','adapters/xarts/build-worker.mjs','adapters/xarts/consumer-worker.mjs'])write(file,'// fixture evaluator');
+ for(const file of ['server/xarts-delivery.ts','server/xarts-validation.ts','server/container-runner.ts','adapters/xarts/build-worker.mjs','adapters/xarts/consumer-worker.mjs','adapters/xarts/currency-check.mjs'])write(file,'// fixture evaluator');
  write('lib/sql.mjs','export const runSelect=(db,sql)=>({rows:db.prepare(sql).all().map(r=>({...r})),truncated:false});');
  write('runs/run-1/chart-1.spec.json',JSON.stringify({chartId:'bar'}));
  const rows=[{value:42}];write('runs/run-1/chart-1.data.json',JSON.stringify({sql:'SELECT 42 AS value',rows,rowCount:1,dataHash:hash(JSON.stringify(rows))}));

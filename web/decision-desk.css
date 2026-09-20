@@ -93,7 +93,7 @@
 .decision-demo h4{font:500 25px/1.25 Georgia,serif;margin:12px 0;}
 .decision-demo .decision-intro{font-size:16px;line-height:1.55;margin-bottom:20px;}
 .decision-demo .decision-recommendation p{font-size:17px;}
-@media(min-width:651px){body[data-mode=demo] #desk[data-station=briefing]{position:fixed!important;inset:70px 4vw 24px!important;width:92vw!important;height:calc(100dvh - 94px)!important;transform:none!important;max-width:none;max-height:none;}.decision-demo{grid-template-columns:260px minmax(0,1fr);}.decision-demo .decision-sheet{padding:28px 36px;}.decision-demo .demo-infographic{max-width:760px;}.decision-demo .decision-sheet h3{max-width:none;}}
+@media(min-width:651px){:is(body[data-mode=demo],body[data-improvements=true]) #desk[data-station=briefing]{position:fixed!important;inset:70px 4vw 24px!important;width:92vw!important;height:calc(100dvh - 94px)!important;transform:none!important;max-width:none;max-height:none;}.decision-demo{grid-template-columns:260px minmax(0,1fr);}.decision-demo .decision-sheet{padding:28px 36px;}.decision-demo .demo-infographic{max-width:760px;}.decision-demo .decision-sheet h3{max-width:none;}}
 @media(max-width:650px){.decision-demo .decision-queue{display:flex;gap:8px;max-height:none;min-height:146px;overflow:auto;}.decision-demo .decision-envelope{min-width:150px;width:150px;flex-shrink:0;}.decision-demo .decision-envelope img{height:64px;}.decision-demo .decision-envelope strong{font-size:13px;}.decision-demo .demo-heading{font-size:27px;white-space:normal;}.decision-demo .decision-sheet{padding:16px;}.decision-demo .decision-sheet h3{font-size:28px;}.demo-infographic figcaption span{font-size:11px;padding:10px 3px;}}
 @media(min-width:651px){
  .decision-demo .decision-envelope{display:grid;grid-template-columns:64px 1fr;gap:4px 12px;padding:12px;margin-bottom:8px;}
@@ -107,7 +107,7 @@
  .decision-demo .decision-recommendation{margin-bottom:12px;}
 }
 @media(max-width:650px){
- body[data-mode=demo] #desk[data-station=briefing] h2{font-size:25px;margin:12px 0;}
+ :is(body[data-mode=demo],body[data-improvements=true]) #desk[data-station=briefing] h2{font-size:25px;margin:12px 0;}
  .decision-demo .demo-heading,.decision-demo .decision-tray>.decision-empty{display:none;}
  .decision-demo .decision-tray>.decision-kicker{display:block;margin:6px 0 12px;}
  .decision-demo .decision-tray>.decision-consent{font-size:11px;line-height:1.4;margin:8px 0;}

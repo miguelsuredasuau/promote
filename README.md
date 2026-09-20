@@ -56,9 +56,9 @@ Promote owns orchestration and release decisions. Engineering providers return c
 
 ### Product direction you can see
 
-Four illustrated proposals explore what Promote could become: connect a project, delegate maintenance, turn feedback into priorities, and deliver safely. Open the [visual decision demo](http://127.0.0.1:4310/?demo=decisions) after starting the local server. Choices are illustrative and never approve real work.
+Four illustrated proposals explore improvements to **Xarts, the chart library being analyzed**: numeric formatting, adaptive labels, accessible themes and specification preflight. Each proposal names its documented evidence and acceptance checks. Open the [Xarts improvement desk](http://127.0.0.1:4310/?improvements=xarts) after starting the local server. Planning actions persist real decisions. Scoped execution dispatches Devin only with an exact task mandate and ACU ceiling; unprepared proposals explain their blockers. Images illustrate proposed outcomes, not completed work.
 
-![Visual maintenance proposal in the Promote office](docs/images/visual-decisions.png)
+![Xarts chart-library feature proposal in the Promote office](docs/images/visual-decisions.png)
 
 Generated with GPT Image 2.5 through fal, using the office’s art direction. [How the demo and generation work](docs/visual-decisions.md).
 

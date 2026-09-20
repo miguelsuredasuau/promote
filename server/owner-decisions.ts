@@ -16,8 +16,9 @@ export function decisionRevision(proposal: Record<string, unknown>) {
 /** Escalate product direction, not the volume of technical findings.
  * This projection never grants spending, merge or release authority.
  */
-export function ownerAttention(proposal: {category:string;title:string}) {
+export function ownerAttention(proposal: {category:string;title:string;evidenceKey?:string}) {
   if(proposal.category!=='feature')return false;
+  if(proposal.evidenceKey?.startsWith('project-analysis:xarts:'))return true;
   return /\b(pricing|subscription|monetiz\w*|new market|new audience|pivot|replace|migrat\w*|framework|platform|billing|paid plan|redesign|rebrand|precios|suscripci[oó]n|nuevo mercado|migrar|redise[nñ]ar)\b/i.test(proposal.title);
 }
 export function decisionBrief(proposal:{category:string;title:string}) {

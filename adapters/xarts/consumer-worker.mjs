@@ -24,6 +24,10 @@ for (const row of changed) for (const key of Object.keys(row)) if (typeof row[ke
 }
 assert.ok(changedValue, 'numeric counterexample required');
 assert.notEqual((await renderSvg({ ...full, data: changed })).svg, svg, 'render must respond to SQL data');
+if(input.requiredTextFormat==='negative_currency_sign_before_prefix'){
+ const {checkNegativeCurrency}=await import('/inputs/currency-check.mjs');
+ checkNegativeCurrency(svg,input.spec,input.rows);
+}
 writeFileSync('/exports/chart.svg', svg);
 writeFileSync('/exports/consumer.json', JSON.stringify({ schemaVersion: 1, shims: [], dataHash, rows: input.rows.length, svgBytes: Buffer.byteLength(svg), numericCounterexample: 'pass' }));
 console.log('Standalone package imported and original SQL-backed request regenerated without shims.');

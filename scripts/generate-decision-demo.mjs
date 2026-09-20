@@ -3,7 +3,7 @@ import {resolve,join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {projectEnvironment} from '../server/environment.mjs';
 import {officeBrand} from '../studio/brand-profile.mjs';
-import {decisionDemos} from '../web/decision-demo.js';
+import {decisionDemos,decisionDemoProject} from '../web/decision-demo.js';
 const root=resolve(import.meta.dirname,'..'),dir=join(root,'.local/decision-visuals'),out=join(root,'web/assets/decisions');
 const model='openai/gpt-image-2.5/flare/edit',base='https://queue.fal.run/openai/gpt-image-2.5';
 await mkdir(dir,{recursive:true});await mkdir(out,{recursive:true});
@@ -14,7 +14,8 @@ const hash=b=>createHash('sha256').update(b).digest('hex');
 try{
  const reference=await readFile(join(root,'.local/asset-studio/references/style.png'));
  const results=await Promise.allSettled(decisionDemos.map(async d=>{
-  const prompt=`Create a polished conceptual infographic illustration for the Promote engineering office. ${officeBrand.illustration}. Palette and materials: ${officeBrand.materials}. Use the reference only for palette, finish and design sophistication. New composition: ${d.scene} Strong left-to-right narrative with three clearly separated stages. Fill the landscape composition generously. No text, letters, numbers, logos, captions, UI, watermarks or charts with invented metrics. Labels will be added in HTML.`;
+  const prompt=`Create a polished conceptual infographic about a feature improvement to the ${decisionDemoProject.name} chart library. The subject is the analyzed chart library, never Promote or its engineering orchestration. ${officeBrand.illustration}. Palette and materials: ${officeBrand.materials}. Use the reference only for palette, finish and design sophistication. New composition: ${d.scene} Strong left-to-right narrative with three clearly separated stages. Fill the landscape composition generously. No text, letters, numbers, logos, captions or watermarks. Chart geometry is illustrative, with no real data or metrics claimed. Labels will be added in HTML.`;
+  if(d.project!==decisionDemoProject.id)throw Error("Proposal does not belong to the analyzed project");
   const fingerprint=hash(JSON.stringify({model,prompt,reference:hash(reference)}));
   const file=join(dir,`${d.id}.json`);let job;try{job=JSON.parse(await readFile(file,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;job={id:d.id,fingerprint,model,status:'planned',costUsd:null};}
   const save=async()=>{await writeFile(file+'.tmp',JSON.stringify(job,null,2));await rename(file+'.tmp',file);};

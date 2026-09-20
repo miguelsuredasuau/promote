@@ -21,7 +21,7 @@ try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detail
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}
 function update(force=false){
  model=createOfficeModel(snapshot,mode,demoState);
- model.ownerDecisions=mode==='live'?list(snapshot?.ownerReport?.decisions).filter(d=>d.ownerAttention&&!d.resolution).length:4;
+ model.ownerDecisions=mode==='live'?list(snapshot?.ownerReport?.decisions).filter(d=>d.ownerAttention&&!d.resolution).length:0;
  const stamp=JSON.stringify(model);const changed=stamp!==lastModel;lastModel=stamp;
  if(changed||force)scene?.update(model);
  const count=[allCards().filter(c=>c.status!=='completed'&&c.status!=='done').length,list(snapshot?.operations).length,model.strategy.ideas.length,model.qa.candidateId?1:0,model.finance.currency??'—'];
@@ -35,7 +35,7 @@ function update(force=false){
  $('live-mode').setAttribute('aria-pressed',String(mode==='live'));$('demo-mode').setAttribute('aria-pressed',String(mode==='demo'));
  setText('demo-step',`Step ${demoState.phase+1}/7 · ${model.qa.status==='idle'?'Ready to begin':human(model.qa.status)} · No real work or spending.`);
  $('advance-demo').disabled=demoState.phase>=6;setText('play-demo',playTimer?'Pause story':'Play story');
- setText('briefing-summary',mode==='demo'?'4 propuestas visuales · Explora el futuro de Promote':model.ownerDecisions?`${model.ownerDecisions} big decisions need your direction`:'No big decisions waiting');
+ setText('briefing-summary',mode==='demo'?'Historia ilustrativa · Las propuestas están en la oficina en vivo':model.ownerDecisions?`${model.ownerDecisions} big decisions need your direction`:'No big decisions waiting');
  if(changed||force){for(const [key,surface] of Object.entries(nativeSurfaces))renderDesk(key,surface);if(desk==='briefing')decisions.update(snapshot,mode);}
 }
 function stopStory(){clearInterval(playTimer);playTimer=null;setText('play-demo','Play story')}
@@ -114,9 +114,10 @@ $('close-desk').onclick=()=>$('desk').close();$('desk').addEventListener('close'
 $('desk').addEventListener('click',e=>{if(e.target===$('desk')){const r=$('desk').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('desk').close()}});
 async function refresh(){const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),8000);try{const r=await fetch('/api/overview',{signal:abort.signal,cache:'no-store'});if(!r.ok)throw Error();const data=await r.json();if(!data.project||!data.implementation)throw Error();snapshot=data;update();setText('connection-status','Local office connected');$('connection-light').classList.add('ready');setText('observed',`Provider ${human(data.project.providerStatus)} · updated ${new Date(data.observedAt).toLocaleTimeString()}`);$('error-banner').hidden=true}catch{setText('connection-status',snapshot?'Office disconnected · last snapshot':'Controller unavailable');$('connection-light').classList.remove('ready');setText('error-banner','Waiting for controller updates. The last snapshot remains visible.');$('error-banner').hidden=false}finally{clearTimeout(timeout);setTimeout(refresh,5000)}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopStory()});
-if(new URLSearchParams(location.search).get('demo')==='decisions')mode='demo';
+const showImprovements=new URLSearchParams(location.search).has('improvements')||new URLSearchParams(location.search).get('demo')==='decisions';
+if(showImprovements)document.body.dataset.improvements='true';
 update();refresh();
-if(mode==='demo')openDesk('briefing');
+if(showImprovements)openDesk('briefing');
 
 for (const button of document.querySelectorAll('.station-dock [data-open]')) {
  button.addEventListener('pointerenter',()=>scene?.preview?.(button.dataset.open));

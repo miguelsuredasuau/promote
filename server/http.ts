@@ -1,3 +1,4 @@
+import {executeImprovement,projectImprovements} from './improvements';
 import { createServer, type IncomingMessage } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -27,10 +28,10 @@ const assets: Record<string, { file: string; mime: string }> = {
   '/assets/studio/studio-small-09.hdr': { file: 'assets/studio/studio-small-09.hdr', mime: 'application/octet-stream' },
   '/office-scene.js': { file: 'office-scene.js', mime: 'text/javascript; charset=utf-8' },
   '/decision-demo.js': { file: 'decision-demo.js', mime: 'text/javascript; charset=utf-8' },
-  '/assets/decisions/connect.png': { file: 'assets/decisions/connect.png', mime: 'image/png' },
-  '/assets/decisions/autonomy.png': { file: 'assets/decisions/autonomy.png', mime: 'image/png' },
-  '/assets/decisions/feedback.png': { file: 'assets/decisions/feedback.png', mime: 'image/png' },
-  '/assets/decisions/release.png': { file: 'assets/decisions/release.png', mime: 'image/png' },
+  '/assets/decisions/xarts-formatting.png': { file: 'assets/decisions/xarts-formatting.png', mime: 'image/png' },
+  '/assets/decisions/xarts-layout.png': { file: 'assets/decisions/xarts-layout.png', mime: 'image/png' },
+  '/assets/decisions/xarts-accessibility.png': { file: 'assets/decisions/xarts-accessibility.png', mime: 'image/png' },
+  '/assets/decisions/xarts-preflight.png': { file: 'assets/decisions/xarts-preflight.png', mime: 'image/png' },
   '/decision-desk.js': { file: 'decision-desk.js', mime: 'text/javascript; charset=utf-8' },
   '/decision-desk.css': { file: 'decision-desk.css', mime: 'text/css; charset=utf-8' },
   '/pull-requests.js': { file: 'pull-requests.js', mime: 'text/javascript; charset=utf-8' },
@@ -75,6 +76,13 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(record));
       }catch(error){res.writeHead(error instanceof ZodError||error instanceof SyntaxError?400:409,{'Content-Type':'application/json'}).end(JSON.stringify({error:error instanceof Error?error.message:'Test unavailable'}));}
       return;
+    }
+    if (req.method === 'POST' && req.url === '/api/improvements/execute') {
+      if (!ownerAuthorized(req, host, origin)) { res.writeHead(403).end('Owner session required'); return; }
+      if(req.headers['content-type']!=='application/json'){res.writeHead(415).end('JSON required');return;}
+      try { let body='';for await(const chunk of req){body+=chunk.toString();if(Buffer.byteLength(body)>4000){res.writeHead(413).end();return;}}
+        const result=await executeImprovement(options.root,options.store,JSON.parse(body));res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(result));
+      }catch(error){res.writeHead(error instanceof StoreConflictError?409:400,{'Content-Type':'application/json'}).end(JSON.stringify({error:error instanceof StoreConflictError?error.message:'Execution could not start; inspect the activity journal.'}));}return;
     }
     if (req.method === 'POST' && req.url === '/api/owner-decisions') {
       if (!ownerAuthorized(req, host, origin)) { res.writeHead(403).end('Owner session required'); return; }
@@ -130,6 +138,7 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         if (site !== undefined && site !== 'same-origin' && site !== 'none') { res.writeHead(403).end('Owner session is same-origin only'); return; }
         res.setHeader('Content-Type','application/json'); res.end(JSON.stringify({token:ownerToken})); return;
       }
+      if (url.pathname === '/api/improvements') {res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify({projectId:'xarts',items:projectImprovements(options.root,options.store)}));return;}
       if (url.pathname === '/api/overview') {
         const data = await overview(options.root, options.store, options.checkout);
         res.setHeader('Content-Type', 'application/json; charset=utf-8');

@@ -1,23 +1,23 @@
-# Visual directions in the office
+# Propuestas reales de Xarts
 
-Open **http://127.0.0.1:4310/?demo=decisions**, or choose **Explore demo** in the office and open the owner decision desk.
+Abre http://127.0.0.1:4310/?improvements=xarts o el escritorio del propietario en la oficina en vivo. La antigua URL `?demo=decisions` también abre la vista real.
 
-Four illustrative directions explore an installable adapter, bounded maintenance autonomy, feedback prioritization and safe delivery. Each combines a generated image with accessible HTML: the question, recommendation, alternative and boundaries. These are product concepts, not an implementation status report.
+Las cuatro propuestas pertenecen a la librería Xarts: formato numérico, layout adaptable de etiquetas, temas accesibles y validación previa. Se registran en SQLite con fuentes documentales, revisión y hashes; no son mejoras de Promote ni elecciones simuladas.
 
-Choices are local to the mounted view. The demo never requests an owner token, posts an approval, dispatches engineering or changes the release registry. Reloading or leaving the view clears choices. The live owner workflow is unchanged.
+`Encargar planificación` guarda un encargo real de planificación. `Ejecutar reparación` despacha una tarea real a Devin únicamente cuando una configuración del servidor liga la revisión de esa propuesta a alcance, repositorio, commit base, reproducción, pruebas, mandato y techo de ACU. No se infiere autorización de una aprobación antigua. Sin esa preparación, el botón de ejecución queda desactivado y explica qué falta.
 
-## Images and brand
+El primer ensayo autorizado implementa solo una parte de la propuesta de formato: corregir el signo negativo antes del prefijo monetario de waterfall. No implementa aún numberFormat global ni precisión configurable. El límite de esta reparación es 20 ACU.
 
-The four bundled PNGs were generated through fal using `openai/gpt-image-2.5/flare/edit`. `studio/brand-profile.mjs` supplies the same palette and materials to office generation and decision illustrations. Labels remain HTML so their meaning does not depend on generated typography. Images can be opened at full resolution.
+El candidato vuelve por una rama, pasa comprobación de identidad y alcance, compilación aislada y pruebas de consumidor. El replay usa el SQL original y verifica su hash; para esta reparación exige etiquetas monetarias negativas correctas. Solo entonces se activa el paquete en el registro. Que haya un candidato o una imagen bonita no demuestra entrega ni adopción en el chat.
 
-The generation tool is explicit, not triggered by viewing a proposal:
+## Operación
 
 ```sh
-node scripts/generate-decision-demo.mjs --submit
+node --import tsx scripts/register-improvements.ts /ruta/a/xarts /ruta/a/xarts-chat
 ```
 
-It requires `FAL_KEY` in the project environment and the local office style reference at `.local/asset-studio/references/style.png`. Initial generation can incur provider charges. Four requests were completed for the supplied set. No dollar total was reported by the image API; cost is unknown, not zero.
+Registrar nuevas fuentes produce evidencia versionada. `.local/improvement-executions.json` contiene las tareas y autorizaciones concretas; nunca credenciales. Los endpoints de escritura exigen sesión de propietario y origen local. Los clics repetidos reutilizan la reserva y no crean sesiones adicionales.
 
-Each image has a local durable journal containing its input fingerprint, provider request ID and output hash. A batch lock prevents simultaneous runs. Subsequent runs reuse completed images or resume recorded requests. An ambiguous submission without a request ID is never automatically retried. A changed input requires explicit revision management; do not delete an uncertain journal to retry a paid submission.
+Las imágenes son ilustraciones de la propuesta, no resultados. Se generaron con fal `openai/gpt-image-2.5/flare/edit`, compartiendo `studio/brand-profile.mjs` con la oficina. Cuatro imágenes de Xarts sustituyen a las cuatro iniciales de Promote. Coste de generación no comunicado por el proveedor; no se presenta como cero. La visualización no genera imágenes ni incurre en llamadas pagadas por sí sola.
 
-This release is a curated demo. Generating images automatically for live proposals, per-client brand configuration, and image-cost ingestion are future integration work.
+[Preparación del vídeo y criterios de evidencia](xarts-video-loop.md).

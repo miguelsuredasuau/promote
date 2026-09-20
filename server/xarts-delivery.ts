@@ -19,6 +19,7 @@ import { runNormaReview } from './norma-review';
 const exec = promisify(execFile);
 const digest = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
 export const DeliveryTask = z.object({
+  requiredTextFormat: z.enum(['negative_currency_sign_before_prefix']).optional(),
   attempt: z.number().int().min(1).max(3).default(1),
   schemaVersion: z.literal(1), checkout: z.string().min(1), repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
   candidateSha: z.string().regex(/^[a-f0-9]{40}$/), baseSha: z.string().regex(/^[a-f0-9]{40}$/),
@@ -59,10 +60,10 @@ export async function runXartsDelivery(store: ControllerStore, controllerRoot: s
   try { const selected = runSelect(db,saved.sql,10000);if(selected.truncated)throw Error('request_data_truncated');rows=selected.rows; } finally {db.close();}
   const dataHash = digest(JSON.stringify(rows));
   if (dataHash!==saved.dataHash || rows.length!==saved.rowCount) throw Error('original_sql_data_changed');
-  const request = {spec,rows,dataHash};
+  const request = {spec,rows,dataHash,requiredTextFormat:task.requiredTextFormat};
   const evaluatorRevision = (await exec('git',['rev-parse','HEAD'],{cwd:controllerRoot})).stdout.trim();
   const codeHashes: Record<string,string> = {};
-  for (const file of ['server/xarts-delivery.ts','server/xarts-validation.ts','server/container-runner.ts','adapters/xarts/build-worker.mjs','adapters/xarts/consumer-worker.mjs']) codeHashes[file]=digest(await readFile(join(controllerRoot,file)));
+  for (const file of ['server/xarts-delivery.ts','server/xarts-validation.ts','server/container-runner.ts','adapters/xarts/build-worker.mjs','adapters/xarts/consumer-worker.mjs','adapters/xarts/currency-check.mjs']) codeHashes[file]=digest(await readFile(join(controllerRoot,file)));
   const input = {task,request,codeHashes,changedPaths:changed};
   const profile: GateProfile = {schemaVersion:1,profileId:'xarts-delivery-v1',libraryId:'xarts',evaluatorRevision,
     gates:['protected.sourceAndSql','xarts.sdkBuild','xarts.standaloneAndRegeneration'].map(gateId=>({gateId,gateVersion:1,requirement:'required' as const,notApplicableAllowed:false}))};

@@ -1,3 +1,4 @@
+import {executionBindings} from './improvements';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFileSync, existsSync } from 'node:fs';
@@ -85,6 +86,17 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
     store.deliveryStatus({status:'waiting_for_docker',candidateSha:deliveryTask.candidateSha,nextAction:'Start Docker Desktop and free disk space. The next ten-minute review checks again.'});
     store.recordActivity('verification','Package verification is waiting for Docker',{reason:'docker_unavailable',candidateSha:deliveryTask.candidateSha,
      nextAction:'Start Docker Desktop and free disk space. The next scheduled review will check again; no paid session is launched.'});
+   }
+  }
+ }
+ for(const binding of executionBindings(root)){
+  const reservation=store.engineeringReservation(binding.task.incidentId);
+  if(reservation?.state==='stopped'&&reservation.candidateSha){
+   const deliveryTask=DeliveryTask.parse({...binding.delivery,candidateSha:reservation.candidateSha,sourceBranch:binding.task.providerExtension.branch});
+   const workId=`improvement-delivery:${hashCanonical(deliveryTask)}`;
+   if(!store.workQueue().some(w=>w.id===workId)){
+    const inspection=await inspectCandidate(store,binding.task.incidentId,deliveryTask.checkout);
+    if(inspection.result.reason==='independent_runtime_checks_pending')store.enqueueWork({id:workId,kind:'candidate_review',role:'qa',lane:'reliability',priority:100,payload:{deliveryTask,proposalId:binding.proposalId},promptHash:rolePrompt('qa').hash});
    }
   }
  }

@@ -1,3 +1,4 @@
+import {executionBindings} from './improvements';
 import { createScheduledReview } from './scheduled-review';
 import { mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -17,6 +18,8 @@ const port = Number(process.env.PORT ?? 4310);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be a valid TCP port');
 mkdirSync(dirname(database), { recursive: true });
 const store = new ControllerStore(database);
+let orchestrating=false;
+async function orchestrate(){if(orchestrating)return;orchestrating=true;try{await runOrchestrator(store,root,process.env.PROMOTE_PROJECT_PATH);}finally{orchestrating=false;}}
 let observing = false;
 let providerState = '';
 async function pollEngineering() {
@@ -24,12 +27,14 @@ async function pollEngineering() {
   observing = true;
   try {
     const config = loadDevin(root);
-    store.providerStatus(config.status);
+    const running=store.engineeringReservations().filter(r=>r.state==='running');
+    store.providerStatus(running.length?{...config.status,status:'engineering_running',explanation:'Devin is working on an authorized task. Usage is reported by the provider; release still requires independent verification.'}:config.status);
     if (providerState !== config.status.status) {
       providerState = config.status.status;
       store.recordActivity('provider', 'Engineering provider readiness changed', config.status);
     }
     if (config.adapter) { await observeEngineering(store, config.adapter); await observeExplorations(store,config.adapter); }
+    if(executionBindings(root).some(b=>{const r=store.engineeringReservation(b.task.incidentId);return r?.state==='stopped'&&r.candidateSha&&!store.workQueue().some(w=>w.payload?.proposalId===b.proposalId&&w.payload?.deliveryTask?.candidateSha===r.candidateSha);}))void orchestrate().catch(()=>console.error('Proposal delivery scheduling failed; evidence retained'));
   } finally { observing = false; }
 }
 let importing = false;
@@ -71,7 +76,7 @@ const heartbeat = createScheduledReview({
     const prior = store.orchestratorHeartbeat();
     return !prior || Date.parse(prior.nextCheckAt) <= Date.now();
   },
-  orchestrate: () => runOrchestrator(store, root, process.env.PROMOTE_PROJECT_PATH),
+  orchestrate,
   review: () => reviewProject(store, process.env.PROMOTE_PROJECT_PATH),
   report: message => console.error(message),
 });

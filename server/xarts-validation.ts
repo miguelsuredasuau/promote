@@ -124,6 +124,7 @@ export async function validateXartsConsumer(config: { root: string; packageBytes
   await writeFile(join(root, 'preparation.log'), preparation.stdout + preparation.stderr);
   const image = (await readFile(join(root, 'image.id'), 'utf8')).trim();
   const files = [
+    ['currency-check.mjs', await readFile(new URL('../adapters/xarts/currency-check.mjs', import.meta.url))],
     ['consumer-worker.mjs', await readFile(new URL('../adapters/xarts/consumer-worker.mjs', import.meta.url))],
     ['request.json', Buffer.from(JSON.stringify(config.request))],
   ] as const;

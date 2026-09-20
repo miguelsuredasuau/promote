@@ -1,34 +1,35 @@
 {
   "schemaVersion": 1,
+  "projectId": "xarts",
   "model": "openai/gpt-image-2.5/flare/edit",
   "provider": "fal",
   "brand": "xarts-office-v1",
-  "purpose": "illustrative-demo",
+  "purpose": "proposal-illustration-not-delivery-evidence",
   "costUsd": null,
   "images": [
     {
-      "id": "connect",
-      "file": "connect.png",
-      "sha256": "cb857f642710716c3154667cd173c67d9e38637c9b842c5d8c2180cf42166287",
-      "completedAt": "2026-09-20T07:17:05.595Z"
+      "id": "xarts-formatting",
+      "file": "xarts-formatting.png",
+      "sha256": "102052ae5e22b25283d7cbc93f0bee7be47938d1c2a350e581897064e981c585",
+      "completedAt": "2026-09-20T07:23:19.394Z"
     },
     {
-      "id": "autonomy",
-      "file": "autonomy.png",
-      "sha256": "ab3f43864a3562410e3e6d756f781e908e2e946ad38c9f61dc285a3ec73bd3ad",
-      "completedAt": "2026-09-20T07:17:00.483Z"
+      "id": "xarts-layout",
+      "file": "xarts-layout.png",
+      "sha256": "c94cbccacc03b48e66b2f5368829b16a35963e7768b625297708d67488aa9ae2",
+      "completedAt": "2026-09-20T07:23:18.777Z"
     },
     {
-      "id": "feedback",
-      "file": "feedback.png",
-      "sha256": "b883a5f26fc838a1e24fa6e5bec9a220815d78416213b87f528a02c82158be43",
-      "completedAt": "2026-09-20T07:17:00.129Z"
+      "id": "xarts-accessibility",
+      "file": "xarts-accessibility.png",
+      "sha256": "eec9a0a802793affb29ff97c5e454f259eb9ae4967ee8e159939b0d379af2f82",
+      "completedAt": "2026-09-20T07:23:17.821Z"
     },
     {
-      "id": "release",
-      "file": "release.png",
-      "sha256": "adb4af10bcd0e4a7cc5bfff08bd75406aaa32f3d14b59e154626c3ad8f868aad",
-      "completedAt": "2026-09-20T07:16:59.656Z"
+      "id": "xarts-preflight",
+      "file": "xarts-preflight.png",
+      "sha256": "38f2f768d80f02546f6436f0c2a0de7d93e1fc88d03ee5eea5a4fbcfc4635a58",
+      "completedAt": "2026-09-20T07:23:19.301Z"
     }
   ]
 }

@@ -2,7 +2,7 @@ import { mountDecisionDemo } from '/decision-demo.js';
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 const actions={approve_plan:'Planning commissioned',request_changes:'Changes requested',reject:'Declined'};
 export function createDecisionDesk({onSaved,pullRequests}){
- let root,data,mode,selected,tab='pending',stamp='',busy=false,notice='';const drafts=new Map();
+ let root,data,mode,selected,tab='improvements',stamp='',busy=false,notice='';const drafts=new Map();
  const items=()=>(data?.ownerReport?.decisions??[]).filter(d=>d.ownerAttention||d.resolution);
  const routine=()=>data?.ownerReport?.routineWork?.tracked??0;
  function mount(container,snapshot,currentMode){root=container;data=snapshot;mode=currentMode;stamp=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);render();}
@@ -21,11 +21,12 @@ export function createDecisionDesk({onSaved,pullRequests}){
   render();
  }
  function render(){
-  if(!root)return;root.replaceChildren();root.className='decision-workspace';
-  if(mode==='demo'){mountDecisionDemo(root);return;}
+  if(!root)return;root.improvementView=null;root.replaceChildren();root.className='decision-workspace';
+  if(mode==='live'&&tab==='improvements'){document.body.dataset.improvements='true';mountDecisionDemo(root,{onHistory:()=>{tab='pending';render();}});return;}
+  if(mode==='demo'){root.append(el('p','Las propuestas reales de Xarts están en el escritorio en vivo.'));const link=el('a','Abrir propuestas de Xarts');link.href='/?improvements=xarts';root.append(link);return;}
   const pending=items().filter(d=>!d.resolution),resolved=items().filter(d=>d.resolution),visible=tab==='pending'?pending:resolved;
   const rail=el('aside',undefined,'decision-tray');const head=el('div',undefined,'decision-count');head.append(el('strong',String(pending.length).padStart(2,'0')),el('span','big decisions for you'));rail.append(head);
-  const tabs=el('nav',undefined,'decision-tabs');tabs.setAttribute('aria-label','Decision trays');for(const [id,label,count]of[['pending','For you',pending.length],['resolved','Decided',resolved.length],...(pullRequests?[['prs','Pull requests',null]]:[])]){const b=el('button',count===null?label:`${label} · ${count}`);b.setAttribute('aria-pressed',String(tab===id));b.onclick=()=>{tab=id;selected=null;render();};tabs.append(b);}rail.append(tabs);
+  const tabs=el('nav',undefined,'decision-tabs');tabs.setAttribute('aria-label','Decision trays');for(const [id,label,count]of[['improvements','Xarts',null],['pending','For you',pending.length],['resolved','Decided',resolved.length],...(pullRequests?[['prs','Pull requests',null]]:[])]){const b=el('button',count===null?label:`${label} · ${count}`);b.setAttribute('aria-pressed',String(tab===id));b.onclick=()=>{tab=id;selected=null;render();};tabs.append(b);}rail.append(tabs);
   if(tab==='prs'){rail.append(el('p','Open pull requests on the repositories Promote governs. Each merges as you, once QA is green.','decision-empty'));const rule=el('div',undefined,'decision-boundary');rule.append(el('b','Your authority, intact.'),el('p','Nothing merges red. Conflicts are resolved in an isolated clone; overlapping source changes wait for you.'));rail.append(rule);const sheet=el('article',undefined,'decision-sheet');pullRequests.mount(sheet);root.append(rail,sheet);return;}
   const queue=el('div',undefined,'decision-queue');let item=visible.find(d=>d.id===selected)??visible[0];selected=item?.id;
   visible.forEach((d,i)=>{const b=el('button',undefined,'decision-envelope');b.setAttribute('aria-pressed',String(d.id===selected));b.append(el('small',`Decision ${String(i+1).padStart(2,'0')}`),el('strong',d.brief?.title??d.title),el('span',d.resolution?actions[d.resolution.action]:'Your direction matters →'));b.onclick=()=>{selected=d.id;notice='';render();};queue.append(b);});
