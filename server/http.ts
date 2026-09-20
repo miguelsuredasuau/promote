@@ -6,6 +6,7 @@ import { ControllerStore, StoreConflictError } from './store';
 import { ZodError } from 'zod';
 import { overview } from './overview';
 import { GateResult } from '../contracts/records';
+import { listPullRequests, loadPullRequestConfig, mergePullRequest } from './pull-requests';
 
 const assets: Record<string, { file: string; mime: string }> = {
   '/activity': { file: 'activity.html', mime: 'text/html; charset=utf-8' },
@@ -23,6 +24,7 @@ const assets: Record<string, { file: string; mime: string }> = {
   '/office-scene.js': { file: 'office-scene.js', mime: 'text/javascript; charset=utf-8' },
   '/decision-desk.js': { file: 'decision-desk.js', mime: 'text/javascript; charset=utf-8' },
   '/decision-desk.css': { file: 'decision-desk.css', mime: 'text/css; charset=utf-8' },
+  '/pull-requests.js': { file: 'pull-requests.js', mime: 'text/javascript; charset=utf-8' },
   '/app.js': { file: 'app.js', mime: 'text/javascript; charset=utf-8' },
   '/styles.css': { file: 'styles.css', mime: 'text/css; charset=utf-8' },
 };
@@ -51,6 +53,23 @@ export function createOperatorServer(options: { root: string; store: ControllerS
       } catch (error) {
         const status = error instanceof StoreConflictError ? 409 : error instanceof ZodError || error instanceof SyntaxError ? 400 : 503;
         res.writeHead(status, {'Content-Type':'application/json'}).end(JSON.stringify({error:status===409?'Decision changed; refresh and review again.':status===400?'Invalid decision or missing feedback.':'Decision could not be saved.'}));
+      }
+      return;
+    }
+    if (req.method === 'POST' && req.url === '/api/pull-requests/merge') {
+      if (origin !== `http://${host}` || req.headers['x-owner-token'] !== ownerToken) { res.writeHead(403).end('Owner session required'); return; }
+      if (req.headers['content-type'] !== 'application/json') { res.writeHead(415).end('JSON required'); return; }
+      const config = loadPullRequestConfig(options.root);
+      if (!config) { res.writeHead(409, {'Content-Type':'application/json'}).end(JSON.stringify({error:'Set PROMOTE_GITHUB_TOKEN and PROMOTE_MERGE_REPOS in .env to merge from the office.'})); return; }
+      try {
+        let body = '';
+        for await (const chunk of req) { body += chunk.toString(); if (Buffer.byteLength(body) > 4000) { res.writeHead(413).end('Request too large'); return; } }
+        const outcome = await mergePullRequest(config, options.store, JSON.parse(body));
+        res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify(outcome));
+      } catch (error) {
+        const status = error instanceof ZodError || error instanceof SyntaxError ? 400 : 503;
+        const github = error instanceof Error && /^github_(\d+)/.exec(error.message)?.[1];
+        res.writeHead(status, {'Content-Type':'application/json'}).end(JSON.stringify({error:status===400?'Invalid merge request.':github?`GitHub answered ${github}; check the token's scopes.`:'Merge could not be completed; the branch was left untouched unless reported otherwise.'}));
       }
       return;
     }
@@ -86,6 +105,14 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         if (!Number.isSafeInteger(after) || after < 0) { res.writeHead(400).end('Invalid cursor'); return; }
         const events = options.store.chatProgress(chatProgressRoute[1], after);
         res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ events, nextCursor: events.at(-1)?.ordinal ?? after })); return;
+      }
+      if (url.pathname === '/api/pull-requests') {
+        const config = loadPullRequestConfig(options.root);
+        res.setHeader('Content-Type', 'application/json');
+        if (!config) { res.end(JSON.stringify({ configured: false, repos: [], items: [] })); return; }
+        try { res.end(JSON.stringify({ configured: true, repos: config.repos, items: await listPullRequests(config) })); }
+        catch { res.writeHead(503).end(JSON.stringify({ error: 'GitHub unavailable or token rejected.' })); }
+        return;
       }
       if (url.pathname === '/api/inbox') {
         res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ items: options.store.inboxSnapshot() })); return;

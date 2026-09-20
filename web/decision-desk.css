@@ -48,3 +48,13 @@
  .decision-actions{flex-direction:column;}.decision-actions button{min-height:46px;font-size:15px;}.decision-feedback textarea{font-size:16px;}
  body[data-station=briefing] .service-activity-link,body[data-station=briefing] .generated-asset-status{display:none;}
 }
+.pr-desk{margin-top:28px;padding-top:22px;border-top:1px solid #d9d3ca;}
+.pr-list{list-style:none;margin:14px 0;padding:0;display:grid;gap:12px;}
+.pr-item{padding:14px 16px;border:1px solid #d9d3ca;border-radius:12px;background:#fbfaf7;display:grid;gap:6px;}
+.pr-head a{font-weight:600;color:#1b4a6b;text-decoration:none;}.pr-head a:hover{text-decoration:underline;}
+.pr-facts{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:#52696e;}
+.pr-qa,.pr-merge{padding:1px 8px;border-radius:999px;background:#e8e4dd;}
+.pr-qa-passed{background:#d7ecdf;color:#1f5a3a;}.pr-qa-failed{background:#f3d6d2;color:#7a2a20;}.pr-qa-pending{background:#f6e9c8;color:#6b4d0e;}
+.pr-merge-conflicts{background:#f6e9c8;color:#6b4d0e;}.pr-merge-blocked{background:#f3d6d2;color:#7a2a20;}
+.pr-item details p{margin:2px 0;font-size:12px;color:#52696e;}
+.pr-item button,.pr-desk>button{justify-self:start;}
