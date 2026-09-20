@@ -76,6 +76,24 @@ Activity records each gate and links its hash-checked log. The office ticker use
 those same delivery states. A failure preserves the existing active release.
 Execution failures are not proof of a library defect.
 
+## Retention: immutable evidence
+
+Evidence is never deleted; only payload bytes are. Incident events, gate results,
+release records and the hashes they carry stay in the store and the registry
+forever. A candidate workspace under `.local/xarts-validation/<sha>` may lose its
+payloads — `source.tar`, container `runs/`, the `consumer/` image inputs and any
+exported artifact above 1 MiB — but keeps `identity.json`, `build-evidence.json`
+and every small content-addressed log or report. Before any byte is removed the
+workspace gets an append-only `expunged.json` receipt with the path, SHA-256 and
+size of each file, so a hash referenced anywhere remains explainable. The active
+release's workspace is never expunged. A gate log whose bytes were expunged is
+served as `410` with that receipt entry instead of `404`.
+
+```sh
+node --import tsx scripts/retain-evidence.ts --registry .local/registry --older-than-days 14          # report only
+node --import tsx scripts/retain-evidence.ts --registry .local/registry --older-than-days 14 --apply  # expunge
+```
+
 ## Chat connection
 
 Start the chat with `PROMOTE_REGISTRY` pointing at the task's registry directory,
