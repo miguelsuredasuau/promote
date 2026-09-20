@@ -58,3 +58,22 @@
 .pr-merge-conflicts{background:#f6e9c8;color:#6b4d0e;}.pr-merge-blocked{background:#f3d6d2;color:#7a2a20;}
 .pr-item details p{margin:2px 0;font-size:12px;color:#52696e;}
 .pr-item button,.pr-desk>button{justify-self:start;}
+
+/* Direction first; implementation detail stays available on demand. */
+.decision-sheet h3{font-size:clamp(28px,3vw,42px);line-height:1.12;text-wrap:balance;max-width:22ch;}
+.decision-intro{font-size:18px;line-height:1.65;max-width:58ch;color:#496159;margin:0 0 24px;}
+.decision-kicker{font:500 13px/1.5 system-ui,sans-serif;letter-spacing:.3px;color:#526b62;}
+.decision-comparison{display:grid;grid-template-columns:1fr 1.3fr;margin:22px 0 26px;border:1px solid #c5cfc5;border-radius:8px;overflow:hidden;}
+.decision-comparison>div{padding:20px;background:#f1f0e9;}
+.decision-comparison>div+div{background:#e6eee2;border-left:1px solid #c5cfc5;}
+.decision-comparison small{font-size:12px;font-weight:600;color:#496459;}
+.decision-comparison p{font-size:17px;line-height:1.5;text-wrap:pretty;margin:10px 0 0;}
+.decision-autonomy{display:grid;gap:0;margin:28px 0;border-block:1px solid #ced5ca;}
+.decision-autonomy>div{display:grid;grid-template-columns:110px 1fr;gap:18px;padding:18px 0;align-items:baseline;}
+.decision-autonomy>div+div{border-top:1px solid #e0e4da;}
+.decision-autonomy strong{font:500 23px/1.2 Georgia,serif;color:#2f6650;}
+.decision-autonomy span{font-size:15px;line-height:1.5;color:#52675e;}
+.decision-workspace button:focus-visible,.decision-workspace a:focus-visible,.decision-workspace textarea:focus-visible,.decision-workspace summary:focus-visible{outline:3px solid #2d7255;outline-offset:3px;}
+.decision-actions button:active{transform:translateY(1px);}
+.decision-sheet .decision-owner-note{background:#eaf0e4;color:#365246;font-size:15px;line-height:1.6;}
+@media(max-width:650px){.decision-comparison{grid-template-columns:1fr;}.decision-comparison>div+div{border-left:0;border-top:1px solid #c5cfc5;}.decision-intro{font-size:16px;}.decision-autonomy>div{grid-template-columns:1fr;gap:6px;}.decision-autonomy strong{font-size:21px;}}

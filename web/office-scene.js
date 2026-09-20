@@ -398,7 +398,7 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     const copy=currentStage?qaStageCopy(currentStage,model.mode):null;
     activityBubble(qaBubble,q.status==='failed'?'QA · Needs attention':q.status==='running'?'QA · Checking':q.status==='completed'?'QA · Complete':'QA',q.candidateId?(q.status==='failed'&&model.operations?.heading?model.operations.heading:copy?.headline||'Waiting for verification'):'',q.status==='failed'?'attention':q.status==='running'?'working':'complete');
     const proposals=model.ownerDecisions??(model.strategy?.ideas||[]).filter(i=>!['completed','done','cancelled','refused'].includes(i.status)).length;
-    activityBubble(ceoBubble,'CEO · Decision queue',proposals?`${proposals} proposal${proposals===1?'':'s'} awaiting review`:'','neutral');
+    activityBubble(ceoBubble,'CEO · Decision queue',proposals?`${proposals} decision${proposals===1?'':'s'} need your direction`:'','neutral');
     requestRender();
   }
   function focus(id) { if(nativeDetail){nativeDetail=null;signature='';update(model);}tourMode='off';tourTime=0;tourLabel(); selected = stations[id] ? id : null; signature='';update(model);focusElapsed=0; hovered = null; if (detailElement) { detailElement.classList.toggle('world-surface', !!selected); if (!selected) { detailElement.style.removeProperty('transform'); detailElement.style.removeProperty('width'); detailElement.style.removeProperty('height'); detailElement.style.removeProperty('opacity'); } } requestRender(); }

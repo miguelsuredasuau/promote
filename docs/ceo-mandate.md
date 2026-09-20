@@ -27,3 +27,7 @@ Costs can later include model usage, execution infrastructure and other explicit
 The initial owner report provides real incident-derived backlog counts for the visible snapshot, known implementation status, integration readiness and gate inventory. Feedback ingestion, budget ledger, autonomous prioritization, policy decisions and financial reconciliation are planned. Their UI states explicitly report not connected/not configured; they do not show fabricated zero spend or fictional customer feedback.
 
 Next delivery packages: feedback inbox and deduplication; prioritized proposals with evidence; versioned mandate and budget reservations; decision queue with optimistic revision checks; provider-backed task execution; verified releases; reconciled periodic owner reports. These extend the control plane without changing the frozen v1 gate-evidence contract.
+
+## September 20 update: fewer interruptions
+
+The decision desk now separates routine investigation from product-direction choices. Proposal assessments prepare planning outlines automatically. Technical evidence stays in the backlog and Activity, while the owner sees a plain-language recommendation and visual options for elevated product choices. See [the implemented decision desk](owner-decision-desk.md). The exact-task engineering mandate remains the authority for paid execution; this interface change does not establish a blanket budget or automatic merge policy.

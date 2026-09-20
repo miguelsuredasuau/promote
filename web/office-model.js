@@ -119,7 +119,7 @@ export function createOfficeModel(snapshot, mode, demoState) {
     if(operations.review&&selected){const card=cards.find(c=>c.id===selected.id);if(card){card.columnId='review';card.status=operations.review.state==='blocked'?'blocked':'evaluating';}}
   }
   return {
-    mode: 'live', operations, kanban: board(cards),
+    mode: 'live', operations, ownerDecisionCount: array(snapshot?.ownerReport?.decisions).filter(d=>d.ownerAttention&&!d.resolution).length, kanban: board(cards),
     engineering: { lines: operations?[operations.heading,operations.detail,`Next: ${operations.next}`]:events.slice(-14).map(event => `${event.occurredAt} · ${event.type}${event.payload?.reason ? ` · ${event.payload.reason}` : ''}`), status: operations?.activeCount?'engineering':operations?.session?.state==='stopped'?'stopped':selected?.status ?? 'idle', task: selected?.requestedOutcome.summary ?? 'No controller tasks received' },
     strategy: { ideas: cards.filter(card => card.kind !== 'repair').map(card => ({ id: card.id, title: card.title, body: card.kind === 'gate_strengthening' ? 'Controller request to strengthen acceptance gates.' : 'Controller capability request.', status: card.status })) },
     qa: operations?.review?{executionMode:'local_checks',candidateId:operations.review.result?.candidateSha??operations.session?.candidateSha??null,attempt:1,stageIndex:0,status:operations.review.state==='blocked'?'failed':'running',stages:[{id:'provenance',label:'Candidate scope',outcome:operations.review.result?.checks?.scope??'not_run'},{id:'meaning',label:'Independent build',outcome:'not_run'},{id:'regression',label:'Regression checks',outcome:'not_run'},{id:'release',label:'Release',outcome:'not_run'}]}:projectedQA(snapshot, selected, events),

@@ -9,6 +9,7 @@ import { rolePrompt } from './role-prompts';
 import { loadDevin } from './devin-config';
 import { dispatchEngineering } from './engineering';
 import { DeliveryTask, runXartsDelivery } from './xarts-delivery';
+import { ownerAttention } from './owner-decisions';
 import { originMatchesRepo } from './repo-identity';
 const exec=promisify(execFile);
 
@@ -89,7 +90,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
  for(const source of store.untriagedRecords(100))if(store.triageRecord(source.sourceKey,classifyRecord(source.record),feedback.hash))triaged++;
  for(const proposal of store.proposals()){
   const role=proposal.category==='feature'?'product':'feedback';
-  store.enqueueWork({id:`assess:${proposal.id}`,kind:'proposal_assessment',role,lane:['feature','feedback'].includes(proposal.category)?'discovery':'reliability',priority:proposal.priority,payload:{proposalId:proposal.id},promptHash:rolePrompt(role).hash});
+  store.enqueueWork({id:`assess-v2:${hashCanonical(proposal)}`,kind:'proposal_assessment',role,lane:['feature','feedback'].includes(proposal.category)?'discovery':'reliability',priority:proposal.priority,payload:{proposalId:proposal.id},promptHash:rolePrompt(role).hash});
  }
  for(const reservation of store.engineeringReservations())if(reservation.state==='stopped'&&reservation.candidateSha)
   store.enqueueWork({id:`review:${reservation.incidentId}:${reservation.candidateSha}`,kind:'candidate_review',role:'qa',lane:'reliability',priority:100,payload:{incidentId:reservation.incidentId},promptHash:rolePrompt('qa').hash});
@@ -103,7 +104,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
    if(work.kind==='proposal_assessment'){
     const proposal=work.payload.ownerDecision ? work.payload.approvedProposal : store.proposals().find(p=>p.id===work.payload.proposalId);
     if(!proposal)throw Error('proposal_missing');
-    store.finishWork(work.id,work.token,'completed',{proposalId:proposal.id,category:proposal.category,confidence:'needs_validation',evidenceCount:proposal.sources.length,nextAction:proposal.nextAction,implementationAuthorized:false,executionMode:'local_rules',...(work.payload.ownerDecision?{planningBrief:{title:proposal.title,objective:proposal.nextAction,evidence:proposal.sources,steps:['Review the cited customer evidence','Define a reproducible acceptance example','Propose affected files and independent checks','Return an implementation estimate for separate approval'],costEstimate:null,requiresOwnerApproval:['Implementation scope','Paid session limit','Any release'],ownerFeedback:store.ownerDecisions().find(d=>d.revision===work.payload.ownerDecision)?.feedback??''}}:{})});
+    store.finishWork(work.id,work.token,'completed',{proposalId:proposal.id,category:proposal.category,confidence:'needs_validation',evidenceCount:proposal.sources.length,nextAction:proposal.nextAction,implementationAuthorized:false,executionMode:'local_rules',...({planningBrief:{title:proposal.title,objective:proposal.nextAction,evidence:proposal.sources,steps:['Review the cited customer evidence','Define a reproducible acceptance example','Propose affected files and independent checks','Return an implementation estimate for separate approval'],costEstimate:null,requiresOwnerDirection:ownerAttention(proposal),requiresExecutionMandate:true,ownerFeedback:store.ownerDecisions().find(d=>d.revision===work.payload.ownerDecision)?.feedback??''}})});
    }else if(work.kind==='candidate_review'){
     const review=work.payload.deliveryTask?await runXartsDelivery(store,root,work.payload.deliveryTask):await inspectCandidate(store,String(work.payload.incidentId),checkout);
     store.finishWork(work.id,work.token,review.state,review.result);
