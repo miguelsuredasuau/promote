@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {evaluateIntegration,integrationChecks} from './integration.mjs';
+test('changed office invalidates all old passes',()=>{const report={fingerprint:'old',checks:integrationChecks.map(([id])=>({id,status:'passed'}))};assert.equal(evaluateIntegration(report,'old').complete,true);const stale=evaluateIntegration(report,'new');assert.equal(stale.complete,false);assert.ok(stale.checks.every(c=>c.status==='pending'));});
+test('missing checks cannot complete integration',()=>{assert.equal(evaluateIntegration({fingerprint:'now',checks:[{id:'layout',status:'passed'}]},'now').complete,false);assert.ok(evaluateIntegration(null,'now').checks.every(c=>c.status==='pending'));});

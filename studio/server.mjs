@@ -21,6 +21,7 @@ createServer(async(req,res)=>{
   res.setHeader('Content-Type','application/json');try{res.end(JSON.stringify(await (url.pathname==='/generate-items'?startItems:url.pathname==='/room-command'?roomCommand:url.pathname==='/draft'?saveDraft:decide)(JSON.parse(body))));}catch(error){res.writeHead(409).end(JSON.stringify({error:error.message}));}return;
  }
  if(req.method!=='GET'){res.writeHead(405).end();return;}
+ if(/^\/integration-(office|backlog|engineering|strategy|qa|finance|ticker)\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}
  if(url.pathname==='/preview'){res.writeHead(302,{Location:'/'}).end();return;}
  if(/^\/model-[0-9a-f-]{36}\.glb$/.test(url.pathname)){res.setHeader('Content-Type','model/gltf-binary');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}
  if(/^\/(?:item|render)-[0-9a-f-]{36}\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}

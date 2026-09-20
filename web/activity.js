@@ -1,13 +1,25 @@
 import {operationsStory,eventCopy,reasonText,words} from './operations-model.js';
-const $=id=>document.getElementById(id);let cursor=0,events=[],lastStory='',lastEventKey='',lastInbox='',eventLimit=25;
+const $=id=>document.getElementById(id);let cursor=0,events=[],lastStory='',lastEventKey='',lastInbox='',eventLimit=25,seenSequence=-1,lastFilter=null,storyPainted=false,summaryPainted=false;
 const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=String(text);if(cls)el.className=cls;return el;};
 const status=text=>node('span',text,'status'+(['Needs attention','Blocked'].includes(text)?' attention':text==='Working'?' working':''));
+const calm=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+const enter=(el,i)=>{el.dataset.enter='';el.style.setProperty('--enter',String(Math.min(i,11)));return el;};
+// Animate a disclosure without inventing state: the summary still owns open/closed.
+function disclose(details){
+ const body=node('div',undefined,'disclosure-body');body.append(...[...details.childNodes].filter(n=>n.nodeName!=='SUMMARY'));details.append(body);
+ details.addEventListener('click',e=>{if(!e.target.closest?.('summary')||calm())return;e.preventDefault();const open=details.open;if(!open)details.open=true;
+  body.style.height=(open?body.scrollHeight:0)+'px';body.getBoundingClientRect();body.style.height=(open?0:body.scrollHeight)+'px';
+  body.addEventListener('transitionend',()=>{body.style.height='';if(open)details.open=false;},{once:true});});
+ return details;
+}
+for(const d of document.querySelectorAll('main details'))disclose(d);
 function renderEvents(){
  const filter=$('filter').value,key=filter+':'+eventLimit+':'+events.at(-1)?.sequence;if(key===lastEventKey)return;lastEventKey=key;
  const visible=events.filter(e=>filter==='all'||(filter==='decisions'?!['chat_progress','intake'].includes(e.category)&&!['Work assigned','Role started work','Feedback analyst triaged record','Role completed work'].includes(e.summary):e.category===filter));
  const open=new Set([...$('events').querySelectorAll('details[open]')].map(d=>d.dataset.event));
  $('more-events').hidden=visible.length<=eventLimit;
  $('empty').hidden=visible.length>0;$('events').replaceChildren();
+ const view=filter+':'+eventLimit,restage=view!==lastFilter;lastFilter=view;let row=0;
  for(const event of visible.slice(-eventLimit).reverse()){
   const copy=eventCopy(event),li=node('li'),time=node('time',new Date(event.at).toLocaleString());time.dateTime=event.at;
   const body=node('div');body.append(node('span',words(event.category),'category'),node('span',copy.title,'event-title'));
@@ -15,9 +27,12 @@ function renderEvents(){
   if(event.summary==='gate.finished'&&event.details.result?.logArtifactId?.startsWith('log:')){
    const link=node('a','Read verification log');link.href=`/api/incidents/${encodeURIComponent(event.details.incidentId)}/gates/${encodeURIComponent(event.details.result.id)}/log`;link.target='_blank';link.rel='noopener';body.append(link);
   }
-  if(Object.keys(event.details).length){const details=node('details');details.dataset.event=String(event.sequence);details.open=open.has(String(event.sequence));details.append(node('summary','Evidence & technical details'),node('pre',JSON.stringify(event.details,null,2)));body.append(details);}
-  li.append(time,body);if(event.category==='error')li.classList.add('error');$('events').append(li);
+  if(Object.keys(event.details).length){const details=node('details');details.dataset.event=String(event.sequence);details.open=open.has(String(event.sequence));details.append(node('summary','Evidence & technical details'),node('pre',JSON.stringify(event.details,null,2)));body.append(disclose(details));}
+  li.append(time,body);if(event.category==='error')li.classList.add('error');
+  if(restage)enter(li,row++);else if(event.sequence>seenSequence)li.dataset.fresh='';
+  $('events').append(li);
  }
+ seenSequence=events.at(-1)?.sequence??seenSequence;
 }
 $('filter').onchange=()=>{eventLimit=25;renderEvents();};
 $('more-events').onclick=()=>{eventLimit+=25;renderEvents();};
@@ -26,14 +41,15 @@ function renderStory(s){
  $('objective').textContent=story.objective;$('headline').textContent=story.heading;$('current-detail').textContent=story.detail;
  $('next-title').textContent=story.blockedCount?'Resolve the blocker':story.activeCount?'Let engineering finish':'Review the next assignment';$('next-detail').textContent=story.next;
  $('pipeline').replaceChildren(...story.stages.map(stage=>{const li=node('li',stage.label);li.dataset.state=stage.state;li.setAttribute('aria-label',`${stage.label}: ${stage.state}`);return li;}));
- $('agents').replaceChildren(...story.agents.map(agent=>{const article=node('article',undefined,'agent');article.append(status(agent.status),node('div',agent.name,'agent-name'),node('div',agent.location,'agent-location'),node('p',agent.detail),node('div',agent.mode,'agent-mode'));return article;}));
+ $('agents').replaceChildren(...story.agents.map((agent,i)=>{const article=node('article',undefined,'agent');article.append(status(agent.status),node('div',agent.name,'agent-name'),node('div',agent.location,'agent-location'),node('p',agent.detail),node('div',agent.mode,'agent-mode'));return storyPainted?article:enter(article,i);}));
  const queue=$('queue');queue.replaceChildren();
  const blocked=story.work.filter(w=>w.state==='blocked');
- for(const item of blocked){const row=node('article',undefined,'queue-item');row.append(status('Blocked'),node('span',item.role==='qa'?'Independent QA':'Orchestrator','queue-meta'),node('h3',reasonText(item.result?.reason)),node('p',item.result?.nextAction??'Review the recorded evidence before continuing.'));const details=node('details');details.append(node('summary','Inspect evidence'),node('pre',JSON.stringify(item.result,null,2)));row.append(details);queue.append(row);}
+ for(const item of blocked){const row=node('article',undefined,'queue-item');row.append(status('Blocked'),node('span',item.role==='qa'?'Independent QA':'Orchestrator','queue-meta'),node('h3',reasonText(item.result?.reason)),node('p',item.result?.nextAction??'Review the recorded evidence before continuing.'));const details=node('details');details.append(node('summary','Inspect evidence'),node('pre',JSON.stringify(item.result,null,2)));row.append(disclose(details));row.dataset.live='blocked';queue.append(storyPainted?row:enter(row,queue.children.length));}
  const proposals=story.proposals.slice().sort((a,b)=>b.priority-a.priority);
- for(const proposal of proposals.slice(0,8)){const row=node('article',undefined,'queue-item');row.append(node('span',words(proposal.category)+' proposal','status'),node('span',`${proposal.sources.length} source records · priority ${proposal.priority}`,'queue-meta'),node('h3',proposal.title),node('p',proposal.nextAction));queue.append(row);}
+ for(const proposal of proposals.slice(0,8)){const row=node('article',undefined,'queue-item');row.append(node('span',words(proposal.category)+' proposal','status'),node('span',`${proposal.sources.length} source records · priority ${proposal.priority}`,'queue-meta'),node('h3',proposal.title),node('p',proposal.nextAction));queue.append(storyPainted?row:enter(row,queue.children.length));}
  if(proposals.length>8)queue.append(node('p',`${proposals.length-8} more proposals are retained in the queue. Full evidence is available in the JSON log.`,'fine'));
  if(!blocked.length&&!proposals.length)queue.append(node('p','No assessed proposals yet. The orchestrator will review incoming records on its next cycle.','fine'));
+ storyPainted=true;
 }
 async function refresh(){
  if($('pause').checked){$('connection').textContent='Updates paused · showing the last recorded state';setTimeout(refresh,2000);return;}
@@ -44,7 +60,8 @@ async function refresh(){
   $('summary').replaceChildren();
   const active=(spend?.sessions??[]).filter(r=>r.state==='running').length;
   const pairs=[['Chat intake',s.intake.status==='watching'?'Receiving normally':words(s.intake.status)],['Received records',s.receivedRecords],['Progress events',s.progressEvents],['Active AI agents',active],['Reported usage',spend?.reportedUsage==null?'Not reported':`${spend.reportedUsage} ACUs`],['Reserved ceiling',`${spend?.committedCeilings??0} ACUs`],['Estimated cost',spend?.estimatedDollarCost==null?'Not available':'$'+spend.estimatedDollarCost.toFixed(2)]];
-  for(const [label,value] of pairs){const box=node('article');box.append(node('small',label),node('strong',value));$('summary').append(box);}
+  for(const [label,value] of pairs){const box=node('article');box.append(node('small',label),node('strong',value));$('summary').append(summaryPainted?box:enter(box,$('summary').children.length));}
+  summaryPainted=true;
   $('connection').textContent=`Live · checked ${new Date(s.observedAt).toLocaleTimeString()}`;
   $('explanation').textContent=s.provider.explanation??s.explanation;
   const heartbeat=s.orchestrator;

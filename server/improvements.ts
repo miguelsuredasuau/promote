@@ -31,21 +31,21 @@ export function registerImprovements(store:ControllerStore,checkout:string,chatR
 }
 export function improvementExecution(root:string,store:ControllerStore,proposal:any){
  const binding=executionBindings(root).find(b=>b.proposalId===proposal.id&&b.revision===decisionRevision(proposal));
- if(!binding)return {status:'scope_required',canExecute:false,reason:'Falta una tarea acotada con reproducción, pruebas y presupuesto.',taskHash:null,maxAcu:null};
+ if(!binding)return {status:'scope_required',canExecute:false,reason:'A scoped task with reproduction, tests and budget is missing.',taskHash:null,maxAcu:null};
  const reservation=store.engineeringReservation(binding.task.incidentId);
  if(reservation){
   const work=store.workQueue().find(w=>w.payload?.proposalId===proposal.id&&w.payload?.deliveryTask?.candidateSha===reservation.candidateSha&&w.payload?.deliveryTask?.attempt===binding.delivery.attempt);
   const delivered=work?.state==='completed'&&work.result?.reason==='verified_release_activated';
   const receiptPath=delivered?join(root,'.local/chat-replays',String(work.result.releaseId)+'.json'):null;
   const replay=receiptPath&&existsSync(receiptPath)?JSON.parse(readFileSync(receiptPath,'utf8')):null;
-  const reason=delivered&&replay?.status==='confirmed'?'Reparación publicada y comprobada en Xarts Chat con el mismo SQL y los mismos datos.':delivered?'Paquete verificado y activado. Falta confirmar su uso en un nuevo turno del chat.':work?.state==='blocked'?'La verificación bloqueó la entrega. Consulta el registro.':reservation.candidateSha?'Candidato recibido; verificación y entrega pendientes.':reservation.state==='running'?'Devin está trabajando en la reparación.':'Trabajo retenido; consulta el registro del proveedor.';
+  const reason=delivered&&replay?.status==='confirmed'?'Repair published and checked in Xarts Chat with the same SQL and the same data.':delivered?'Package verified and activated. Its use in a new chat turn still has to be confirmed.':work?.state==='blocked'?'Verification blocked the delivery. Check the log.':reservation.candidateSha?'Candidate received; verification and delivery pending.':reservation.state==='running'?'Devin is working on the repair.':'Work held; check the provider log.';
   return{status:delivered?'active':work?.state??reservation.state,canExecute:false,reason,taskHash:hashCanonical(binding.task),maxAcu:reservation.maxAcu,incidentId:binding.task.incidentId,remoteId:reservation.remoteId,candidateSha:reservation.candidateSha,usageAcu:reservation.usageAcu,releaseId:delivered?work.result.releaseId:null,replay:replay?{status:replay.status,runId:replay.runId,sourceRunId:replay.sourceRunId,outcome:replay.outcome}:null,scope:binding.incident.requestedOutcome.summary};
  }
- try{authorizeEngineering(binding.mandate,binding.task);}catch{return{status:'authorization_invalid',canExecute:false,reason:'La autorización de esta tarea ha caducado o no coincide.',taskHash:null,maxAcu:binding.mandate.maxSessionAcu};}
+ try{authorizeEngineering(binding.mandate,binding.task);}catch{return{status:'authorization_invalid',canExecute:false,reason:'The authorization for this task has expired or does not match.',taskHash:null,maxAcu:binding.mandate.maxSessionAcu};}
  const funding=JSON.parse(readFileSync(join(root,'.local/engineering-funding-policy.json'),'utf8'));
  const provider=loadDevin(root);
  const ready=!!provider.adapter&&funding.balanceVerified===true&&funding.autoReloadVerifiedDisabled===true&&funding.additionalBillingAllowed===false;
- return{status:ready?'ready':'funding_or_provider_required',canExecute:ready,reason:ready?'Reparación acotada lista para ejecutar con Devin.':'Verificar proveedor y crédito existente.',taskHash:hashCanonical(binding.task),maxAcu:binding.mandate.maxSessionAcu,incidentId:binding.task.incidentId,scope:binding.incident.requestedOutcome.summary};
+ return{status:ready?'ready':'funding_or_provider_required',canExecute:ready,reason:ready?'Scoped repair ready to run with Devin.':'Verify the provider and the existing credit.',taskHash:hashCanonical(binding.task),maxAcu:binding.mandate.maxSessionAcu,incidentId:binding.task.incidentId,scope:binding.incident.requestedOutcome.summary};
 }
 export function projectImprovements(root:string,store:ControllerStore){
  return store.proposals().filter(p=>p.evidenceKey.startsWith('project-analysis:xarts:')).flatMap(p=>{

@@ -90,15 +90,15 @@ export function articulateVault(THREE, placed, display, ledger) {
   const size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
   const pivot=new THREE.Vector3(bounds.max.x-size.x*.065,0,bounds.max.z-.32);
   const door=new THREE.Group();door.name='articulated-vault-door';door.position.copy(pivot);placed.add(door);
-  const enamel=new THREE.MeshPhysicalMaterial({color:0x194eac,metalness:.28,roughness:.3,clearcoat:.55}),steel=new THREE.MeshStandardMaterial({color:0xc1ccd2,metalness:.75,roughness:.3});let doorTriangles=0;
+  const steel=new THREE.MeshStandardMaterial({color:0xc1ccd2,metalness:.75,roughness:.3});let doorTriangles=0;
   for(const {mesh,geometry} of sources){
     const p=geometry.attributes.position, buckets=[[],[]];
     for(let i=0;i<p.count;i+=3){const x=(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3,y=(p.getY(i)+p.getY(i+1)+p.getY(i+2))/3,z=(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3;
       const front=x>bounds.min.x+size.x*.065&&x<bounds.max.x-size.x*.065&&y>bounds.min.y+size.y*.05&&y<bounds.max.y-size.y*.07&&z>pivot.z;
       buckets[front?1:0].push(i,i+1,i+2);if(front)doorTriangles++;
     }
-    buckets.forEach((indices,isDoor)=>{if(!isDoor||!indices.length)return;const g=new THREE.BufferGeometry();for(const [name,attribute] of Object.entries(geometry.attributes)){const values=new attribute.array.constructor(indices.length*attribute.itemSize);indices.forEach((source,target)=>{for(let n=0;n<attribute.itemSize;n++)values[target*attribute.itemSize+n]=attribute.array[source*attribute.itemSize+n];});g.setAttribute(name,new THREE.BufferAttribute(values,attribute.itemSize,attribute.normalized));}
-      if(isDoor)g.translate(-pivot.x,-pivot.y,-pivot.z);g.computeBoundingSphere();const part=new THREE.Mesh(g,isDoor?steel:enamel);part.castShadow=true;part.receiveShadow=true;(isDoor?door:placed).add(part);
+    buckets.forEach((indices,isDoor)=>{if(!indices.length)return;const g=new THREE.BufferGeometry();for(const [name,attribute] of Object.entries(geometry.attributes)){const values=new attribute.array.constructor(indices.length*attribute.itemSize);indices.forEach((source,target)=>{for(let n=0;n<attribute.itemSize;n++)values[target*attribute.itemSize+n]=attribute.array[source*attribute.itemSize+n];});g.setAttribute(name,new THREE.BufferAttribute(values,attribute.itemSize,attribute.normalized));}
+      if(isDoor)g.translate(-pivot.x,-pivot.y,-pivot.z);g.computeBoundingSphere();const part=new THREE.Mesh(g,mesh.material);part.castShadow=true;part.receiveShadow=true;(isDoor?door:placed).add(part);
     });mesh.visible=false;geometry.dispose();
   }
   if(!doorTriangles)return null;
@@ -107,11 +107,8 @@ export function articulateVault(THREE, placed, display, ledger) {
   ledger.face.visible=true;placed.attach(ledger.face);ledger.face.position.set(center.x,size.y*.5,pivot.z-.09);
   const dark=new THREE.MeshStandardMaterial({color:0x102a39,roughness:.45,metalness:.35});
   const lining=new THREE.Mesh(new THREE.BoxGeometry(size.x*.88,size.y*.9,.12),dark);lining.position.set(center.x,size.y*.5,pivot.z-.18);placed.add(lining);
-  // Repair the generated shell's ragged planar boundary with an exact, bevelled housing.
-  const outline=new THREE.Shape();outline.moveTo(-size.x/2,0);outline.lineTo(size.x/2,0);outline.lineTo(size.x/2,size.y);outline.lineTo(-size.x/2,size.y);outline.closePath();
-  const opening=new THREE.Path();opening.moveTo(-size.x*.435,size.y*.05);opening.lineTo(-size.x*.435,size.y*.93);opening.lineTo(size.x*.435,size.y*.93);opening.lineTo(size.x*.435,size.y*.05);opening.closePath();outline.holes.push(opening);
-  const housing=new THREE.Mesh(new THREE.ExtrudeGeometry(outline,{depth:pivot.z-bounds.min.z+.06,bevelEnabled:true,bevelSize:.028,bevelThickness:.028,bevelSegments:3,steps:1}),enamel);housing.position.set(center.x,0,bounds.min.z);housing.castShadow=true;housing.receiveShadow=true;placed.add(housing);
-  const backing=new THREE.Mesh(new THREE.BoxGeometry(size.x*.87,size.y*.88,.16),steel);backing.position.set(-size.x*.435,size.y*.49,.09);door.add(backing);
+  // Preserve the generated shell, UVs and materials: its chart ribs and corner guards are part of the design.
+  const backing=new THREE.Mesh(new THREE.BoxGeometry(size.x*.87,size.y*.88,.05),steel);backing.position.set(-size.x*.435,size.y*.49,-.06);door.add(backing);
   for(const [w,h,x,y] of [[size.x*.91,.055,center.x,size.y*.94],[size.x*.91,.055,center.x,size.y*.055],[.055,size.y*.9,bounds.min.x+size.x*.05,size.y*.5],[.055,size.y*.9,bounds.max.x-size.x*.05,size.y*.5]]){const rim=new THREE.Mesh(new THREE.BoxGeometry(w,h,.11),steel);rim.position.set(x,y,pivot.z+.005);placed.add(rim);}
   return {door,triangles:doorTriangles,width:size.x,height:size.y,center:new THREE.Vector3(center.x,size.y*.5,pivot.z),surface:ledger};
 }

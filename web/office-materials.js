@@ -77,18 +77,13 @@ export function createOfficeMaterials(THREE) {
 
   // A single composition, with the hand-tufted texture in a separate relief map.
   const [rugCanvas, rugPaint] = canvas(1024);
-  rugPaint.fillStyle = '#e6ddc8'; rugPaint.fillRect(0, 0, 1024, 1024);
-  rugPaint.fillStyle = '#087c83';
-  rugPaint.beginPath(); rugPaint.moveTo(0, 115); rugPaint.bezierCurveTo(170, -65, 452, 80, 530, 220);
-  rugPaint.bezierCurveTo(620, 365, 361, 432, 445, 573); rugPaint.bezierCurveTo(610, 823, 201, 1050, 0, 851); rugPaint.closePath(); rugPaint.fill();
-  rugPaint.fillStyle = '#2461bf';
-  rugPaint.beginPath(); rugPaint.moveTo(1024, 221); rugPaint.bezierCurveTo(710, 142, 623, 357, 740, 519);
-  rugPaint.bezierCurveTo(823, 636, 557, 705, 657, 893); rugPaint.bezierCurveTo(729, 1024, 930, 982, 1024, 897); rugPaint.fill();
-  rugPaint.fillStyle = '#eb743f';
-  rugPaint.beginPath(); rugPaint.ellipse(385, 957, 239, 177, -.25, 0, Math.PI * 2); rugPaint.fill();
-  rugPaint.fillStyle = '#d7bc51';
-  rugPaint.beginPath(); rugPaint.ellipse(973, 52, 153, 168, .4, 0, Math.PI * 2); rugPaint.fill();
-  // Fine colour flecks emulate yarn variation without losing the large pattern.
+  rugPaint.fillStyle = '#f2eee3'; rugPaint.fillRect(0, 0, 1024, 1024);
+  // Chart geometry is the decoration: waterfall steps and one uninterrupted spline.
+  const bars=[[70,300,185,500,'#2457cf'],[255,300,170,180,'#ff7029'],[425,480,170,190,'#d5ed28'],[595,240,170,430,'#2457cf'],[765,240,180,560,'#ff7029']];
+  for(const [x,y,w,h,color] of bars){rugPaint.fillStyle=color;rugPaint.fillRect(x,y,w,h);}
+  rugPaint.strokeStyle='#169b9d';rugPaint.lineWidth=25;rugPaint.lineCap='round';
+  rugPaint.beginPath();rugPaint.moveTo(30,770);rugPaint.bezierCurveTo(330,770,180,80,490,420);rugPaint.bezierCurveTo(730,690,760,330,1000,140);rugPaint.stroke();
+  for(let row=0;row<2;row++)for(let column=0;column<24;column++){rugPaint.fillStyle=(row+column)%2?'#f2eee3':'#192a36';rugPaint.fillRect(column*44,905+row*40,44,40);}
   for (let i = 0; i < 24000; i++) {
     rugPaint.fillStyle = i % 2 ? 'rgba(255,252,233,.12)' : 'rgba(54,61,52,.065)';
     rugPaint.fillRect(random() * 1024, random() * 1024, .6 + random(), 1 + random() * 2);

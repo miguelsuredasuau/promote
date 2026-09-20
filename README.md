@@ -4,6 +4,8 @@
 
 **An engineering team for the solo developer.**
 
+Built for **Hackbarna 2026**, during the weekend of **September 19–20, 2026**, with **Devin, OpenAI Codex and Claude Code**, under human direction and review. [MIT licensed](LICENSE).
+
 [**▶ Watch the film**](https://youtu.be/nC2f0_lAhSY) &nbsp; · &nbsp; [Xarts + Promote explained](docs/projects.md) &nbsp; · &nbsp; [The three layers](#the-three-layers) &nbsp; · &nbsp; [See the product](#a-workplace-for-the-work) &nbsp; · &nbsp; [Run locally](#run-locally)
 
 </div>
@@ -22,7 +24,7 @@ You can launch an app in a weekend. Then come the bug reports, broken builds, fe
 
 <p align="center"><a href="https://youtu.be/nC2f0_lAhSY"><strong>▶ Watch the film on YouTube</strong></a></p>
 
-> **Development preview.** Real intake, orchestration and Devin dispatch are implemented. A real repair has returned a candidate. Its complete verification-to-release run is pending; the general SDK and hosting integrations are planned.
+> **Development preview.** Real intake, orchestration and Devin dispatch are implemented. One bounded Xarts repair completed independent verification, local registry activation and deterministic chat replay; the general SDK and hosting integrations are planned.
 
 ## The three layers
 
@@ -82,7 +84,7 @@ The **3D office** makes the team visible. The **operations journal** makes its d
 | **Engineering & QA** | The repair task, candidate and independent verification stages |
 | **Finance & activity** | Reserved budgets, reported usage, decisions and blockers |
 
-Screenshots were captured on **September 19, 2026**. Generated office assets are local previews, not bundled models. **Explore demo** provides a separately labelled illustrative repair story.
+The office and activity screenshots above are historical captures from **September 19, 2026**. The activity blocker shown above is not the latest release status. Generated office assets are local previews, not bundled models. **Explore demo** provides a separately labelled illustrative repair story.
 
 ## The first proving ground: Xarts
 
@@ -95,8 +97,8 @@ The intended payoff is concrete: **the same request works with a verified, repai
 | **Receive** | Real chat runs, feedback and progress reach Promote. |
 | **Investigate** | Signals are grouped into proposals and scoped work. |
 | **Repair** | One real Devin session returned a candidate. |
-| **Verify** | Build, standalone consumer checks and SQL request replay are wired; the full package run was interrupted by Docker. |
-| **Release** | Registry activation is implemented. No repaired release has been activated. |
+| **Verify** | The bounded waterfall currency-sign repair passed independent checks and deterministic SQL replay. See [recorded evidence](docs/xarts-video-loop.md). |
+| **Release** | The repaired package was activated in the local registry and consumed by Xarts Chat. This does not claim an npm publication or a merge of the repair into Xarts main. |
 
 This integration spans three repositories:
 
@@ -154,6 +156,10 @@ Independent candidate execution requires Docker and the configured verification 
 
 The optional Studio provides office concept generation, model inspection and visual review on port **4311**. Generated assets and review history live under ignored local storage. A clone includes the viewer and source, not the locally generated asset collection.
 
+**September 20 update:** Studio now includes a persistent **Integration review** stage: placement and duplicate assets, six workstation zooms and returns, native-surface readability, movement, browser loading and local frame pacing. Evidence is bound to the office code and installed asset manifest; changes invalidate earlier passes. Four new Xarts previews (lounge, engineer, vault and slide), chart-inspired decoration and a single-chair replacement path are integrated locally.
+
+Open `http://127.0.0.1:4311/#integration` for the review and screenshots. The checks describe the tested local desktop configuration, not universal visual perfection, mobile performance or collision simulation. Source and workflow are public; generated models, SQLite records and the local before/after video handoff remain private local artifacts.
+
 See [Studio setup and current limits](studio/README.md). Asset generation uses its own provider and spending controls.
 
 </details>
@@ -199,7 +205,7 @@ The next milestones turn a concrete integration into a reusable product:
 <details>
 <summary><strong>Source availability and local state</strong></summary>
 
-This repository is public; an open-source license has not yet been selected. Package publication remains disabled.
+Promote source code is licensed under the [MIT License](LICENSE). Package publication remains disabled. This license does not relicense the separate Xarts repository, brand marks, third-party dependencies or externally generated assets; their respective rights and terms remain applicable.
 
 Credentials, customer data, provider transcripts, private chart implementation, generated model files and runtime state are excluded from Git. The published screenshots document the local UI. Keep `.env` and `.local/` outside commits.
 
@@ -218,3 +224,11 @@ Credentials, customer data, provider transcripts, private chart implementation, 
 ### Exploratory application testing
 
 **Office menu → Explore & test** commissions one bounded Devin sandbox session at a reviewed commit. Reports, coverage, findings and reported ACU persist in SQLite; findings feed discovery for independent reproduction. The first profile tests xarts-chat's UI with synthetic fixtures and no paid chat calls. See [the workflow and its limits](docs/EXPLORATORY-TESTING.md).
+
+## AI development and disclaimer
+
+Promote was developed for **Hackbarna 2026, September 19–20**, using **Devin, OpenAI Codex and Claude Code**, under human direction and review. Code, documentation and visual assets may contain AI-generated errors or omissions. Mentioning these tools does not imply endorsement, certification or a guarantee from Cognition, OpenAI or Anthropic.
+
+The software is provided **as is**, without warranties, under the [MIT License](LICENSE), whose standard warranty and liability exclusions apply. To the fullest extent permitted by applicable law, the authors and contributors disclaim liability arising from use of the project, including generated code or assets, autonomous actions, third-party services, provider charges, data loss, security incidents, interruptions and inaccurate outputs. Nothing excludes liability that applicable law does not allow to be excluded.
+
+Users are responsible for reviewing outputs, permissions, budgets, credentials and third-party terms before operating or deploying the system. A successful test or recorded review is limited to its stated scope and does not guarantee future behavior.
