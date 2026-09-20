@@ -21,7 +21,7 @@ try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detail
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}
 function update(force=false){
  model=createOfficeModel(snapshot,mode,demoState);
- model.ownerDecisions=mode==='live'?list(snapshot?.ownerReport?.decisions).filter(d=>!d.resolution).length:0;
+ model.ownerDecisions=mode==='live'?list(snapshot?.ownerReport?.decisions).filter(d=>d.ownerAttention&&!d.resolution).length:0;
  const stamp=JSON.stringify(model);const changed=stamp!==lastModel;lastModel=stamp;
  if(changed||force)scene?.update(model);
  const count=[allCards().filter(c=>c.status!=='completed'&&c.status!=='done').length,list(snapshot?.operations).length,model.strategy.ideas.length,model.qa.candidateId?1:0,model.finance.currency??'—'];
@@ -35,7 +35,7 @@ function update(force=false){
  $('live-mode').setAttribute('aria-pressed',String(mode==='live'));$('demo-mode').setAttribute('aria-pressed',String(mode==='demo'));
  setText('demo-step',`Step ${demoState.phase+1}/7 · ${model.qa.status==='idle'?'Ready to begin':human(model.qa.status)} · No real work or spending.`);
  $('advance-demo').disabled=demoState.phase>=6;setText('play-demo',playTimer?'Pause story':'Play story');
- setText('briefing-summary',mode==='demo'?`Demo · ${model.engineering.task}`:`${model.ownerDecisions} proposals for your decision`);
+ setText('briefing-summary',mode==='demo'?`Demo · ${model.engineering.task}`:model.ownerDecisions?`${model.ownerDecisions} big decisions need your direction`:'No big decisions waiting');
  if(changed||force){for(const [key,surface] of Object.entries(nativeSurfaces))renderDesk(key,surface);if(desk==='briefing')decisions.update(snapshot,mode);}
 }
 function stopStory(){clearInterval(playTimer);playTimer=null;setText('play-demo','Play story')}
@@ -105,7 +105,7 @@ function renderDesk(key=desk,shell=document.getElementById('desk')){
   const values=[['Usage',model.usage??'Not connected'],['Errors',model.errors??'Not connected'],['Backlog',allCards().filter(c=>!['completed','done'].includes(c.status)).length],['QA',human(model.qa.status)],['Spend',model.finance.spent==null?'Not reported':`${model.finance.currency??'?'} ${model.finance.spent.toFixed(2)}`],['Source',mode==='demo'?'Demo':'Live snapshot']];
   for(const [label,value] of values){const tile=node('section');tile.append(node('small',label),node('strong',String(value)));metrics.append(tile)}content.append(metrics);
  }
- if(desk==='briefing'){setText('desk-eyebrow','OWNER / DECISION DESK');setText('desk-title','The next move is yours.');setText('desk-subtitle','');decisions.mount(content,snapshot,mode);}
+ if(desk==='briefing'){setText('desk-eyebrow','OWNER / DECISION DESK');setText('desk-title','Only the decisions that need you.');setText('desk-subtitle','');decisions.mount(content,snapshot,mode);}
 
  setText('desk-footer',mode==='demo'?'Demo state is local to this page. Reset or reload clears it. No live approval or spending.':'Live records · read-only');
 }

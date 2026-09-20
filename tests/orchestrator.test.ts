@@ -85,3 +85,12 @@ it('keeps recovered library defects visible without promoting corrected input mi
  expect(proposals).toHaveLength(1);expect(proposals[0].category).toBe('bug');
  expect(classifyRecord({schema:'xarts-chat/run-record@1',testMode:'ui-fixture',signals:[{kind:'possible_library_defect',code:'FAKE'}]})).toEqual([]);
 });
+
+it('prepares routine planning without creating owner approvals or paid engineering',async()=>{
+ const s=setup();const record={schema:'xarts-chat/run-record@1',release:{sourceSha:'a'.repeat(40)},signals:[{kind:'possible_library_defect',code:'TEXT_CLIPPED'}]};
+ s.store.ingest('routine',hashCanonical(record),record,null);await runOrchestrator(s.store,s.root);
+ const work=s.store.workQueue().find(w=>w.kind==='proposal_assessment');
+ expect(work?.result.planningBrief).toMatchObject({requiresOwnerDirection:false,requiresExecutionMandate:true});
+ expect(s.store.ownerDecisions()).toHaveLength(0);expect(s.store.engineeringReservations()).toHaveLength(0);
+ await runOrchestrator(s.store,s.root);expect(s.store.workQueue().filter(w=>w.kind==='proposal_assessment')).toHaveLength(1);
+});

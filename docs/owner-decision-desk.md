@@ -1,13 +1,27 @@
 # Owner decision desk
 
-The CEO desk projects real controller proposals into two trays: awaiting direction and decided. Selecting a proposal shows its evidence, proposed next action and the exact authority requested. Decisions are stored in `owner_decisions` in the local controller SQLite database, with a journal event in the same transaction.
+The owner's desk is for product direction. Routine bugs, infrastructure problems, feedback and small feature requests stay in the team's backlog and receive planning automatically. The office counter and CEO bubble count only unresolved proposals that need owner direction; they no longer turn every diagnostic observation into an approval request.
 
-The current approval is **planning only**. Commissioning a brief queues a `proposal_assessment` work item containing an immutable copy of the approved proposal. The local orchestrator produces a structured planning outline, retains the owner's feedback, and explicitly leaves scope and cost to further investigation. It does not call a model, reserve ACUs, write repository files or release code. Paid engineering still uses the existing exact-task `EngineeringMandate` contract; its budget approval UI is not implemented here.
+## What reaches the owner
 
-Request changes requires written direction. Declining removes the proposal from the office backlog. Commissioned planning appears in active work and moves to review when its planning outline is ready. Every decision remains in the journal. New evidence changes the revision and requires a fresh decision.
+The current deterministic routing elevates feature proposals whose titles identify changes such as pricing, subscriptions, new markets, a product pivot, platform migration or a redesign. This is an initial classification rule, not a semantic model or proof of business impact. Ambiguous and small requests remain investigations: classification never authorizes implementation or spending. Budget/mandate blockers remain visible in Activity and are not silently approved by hiding routine proposals.
 
-`POST /api/owner-decisions` requires the loopback host, exact same-origin header, JSON content type and the current server's owner-session token. Request bodies are limited to 12 KB and validated strictly. This is a local operator surface, not remote multi-user authentication. A proposal/evidence hash binds each decision to the reviewed revision. Identical retries are idempotent; conflicting or stale decisions return 409. Approval and queue insertion are atomic.
+A decision explains the proposed direction, why it matters, our recommendation and a visual comparison of the current direction with the idea to explore. The actions are **Explore this direction**, **Adjust the direction**, and **Keep our current focus**. Evidence and implementation details are available in a disclosure. Cost estimates are not invented. The comparison is a schematic, not a screenshot of an implemented feature.
 
-Desktop controls are registered to the physical CEO folio as the camera moves. Mobile uses an accessible reading layout to preserve legibility. Overview and activity bubbles use the unresolved proposal count. Demo mode cannot mutate live decisions.
+When no decision needs the owner, the desk says so and links to the team's activity. It shows the number of unresolved routine items tracked, without describing queued or blocked work as already fixed. Earlier owner decisions remain in the Decided tray, including decisions on technical proposals made before this routing change.
 
-Validation covers stale evidence, conflicting/repeated submissions, source checks, invalid payloads, persistent owner feedback, planning completion without engineering authority, and browser review on desktop/mobile. Browser approval tests use a separate in-memory fixture server, never the live project.
+## What the team does automatically
+
+Every proposal assessment produces a planning outline with the available evidence, next investigation steps, and whether owner direction is needed. Versioned, evidence-bound work IDs avoid repeating the same assessment and allow new evidence to receive a fresh assessment. No owner commission is required for routine analysis.
+
+The autonomy target is to handle almost all routine decisions; **99% is not a measured result or an unlimited execution mandate**. Current engineering still requires an exact authorized task, path scope and ACU ceiling. Existing verification, publication and merge policies remain in force. This change does not add automatic code repair or blanket automatic merging for every proposal. Broader routine execution needs a separately defined reusable mandate and budget reservation policy; it must not be simulated by relabelling planning as delivery.
+
+## Persisted decisions and authority
+
+Exploring a direction retains the existing `approve_plan` action. It queues a planning task bound to an immutable proposal revision. It does not authorize a paid session, repository write or release. Requesting changes requires written direction. Decisions and journal events persist together in the controller SQLite database.
+
+`POST /api/owner-decisions` requires the loopback host, exact same-origin header, JSON content type and current owner-session token. Bodies are bounded and strictly validated. Identical retries are idempotent; conflicting or stale decisions return 409. Existing direct decision actions remain compatible; UI routing is not an authorization boundary.
+
+## Validation
+
+Tests cover routine-versus-direction routing, automatic planning without paid dispatch or owner decisions, assessment idempotency, existing revision-bound decisions, and all prior controller behavior. Browser review covers the real empty decision tray at desktop and mobile widths plus a synthetic product choice rendered locally without sending approval requests.
