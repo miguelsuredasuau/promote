@@ -54,6 +54,14 @@ Promote owns orchestration and release decisions. Engineering providers return c
 
 ## A workplace for the work
 
+### Product direction you can see
+
+Four illustrated proposals explore what Promote could become: connect a project, delegate maintenance, turn feedback into priorities, and deliver safely. Open the [visual decision demo](http://127.0.0.1:4310/?demo=decisions) after starting the local server. Choices are illustrative and never approve real work.
+
+![Visual maintenance proposal in the Promote office](docs/images/visual-decisions.png)
+
+Generated with GPT Image 2.5 through fal, using the office’s art direction. [How the demo and generation work](docs/visual-decisions.md).
+
 The **3D office** makes the team visible. The **operations journal** makes its decisions readable. Both reflect the same controller state.
 
 ![The live Promote office: engineering desk, QA conveyor, strategy wall, backlog and finance vault](docs/images/office.png)

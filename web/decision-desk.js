@@ -1,3 +1,4 @@
+import { mountDecisionDemo } from '/decision-demo.js';
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 const actions={approve_plan:'Planning commissioned',request_changes:'Changes requested',reject:'Declined'};
 export function createDecisionDesk({onSaved,pullRequests}){
@@ -5,7 +6,7 @@ export function createDecisionDesk({onSaved,pullRequests}){
  const items=()=>(data?.ownerReport?.decisions??[]).filter(d=>d.ownerAttention||d.resolution);
  const routine=()=>data?.ownerReport?.routineWork?.tracked??0;
  function mount(container,snapshot,currentMode){root=container;data=snapshot;mode=currentMode;stamp=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);render();}
- function update(snapshot,currentMode){if(busy||root?.querySelector('textarea')===document.activeElement)return;data=snapshot;mode=currentMode;const next=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);if(next===stamp||busy)return;stamp=next;if(tab==='prs')return;render();}
+ function update(snapshot,currentMode){if(mode==='demo'&&currentMode==='demo')return;if(busy||root?.querySelector('textarea')===document.activeElement)return;data=snapshot;mode=currentMode;const next=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);if(next===stamp||busy)return;stamp=next;if(tab==='prs')return;render();}
  async function decide(item,action){
   const feedback=drafts.get(item.id)??'';
   if(action==='request_changes'&&!feedback.trim()){notice='Tell your CEO what should change first.';render();root.querySelector('textarea')?.focus();return;}
@@ -21,7 +22,7 @@ export function createDecisionDesk({onSaved,pullRequests}){
  }
  function render(){
   if(!root)return;root.replaceChildren();root.className='decision-workspace';
-  if(mode==='demo'){root.append(el('h3','Return to the live office to make decisions.'),el('p','Demo activity cannot approve real work.'));return;}
+  if(mode==='demo'){mountDecisionDemo(root);return;}
   const pending=items().filter(d=>!d.resolution),resolved=items().filter(d=>d.resolution),visible=tab==='pending'?pending:resolved;
   const rail=el('aside',undefined,'decision-tray');const head=el('div',undefined,'decision-count');head.append(el('strong',String(pending.length).padStart(2,'0')),el('span','big decisions for you'));rail.append(head);
   const tabs=el('nav',undefined,'decision-tabs');tabs.setAttribute('aria-label','Decision trays');for(const [id,label,count]of[['pending','For you',pending.length],['resolved','Decided',resolved.length],...(pullRequests?[['prs','Pull requests',null]]:[])]){const b=el('button',count===null?label:`${label} · ${count}`);b.setAttribute('aria-pressed',String(tab===id));b.onclick=()=>{tab=id;selected=null;render();};tabs.append(b);}rail.append(tabs);
