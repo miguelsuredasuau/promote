@@ -14,6 +14,7 @@ import { hashGateProfile, evaluateAcceptance } from '../contracts/gates';
 import type { GateProfile } from '../contracts/profile';
 import type { ExecutionEvidence } from '../contracts/adapters';
 import { publishLocalRelease } from './registry';
+import { originMatchesRepo } from './repo-identity';
 const exec = promisify(execFile);
 const digest = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
 export const DeliveryTask = z.object({
@@ -42,8 +43,7 @@ export async function runXartsDelivery(store: ControllerStore, controllerRoot: s
   if (existing) return { state: existing.status === 'completed' ? 'completed' as const : 'blocked' as const,
     result: { reason: existing.status === 'completed' ? 'release_already_activated' : 'delivery_requires_reconciliation', incidentId: id } };
   const git = async (args: string[]) => (await exec('git', args, { cwd: task.checkout, timeout:30000,killSignal:'SIGKILL', maxBuffer: 1024*1024 })).stdout.trim();
-  const origin = await git(['remote','get-url','origin']);
-  if (![ `https://github.com/${task.repo}.git`, `https://github.com/${task.repo}`, `git@github.com:${task.repo}.git` ].includes(origin)) throw Error('repository_identity_mismatch');
+  if (!await originMatchesRepo(git, task.repo)) throw Error('repository_identity_mismatch');
   await git(['merge-base','--is-ancestor',task.baseSha,task.candidateSha]);
   const changed = (await exec('git',['diff','--name-only','--no-renames','-z',task.baseSha,task.candidateSha],{cwd:task.checkout,timeout:10000,killSignal:'SIGKILL'})).stdout.split('\0').filter(Boolean);
   const inside = (path: string, scopes: string[]) => scopes.some(scope => path===scope || path.startsWith(`${scope}/`));
