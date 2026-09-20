@@ -11,3 +11,15 @@ it('candidate declarations cannot include secrets, nested local files or symlink
  const paths=await archivePaths(git({files:['**','../outside']},[...forbidden,'core/safe.ts','link:core/linked']),sha);
  expect(paths).toEqual(['core/safe.ts']);
 });
+
+it('includes the preview application transitive transform sources without admitting local secrets', async () => {
+ const paths = await archivePaths(git({}, [
+  'app/PreviewApp.tsx', 'transform/TransformPage.tsx', 'transform/InputZone.tsx',
+  'transform/PipelinePanel.tsx', 'transform/StepBuilder.tsx', 'transform/.env.local',
+  'transform/.local/cache.json', 'link:transform/local-source', 'private/unrelated.ts',
+ ]), sha);
+ expect(paths).toEqual([
+  'app/PreviewApp.tsx', 'transform/InputZone.tsx', 'transform/PipelinePanel.tsx',
+  'transform/StepBuilder.tsx', 'transform/TransformPage.tsx',
+ ]);
+});

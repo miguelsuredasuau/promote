@@ -141,7 +141,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
   const role=proposal.category==='feature'?'product':'feedback';
   store.enqueueWork({id:`assess-v2:${hashCanonical(proposal)}`,kind:'proposal_assessment',role,lane:['feature','feedback'].includes(proposal.category)?'discovery':'reliability',priority:proposal.priority,payload:{proposalId:proposal.id},promptHash:rolePrompt(role).hash});
  }
- for(const reservation of store.engineeringReservations())if(reservation.state==='stopped'&&reservation.candidateSha)
+ for(const reservation of store.engineeringReservations())if(reservation.task.resultSchemaId!=='maintenance-candidate-v1'&&reservation.state==='stopped'&&reservation.candidateSha)
   store.enqueueWork({id:`review:${reservation.incidentId}:${reservation.candidateSha}`,kind:'candidate_review',role:'qa',lane:'reliability',priority:100,payload:{incidentId:reservation.incidentId},promptHash:rolePrompt('qa').hash});
  const provider=loadDevin(root);
  if(provider.status.paidDispatchEnabled&&provider.task&&!store.engineeringReservation(provider.task.incidentId))

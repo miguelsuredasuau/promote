@@ -1,0 +1,199 @@
+{
+  "date": "2026-09-20",
+  "source": "user-supplied exports and dashboard screenshot",
+  "sourceCommit": null,
+  "scanId": null,
+  "baseline": {
+    "issues": 3004,
+    "score": 63,
+    "securityScore": 6,
+    "securityIssues": 241,
+    "displayedScanTime": "2026-09-20 11:23",
+    "exportSha256": "faab8e759a92618069816733902a5cf9ae1419d613059a1854bc9116996b20f0"
+  },
+  "latest": {
+    "issues": 3009,
+    "score": 64,
+    "securityScore": 7,
+    "securityIssues": 239,
+    "displayedScanTime": "2026-09-20 12:24",
+    "exportSha256": "50757a8995db463198452ef8abecd4998fede811d3b585b4f487e4b05b6944fd"
+  },
+  "matchingMethod": "Multiset of rule.id, sorted scanned_elements.file_path and whitespace-normalized code_snippet. Snippets are not published.",
+  "same": 2995,
+  "removedMatches": [
+    {
+      "rule": "js-no-error-handling-async-1.0",
+      "paths": [
+        "render-cli/render.ts"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-no-error-handling-async-1.0",
+      "paths": [
+        "render-cli/file-renderer.ts"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-unbounded-promise-all-1.0",
+      "paths": [
+        "render-cli/file-renderer.ts"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "vite-missing-csp-1.0",
+      "paths": [
+        "index.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "rct-unsafe-href-binding-1.0",
+      "paths": [
+        "charts/UIGallery/UIGallery.tsx"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-empty-catch-block-1.0",
+      "paths": [
+        "core/components/card/EmbedModal.tsx"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "vite-missing-referrer-policy-1.0",
+      "paths": [
+        "index.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-console-log-only-1.0",
+      "paths": [
+        "lib/captureSvgForAnnotation.ts"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "rct-unvalidated-url-params-1.0",
+      "paths": [
+        "charts/ConceptWorkflow/ConceptWorkflow.tsx"
+      ],
+      "occurrences": 1
+    }
+  ],
+  "addedMatches": [
+    {
+      "rule": "js-no-error-handling-async-1.0",
+      "paths": [
+        "render-cli/render.ts"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "rct-unsafe-href-binding-1.0",
+      "paths": [
+        "charts/UIGallery/UIGallery.tsx"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-no-error-handling-async-1.0",
+      "paths": [
+        "core/components/card/EmbedModal.tsx"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-unbounded-promise-all-1.0",
+      "paths": [
+        "render-cli/file-renderer.ts"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-no-error-handling-async-1.0",
+      "paths": [
+        "scripts/quality/index-norma-export.mjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-console-log-only-1.0",
+      "paths": [
+        "docs/analysis/norma-security-triage.cjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-console-log-only-1.0",
+      "paths": [
+        "docs/analysis/norma-foreach-triage.cjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-console-log-only-1.0",
+      "paths": [
+        "docs/analysis/norma-security-triage.cjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-nested-ternary-1.0",
+      "paths": [
+        "docs/analysis/norma-foreach-triage.cjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "rct-open-redirect-1.0",
+      "paths": [
+        "scripts/quality/index-norma-export.mjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-scl-await-in-loop-1.0",
+      "paths": [
+        "scripts/quality/index-norma-export.mjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-console-log-only-1.0",
+      "paths": [
+        "scripts/quality/index-norma-export.mjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-console-log-only-1.0",
+      "paths": [
+        "docs/analysis/norma-foreach-triage.cjs"
+      ],
+      "occurrences": 1
+    },
+    {
+      "rule": "js-mnt-double-negation-1.0",
+      "paths": [
+        "docs/analysis/norma-foreach-triage.cjs"
+      ],
+      "occurrences": 1
+    }
+  ],
+  "separateAgenticExport": {
+    "issues": 2,
+    "exportSha256": "2076e4b701953e76cb41eff425411c3b5147dd10a54b9b9f36c03033adeb3ded"
+  },
+  "limits": [
+    "Removed matches do not establish fixed defects; changed snippets create replacements.",
+    "Exports do not identify the scanned Git commit or scan ID.",
+    "Dashboard timezone unspecified; preserve displayed times.",
+    "Reviewer false-positive assessments are not provider dismissals."
+  ]
+}

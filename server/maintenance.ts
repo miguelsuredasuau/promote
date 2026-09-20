@@ -55,6 +55,8 @@ export function buildMaintenanceJob(profile:Profile,baseSha:string,attempt:numbe
 }
 export function createMaintenanceLoop(store:ControllerStore,root:string,testCheckout?:string){
  const journal=new MaintenanceJournal(root);let ticking=false;let nextAt=0;let evaluating=false;let lastBlock='';
+ // A process restart cannot retain ownership of an in-flight verification worker.
+ for(const job of journal.all())if(job.state==='verifying')journal.update(job.id,{state:'awaiting_verification',reason:'verification_recovered_after_restart'});
  const report=(reason:string)=>{if(lastBlock!==reason){lastBlock=reason;store.recordActivity('service','Autonomous maintenance status',{reason,source:'promote_scheduler'});}};
  async function verify(job:Job){
   evaluating=true;journal.update(job.id,{state:'verifying'});
@@ -95,16 +97,22 @@ export function createMaintenanceLoop(store:ControllerStore,root:string,testChec
    // Observation continues elsewhere even when new dispatch is paused. Never resend an ambiguous create.
    for(const job of journal.all()){
     const r=store.engineeringReservation(job.id);
-    if(r?.state==='stopped'&&r.candidateSha&&['running','held','verifying'].includes(job.state)&&!evaluating){void verify(job);}
+    if(r?.state==='stopped'&&r.candidateSha&&['running','held','awaiting_verification'].includes(job.state)){if(!evaluating)void verify(job);else journal.update(job.id,{state:'awaiting_verification'});}
     else if(r?.state==='stopped'&&!r.candidateSha&&['running','held'].includes(job.state))journal.update(job.id,{state:'blocked',reason:r.reason??'session_ended_without_candidate'});
    }
    const capacity=()=>store.engineeringReservations().filter(r=>r.state!=='stopped').length+store.explorations().filter(r=>!['stopped','rejected'].includes(r.state)).length;
    const affordable=()=>{const b=store.operatingBudget();return (b.remainingAcu??0)>=policy.sessionAcu&&(b.totalRemainingAcu??0)>=policy.sessionAcu;};
    if(policy.proactiveTests&&testCheckout&&capacity()<policy.maxConcurrentSessions&&affordable()){
-    const latest=store.explorations()[0];
-    if(!latest||Date.now()-Date.parse(latest.spec.createdAt)>=policy.testEveryMinutes*60000){
+    const profilePath=join(root,'.local/exploration-profiles.json');
+    const focuses=existsSync(profilePath)?z.array(z.string().trim().min(1).max(2000)).min(1).max(8).parse(JSON.parse(readFileSync(profilePath,'utf8'))):[policy.testFocus];
+    for(const focus of focuses){
+     if(capacity()>=policy.maxConcurrentSessions||!affordable())break;
+     const matching=store.explorations().filter(r=>r.spec.focus===focus);
+     const latest=matching[0];
+     if(matching.some(r=>!['stopped','rejected'].includes(r.state)))continue;
+     if(latest&&Date.now()-Date.parse(latest.spec.createdAt)<policy.testEveryMinutes*60000)continue;
      const target=await explorationTarget(testCheckout);
-     if(target.repository===policy.testRepository&&!target.dirty){await launchExploration(store,root,testCheckout,{id:randomUUID(),baseSha:target.baseSha,maxAcu:policy.sessionAcu,minutes:policy.testMinutes,focus:policy.testFocus});}
+     if(target.repository===policy.testRepository&&!target.dirty){await launchExploration(store,root,testCheckout,{id:randomUUID(),baseSha:target.baseSha,maxAcu:policy.sessionAcu,minutes:policy.testMinutes,focus});}
     }
    }
    if(!policy.approvedRepairs)return;

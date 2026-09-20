@@ -5,15 +5,19 @@ export function applyOfficeRuntime(model, policy, maintenance) {
   const engineering = array(policy.runtime?.engineering);
   const testing = array(policy.runtime?.explorations);
   const jobs = array(maintenance?.jobs);
+  const activeEngineering = engineering.filter(session => session.state === 'running');
+  const activeJob = jobs.find(job => activeEngineering.some(session => session.id === job.id || (session.remoteId && session.remoteId === job.remoteId)));
+  const verifying = jobs.filter(job => job.state === 'verifying');
   const budget = policy.budget ?? {};
   const finite = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
   model.runtime = {
     engineering: engineering.filter(job => job.state === 'running').length,
     testing: testing.filter(job => job.state === 'running').length,
     held: [...engineering, ...testing].filter(job => ['held', 'reserved', 'stopping'].includes(job.state)).length,
-    qaJobs: maintenance ? jobs.filter(job => job.state === 'verifying').length : null,
+    qaJobs: maintenance ? verifying.length : null,
+    qaQueued: maintenance ? jobs.filter(job => job.state === 'awaiting_verification').length : null,
     maintenanceJobs: maintenance ? jobs.length : null,
-    qaTask: jobs.find(job=>job.state==='verifying')?.title??null,
+    qaTask: verifying[0]?.title??null,
     heartbeat: policy.runtime?.heartbeat ?? null,
     paused: policy.policy?.paused ?? true,
     sessions: [...engineering, ...testing],
@@ -26,10 +30,18 @@ export function applyOfficeRuntime(model, policy, maintenance) {
   const active = model.runtime.engineering + model.runtime.testing;
   if (active) {
     model.engineering = {...model.engineering, status:'engineering',
-      task:jobs.find(job=>job.state==='running')?.title??`${model.runtime.engineering} engineering · ${model.runtime.testing} sandbox tests`,
-      lines:[`Live provider sessions · ${active} running`, ...model.runtime.sessions.filter(job=>job.state==='running').map(job=>`${job.remoteId??job.id} · running`), `Independent QA: ${model.runtime.qaJobs??'unknown'} verifying · ${jobs.filter(job=>job.state==='verified').length} verified candidates`, 'Returned candidates require independent checks before release.']};
+      task:activeJob?.title??`${model.runtime.engineering} engineering · ${model.runtime.testing} sandbox tests`,
+      lines:[`Live provider sessions · ${active} running`, ...model.runtime.sessions.filter(job=>job.state==='running').map(job=>`${job.remoteId??job.id} · running`), `Independent QA: ${model.runtime.qaJobs??'unknown'} verifying · ${model.runtime.qaQueued??'unknown'} queued · ${jobs.filter(job=>job.state==='verified').length} verified candidates`, 'Returned candidates require independent checks before release.']};
   } else {
-    model.engineering = {...model.engineering,status:'idle',task:'No active Devin task',lines:['No active Devin task recorded.',`Independent QA: ${model.runtime.qaJobs??'unknown'} verifying · ${jobs.filter(job=>job.state==='verified').length} verified candidates`, 'Returned candidates require independent checks before release.']};
+    model.engineering = {...model.engineering,status:'idle',task:'No active Devin task',lines:['No active Devin task recorded.',`Independent QA: ${model.runtime.qaJobs??'unknown'} verifying · ${model.runtime.qaQueued??'unknown'} queued · ${jobs.filter(job=>job.state==='verified').length} verified candidates`, 'Returned candidates require independent checks before release.']};
+  }
+  const candidate = verifying.find(job => typeof job.candidateSha === 'string' && job.candidateSha.length > 0);
+  if (candidate) {
+    // A running worker is not evidence that any individual acceptance gate passed.
+    model.qa = {executionMode:'maintenance', candidateId:candidate.candidateSha,
+      attempt:candidate.attempt ?? 1, stageIndex:0, status:'running',
+      headline:'Independent checks running', task:candidate.title ?? 'Maintenance candidate',
+      stages:['provenance','meaning','regression','release'].map(id => ({id,outcome:'not_run'}))};
   }
   return model;
 }
