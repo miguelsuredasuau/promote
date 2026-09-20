@@ -119,7 +119,22 @@ function view(repo: string, pull: GitHubPull, checks: PullRequestView['checks'])
   };
 }
 
-export async function listPullRequests(config: PullRequestConfig, fetchImpl: Fetch = fetch): Promise<PullRequestView[]> {
+/** Concurrent listings share one GitHub fan-out; a fresh listing is reused briefly. */
+const LIST_CACHE_MS = 15000;
+const listings = new Map<string, { at: number; result: Promise<PullRequestView[]> }>();
+
+export function listPullRequests(config: PullRequestConfig, fetchImpl: Fetch = fetch, now = Date.now): Promise<PullRequestView[]> {
+  const key = createHash('sha256').update(config.token).update('\0').update(config.repos.join(',')).digest('hex');
+  const cached = listings.get(key);
+  if (cached && now() - cached.at < LIST_CACHE_MS) return cached.result;
+  const at = now();
+  const result = fetchPullRequests(config, fetchImpl);
+  listings.set(key, { at, result });
+  result.catch(() => { if (listings.get(key)?.result === result) listings.delete(key); });
+  return result;
+}
+
+async function fetchPullRequests(config: PullRequestConfig, fetchImpl: Fetch): Promise<PullRequestView[]> {
   const call = api(config, fetchImpl);
   const out: PullRequestView[] = [];
   for (const repo of config.repos) {
@@ -193,6 +208,7 @@ export async function mergePullRequest(
   const pull = await call<GitHubPull>(`/repos/${input.repo}/pulls/${input.number}`);
   const current = view(input.repo, pull, await checksFor(call, input.repo, pull.head.sha));
   const record = (outcome: MergeOutcome) => {
+    listings.clear();
     store.recordActivity('pull-request', `${input.repo}#${input.number}: ${outcome.state}`, { ...outcome, headSha: current.headSha });
     return outcome;
   };

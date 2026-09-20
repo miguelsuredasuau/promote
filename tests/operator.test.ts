@@ -171,6 +171,14 @@ it('persists exact owner decisions, queues planning only, and refuses stale or c
  expect(store.activity().some(e=>e.category==='owner_decision')).toBe(true);
 });
 
+it('refuses to list pull requests without the owner token',async()=>{
+ const {base}=await setup();
+ expect((await fetch(`${base}/api/pull-requests`)).status).toBe(403);
+ const {token}=JSON.parse(await(await fetch(`${base}/api/owner-session`)).text());
+ const response=await fetch(`${base}/api/pull-requests`,{headers:{'X-Owner-Token':token}});
+ expect(response.status).toBe(200);expect(await response.json()).toMatchObject({configured:false});
+});
+
 it('keeps requested changes and declined proposals without dispatching work',async()=>{
  const {store,base}=await setup();
  for(const id of ['change','decline']){

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ControllerStore } from '../server/store';
-import { isClerical, loadPullRequestConfig, mergePullRequest, resolveConflicts, type Fetch, type PullRequestConfig } from '../server/pull-requests';
+import { isClerical, listPullRequests, loadPullRequestConfig, mergePullRequest, resolveConflicts, type Fetch, type PullRequestConfig } from '../server/pull-requests';
 
 const cleanups: (() => void)[] = [];
 afterEach(() => { for (const c of cleanups.splice(0)) c(); });
@@ -44,6 +44,24 @@ describe('configuration', () => {
   it('never treats lockfiles, snapshots, goldens or schemas as disposable', () => {
     for (const f of ['pnpm-lock.yaml', 'tests/unit/__snapshots__/x.test.ts.snap', 'tests/__golden__/bar.svg', 'docs/chartspec.schema.json']) expect(isClerical(f)).toBe(false);
     for (const f of ['server/store.ts', 'charts/Bar/Bar.tsx', 'README.md', 'snap.ts']) expect(isClerical(f)).toBe(false);
+  });
+});
+
+describe('listPullRequests', () => {
+  it('shares one GitHub fan-out between concurrent and recent listings', async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const fetchImpl = github({
+      'GET /repos/o/list/pulls?state=open&per_page=100&page=1': [pull()],
+      'GET /repos/o/list/pulls/7': pull(),
+      [`GET /repos/o/list/commits/${sha('a')}/check-runs?per_page=100&page=1`]: { check_runs: [] },
+      [`GET /repos/o/list/commits/${sha('a')}/status?per_page=100&page=1`]: { statuses: [] },
+    }, calls);
+    let clock = 1000;
+    const cfg: PullRequestConfig = { token: 'list-tok', repos: ['o/list'], workRoot: '' };
+    const [a, b] = await Promise.all([listPullRequests(cfg, fetchImpl, () => clock), listPullRequests(cfg, fetchImpl, () => clock)]);
+    expect(a).toHaveLength(1); expect(b).toBe(a); expect(calls).toHaveLength(4);
+    clock += 5000; await listPullRequests(cfg, fetchImpl, () => clock); expect(calls).toHaveLength(4);
+    clock += 20000; await listPullRequests(cfg, fetchImpl, () => clock); expect(calls).toHaveLength(8);
   });
 });
 
