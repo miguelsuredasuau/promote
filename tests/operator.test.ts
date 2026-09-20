@@ -181,3 +181,18 @@ it('keeps requested changes and declined proposals without dispatching work',asy
  for(const p of report.ownerReport.decisions)store.decideProposal({proposalId:p.id,revision:p.revision,action:p.id==='change'?'request_changes':'reject',feedback:'Keep existing behavior'});
  expect(store.ownerDecisions()).toHaveLength(2);expect(store.workQueue()).toHaveLength(0);
 });
+
+it('hands the owner session token only to same-origin fetches and refuses near-miss tokens',async()=>{
+ const {base}=await setup();
+ const okSite=async(site?:string)=>(await fetch(`${base}/api/owner-session`,{headers:site?{'Sec-Fetch-Site':site}:{}})).status;
+ expect(await okSite()).toBe(200);
+ expect(await okSite('same-origin')).toBe(200);
+ expect(await okSite('none')).toBe(200);
+ expect(await okSite('cross-site')).toBe(403);
+ expect(await okSite('same-site')).toBe(403);
+ const {token}=JSON.parse(await(await fetch(`${base}/api/owner-session`)).text());
+ const post=(presented:string)=>fetch(`${base}/api/owner-decisions`,{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-Owner-Token':presented},body:'{}'});
+ expect((await post(token.slice(0,-1)+(token.endsWith('0')?'1':'0'))).status).toBe(403);
+ expect((await post(token+'0')).status).toBe(403);
+ expect((await post(token)).status).toBe(400);
+});

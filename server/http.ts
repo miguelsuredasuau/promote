@@ -1,7 +1,7 @@
-import { createServer } from 'node:http';
+import { createServer, type IncomingMessage } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { ControllerStore, StoreConflictError } from './store';
 import { z, ZodError } from 'zod';
 import { explorationTarget, launchExploration } from './exploration';
@@ -34,6 +34,11 @@ const assets: Record<string, { file: string; mime: string }> = {
 };
 export function createOperatorServer(options: { root: string; store: ControllerStore; checkout?: string; testCheckout?:string }) {
   const ownerToken = randomBytes(32).toString('hex');
+  const ownerAuthorized = (req: IncomingMessage, host: string, origin: string | undefined) => {
+    const presented = req.headers['x-owner-token'];
+    return origin === `http://${host}` && typeof presented === 'string' && presented.length === ownerToken.length
+      && timingSafeEqual(Buffer.from(presented), Buffer.from(ownerToken));
+  };
   return createServer(async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -47,7 +52,7 @@ export function createOperatorServer(options: { root: string; store: ControllerS
       res.writeHead(403).end('Forbidden'); return;
     }
     if(req.method==='POST' && (req.url==='/api/explorations'||req.url==='/api/explorations/stop')) {
-      if(origin!==`http://${host}` || req.headers['x-owner-token']!==ownerToken){res.writeHead(403).end('Owner session required');return;}
+      if(!ownerAuthorized(req, host, origin)){res.writeHead(403).end('Owner session required');return;}
       if(req.headers['content-type']!=='application/json'){res.writeHead(415).end('JSON required');return;}
       try {
 
@@ -67,7 +72,7 @@ export function createOperatorServer(options: { root: string; store: ControllerS
       return;
     }
     if (req.method === 'POST' && req.url === '/api/owner-decisions') {
-      if (origin !== `http://${host}` || req.headers['x-owner-token'] !== ownerToken) { res.writeHead(403).end('Owner session required'); return; }
+      if (!ownerAuthorized(req, host, origin)) { res.writeHead(403).end('Owner session required'); return; }
       if (req.headers['content-type'] !== 'application/json') { res.writeHead(415).end('JSON required'); return; }
       try {
         let body = '';
@@ -81,7 +86,7 @@ export function createOperatorServer(options: { root: string; store: ControllerS
       return;
     }
     if (req.method === 'POST' && req.url === '/api/pull-requests/merge') {
-      if (origin !== `http://${host}` || req.headers['x-owner-token'] !== ownerToken) { res.writeHead(403).end('Owner session required'); return; }
+      if (!ownerAuthorized(req, host, origin)) { res.writeHead(403).end('Owner session required'); return; }
       if (req.headers['content-type'] !== 'application/json') { res.writeHead(415).end('JSON required'); return; }
       const config = loadPullRequestConfig(options.root);
       if (!config) { res.writeHead(409, {'Content-Type':'application/json'}).end(JSON.stringify({error:'Set PROMOTE_GITHUB_TOKEN and PROMOTE_MERGE_REPOS in .env to merge from the office.'})); return; }
@@ -115,7 +120,11 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         let target=null;try{if(options.testCheckout)target=await explorationTarget(options.testCheckout);}catch{/* Show explicit unavailable target, retain history. */}
         res.setHeader('Content-Type','application/json');res.end(JSON.stringify({target,runs:options.store.explorations()}));return;
       }
-      if (url.pathname === '/api/owner-session') { res.setHeader('Content-Type','application/json'); res.end(JSON.stringify({token:ownerToken})); return; }
+      if (url.pathname === '/api/owner-session') {
+        const site = req.headers['sec-fetch-site'];
+        if (site !== undefined && site !== 'same-origin' && site !== 'none') { res.writeHead(403).end('Owner session is same-origin only'); return; }
+        res.setHeader('Content-Type','application/json'); res.end(JSON.stringify({token:ownerToken})); return;
+      }
       if (url.pathname === '/api/overview') {
         const data = await overview(options.root, options.store, options.checkout);
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
