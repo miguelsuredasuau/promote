@@ -47,13 +47,21 @@ Implementation: [Devin instructions](prompts/engineer-v4.md) · [candidate deliv
 
 These demonstrate complementary parts of the use case: a real engineering-and-delivery loop, code improved using Norma, and a retained rescan trail. The Xarts batch was applied with Codex; Norma was unavailable in the recorded Devin currency-sign session. Neither is presented as a completed end-to-end Norma-in-Devin demonstration.
 
-## One finding fixed. One decision defended.
+## One finding fixed. One we deliberately did not change.
 
-**Fixed: failed preview actions lacked useful feedback.** We added an error boundary around export and annotation capture. It reports the problem and permits success-only actions only after completion. Tests cover synchronous throws, rejected promises and successful continuation. The benefit is visible to the user: an actionable failure instead of a silent rejection.
+**Fixed: failed preview actions lacked useful feedback.** The published Xarts repair adds an error boundary around export and annotation capture. It reports the problem and permits navigation only after success. Tests cover synchronous throws, rejected promises and successful continuation. This is a behavioral improvement, not just a lower warning count. [Published repair and test evidence →](docs/reviews/xarts-norma-batch-2026-09-20.md)
 
-**Accepted: an await inside an async PDF test.** Vitest already catches rejected test promises and fails the test. A local catch that logs and continues would weaken that gate. We preserved fail-fast behavior. Two CLI findings likewise already reached a top-level error handler; regression checks confirm a nonzero exit on missing input.
+**Not changed: an await inside an async PDF test.** Vitest already catches rejected test promises and fails the test. Adding a catch that logs and continues would hide a failure and weaken the gate. We retained the code because the surrounding test runner owns the error boundary—not because of time pressure or willingness to expose secrets.
+
+A second example from the security investigation: an array’s `.push()` adds an element; it does not navigate a browser. We are retaining those operations and recording why the open-redirect rule does not apply. Real exposed credentials would require removal and rotation; none is excused by this reasoning.
 
 **The engineering decision is to improve behavior—not simply remove warning-shaped code.**
+
+## The scale of the proving ground
+
+At Xarts commit `6318ac21`, the repository contains **702,433 physical source lines across 3,789 tracked source files**. That includes **68,869 test lines** and **28,609 lines in historical analysis sources**. Excluding the historical analysis sources leaves **673,824 lines**, including tests.
+
+This count includes comments, blank lines and generated source; it excludes JSON, Markdown, SVG, binary assets, dependencies and untracked files. It is a reproducible physical-line count, not a claim about executable statements or production-only code. [Exact commit, extensions and breakdown →](docs/reviews/xarts-source-size-2026-09-20.json)
 
 ## The dashboard
 
@@ -69,13 +77,13 @@ We parsed the complete 3,004-entry export. **Six repeated rules account for 2,62
 | --- | --- |
 | 3,004 entries across 933 paths, but only 2,699 distinct provider IDs | Preserve every occurrence. IDs are reused across locations, including live code and historical copies; deduplicating only by ID would lose work. |
 | Some “open redirect” matches are array `.push()` calls; some “async forEach” matches have synchronous callbacks | Check receiver and callback types before proposing a repair. These examples do not establish that every match in either family is false. |
-| Initial review of the 20 high-security entries assesses 16 as contextual false positives | Examples include design-token names, per-tab PNG captures, deliberately invalid connection-string fixtures, and dedicated-worker messages. This is our assessment, not a provider-confirmed dismissal. |
-| Three image renderers accept URLs beyond their documented embedded-image contract; production preview lacks CSP | Local changes restrict those image sources and add a production policy. Capture payload validation is also strengthened. These changes are not yet a published repair or verified Norma closure. |
-| 54 targeted image/storage and spreadsheet tests, TypeScript and production build passed | Behavioral evidence supports the local changes; it does not establish a clean repository, a new dashboard score or complete browser compatibility. |
+| Review of all 241 security entries assesses 236 as contextual false positives and identifies five repair paths | Includes 181 array mutations mislabeled as redirects, 39 JSX matches lacking the reported query source/sink, and 16 contextual high-severity matches. These are reviewer assessments, not provider-confirmed dismissals. |
+| Three image renderers exceed their embedded-image contract; preview lacks CSP and referrer policy | Repairs restrict image sources, add production CSP and no-referrer policy, and strengthen capture validation. Chrome confirms the app mounts while external images and injected inline scripts are blocked. Provider closure remains pending. |
+| Another 420 async-forEach occurrences inspected | 417 callbacks resolve to synchronous return signatures; three historical-copy cases remain pending. No blanket loop rewrite or rule suppression. |
 
 **Why this belongs in the runtime:** an autonomous engineer must distinguish a real defect from a misapplied rule, test the repair and retain the reasoning. Otherwise, increasing autonomy just accelerates unnecessary rewrites. Our next implementation milestone is a complete finding ledger and scoped remediation tasks; automated dispatch of the entire scan is not implemented yet.
 
-[Repository-wide remediation plan →](docs/reviews/xarts-repository-remediation-plan.md) · [Export counts and provenance →](docs/reviews/norma-xarts-export-summary-2026-09-20.json)
+[Repository-wide remediation plan →](docs/reviews/xarts-repository-remediation-plan.md) · [Export counts and provenance →](docs/reviews/norma-xarts-export-summary-2026-09-20.json) · [Remediation batch evidence →](docs/reviews/xarts-security-runtime-remediation-2026-09-20.md)
 
 Norma currently runs in **advisory mode**. Missing authentication or incomplete coverage stays pending, while mandatory release gates retain authority. The independent review is bounded to ten changed source files per candidate, not a full-repository scan. [Coverage and operating limits →](docs/integrations/norma.md)
 

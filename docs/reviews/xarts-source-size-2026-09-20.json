@@ -1,0 +1,42 @@
+{
+  "commit": "6318ac2163b6d6f6daf67006ea6bddd72d49a0db",
+  "method": "Read tracked blobs using git archive at this immutable commit; count splitlines. Physical lines include comments and blank lines. Nonblank lines still include comments. Not a SLOC/parser measurement. JSON, Markdown, SVG, binary assets, untracked files and dependencies excluded; generated source is included.",
+  "extensions": [
+    ".cjs",
+    ".css",
+    ".cts",
+    ".html",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".mts",
+    ".py",
+    ".scss",
+    ".sh",
+    ".sql",
+    ".ts",
+    ".tsx"
+  ],
+  "categories": {
+    "tests": {
+      "files": 459,
+      "physical_lines": 68869,
+      "nonblank_lines": 63408
+    },
+    "other_source": {
+      "files": 3220,
+      "physical_lines": 604955,
+      "nonblank_lines": 567821
+    },
+    "historical_analysis_sources": {
+      "files": 110,
+      "physical_lines": 28609,
+      "nonblank_lines": 26693
+    }
+  },
+  "total": {
+    "files": 3789,
+    "physical_lines": 702433,
+    "nonblank_lines": 657922
+  }
+}
