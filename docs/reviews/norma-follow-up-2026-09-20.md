@@ -1,5 +1,7 @@
 # Norma follow-up · September 20, 2026
 
+Historical checkpoint. A subsequent [same-scope review, remediation and recheck](norma-remediation-2026-09-20.md) supersedes the outstanding recheck status below.
+
 Promote has gained tested resilience improvements and an integrated advisory review since the [first pilot](norma-pilot-2026-09-19.md). No same-scope Norma recheck has yet established closure of the original 26 findings.
 
 ## Latest recorded controller review

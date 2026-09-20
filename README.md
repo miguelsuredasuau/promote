@@ -156,18 +156,18 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 ## Quality review · Norma
 
-Norma is integrated into Devin’s engineering instructions and Promote’s independent candidate review in **advisory mode**. Reviews record the candidate commit, file hashes and observed rule snapshots; incomplete coverage stays **pending**. Devin requires its own authenticated MCP connection.
+Norma is integrated into Devin’s instructions and Promote’s independent candidate review in **advisory mode**. Candidate commits, file hashes and observed rules are recorded; incomplete coverage remains **pending**.
 
-**Updated September 20, 2026:** diagnostic inputs now receive schema validation, records that break classification are quarantined, and a failed orchestration cycle no longer prevents the scheduled review from running. Intake and triage changes have behavioral tests; the scheduler change has been inspected in code. None establishes verified closure of Norma’s earlier findings.
+**September 20: a live same-scope review, targeted changes, and a live recheck are complete.** Across six files, Norma reported **47 → 39 findings** after simplifying intake error classification and Devin session-state handling. Eight nested-conditional matches disappeared. New scheduler regression tests also verify recovery after orchestration failures and protection against overlapping cycles.
 
-| Recorded review | Scope | Findings | Coverage |
-| --- | --- | ---: | --- |
-| September 19 · `464acab` | Chat intake, Devin adapter, release registry | 26 | Reduced |
-| September 20 · `2724df6` | Engineering dispatch, orchestrator, orchestrator tests | 18 | Incomplete · pending |
+| Same six files | Findings | Coverage |
+| --- | ---: | --- |
+| Before · `aa0898e` | 47 | Reduced · pending |
+| After · `ff6d673` | 39 | Reduced · pending |
 
-The scopes differ, so these counts are **not a before/after improvement score**. The latest recorded Norma review predates the subsequent fixes. A same-scope recheck is still needed to establish which findings are resolved; no completed full-repository scan is recorded, and provider cost remains unknown.
+Local validation passed: **242 tests**, 5 skipped, TypeScript and public-source checks. The remaining findings have a documented contextual triage; none is silently suppressed. All Norma responses still report an unavailable Semgrep rule. This is a bounded improvement, not a complete repository scan or release approval. Provider cost remains unknown; no paid Devin session was launched for this work.
 
-[**Changes, evidence and remaining work →**](docs/reviews/norma-follow-up-2026-09-20.md) · [Setup and limits](docs/integrations/norma.md) · [Original pilot](docs/reviews/norma-pilot-2026-09-19.md)
+[**Before/after evidence, fixes and remaining work →**](docs/reviews/norma-remediation-2026-09-20.md) · [Setup and limits](docs/integrations/norma.md) · [Earlier review history](docs/reviews/norma-follow-up-2026-09-20.md)
 
 ## What comes next
 
