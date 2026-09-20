@@ -5,7 +5,9 @@ export function createPullRequestDesk(){
  let root,data,busy=null,notice='',loading=false;
  async function load(keepNotice=false){
   loading=true;render();
-  try{const r=await fetch('/api/pull-requests',{cache:'no-store'});if(!r.ok){const e=await r.json().catch(()=>({}));throw Error(e.error??'Pull requests unavailable.');}data=await r.json();if(!keepNotice)notice='';}
+  try{const session=await fetch('/api/owner-session',{cache:'no-store'});if(!session.ok)throw Error('Owner session unavailable.');
+   const {token}=await session.json();
+   const r=await fetch('/api/pull-requests',{cache:'no-store',headers:{'X-Owner-Token':token}});if(!r.ok){const e=await r.json().catch(()=>({}));throw Error(e.error??'Pull requests unavailable.');}data=await r.json();if(!keepNotice)notice='';}
   catch(error){data={configured:true,repos:[],items:[],failed:true};notice=error.message;}
   loading=false;render();
  }

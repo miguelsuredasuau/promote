@@ -135,6 +135,8 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ events, nextCursor: events.at(-1)?.ordinal ?? after })); return;
       }
       if (url.pathname === '/api/pull-requests') {
+        // Fans out to GitHub; Origin-less loads (<img>, navigations) must not be able to trigger it.
+        if (req.headers['x-owner-token'] !== ownerToken) { res.writeHead(403).end('Owner session required'); return; }
         const config = loadPullRequestConfig(options.root);
         res.setHeader('Content-Type', 'application/json');
         if (!config) { res.end(JSON.stringify({ configured: false, repos: [], items: [] })); return; }
