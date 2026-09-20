@@ -160,13 +160,13 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 ## Quality review · Norma
 
-**September 20: zero reported findings in the reviewed scope.** The six previously tracked files now have **0 findings**, down from 35 in the preceding round (47 at the start). Four additional files—including the serial-work helper—were also checked and returned zero. File hashes bind all ten results to candidate `caa1e98`; unchanged files reuse the preceding live response, and the final two modified files were rechecked.
+**Repository-wide findings remain unresolved.** A user-provided Norma dashboard summary reports **450 issues and a 55/100 score**. A supplied export contains **121 unique findings**: 118 from Prompts Analysis and 3 from Agentic Rules Analyzer. The export and dashboard have different category totals and cannot yet be reconciled to one scan; the export contains no commit SHA or scan ID.
 
-The work adds validated historical input types, explicit error boundaries and a tested capacity-one queue that preserves ordered writes, cancellation and work claims. **274 tests pass**, with 5 skipped; TypeScript and public-source checks pass. No rules were suppressed or disabled, and execution was not made concurrent to satisfy a static warning.
+The earlier **zero findings** result applies only to a ten-file code Livecheck with incomplete rule coverage. It does **not** clear the repository scan, prompt analysis, agentic review or production-readiness score. The 121 exported findings concern 15 other paths, none of which was in that ten-file review.
 
-**Coverage remains incomplete:** Norma still reports one unavailable Semgrep rule. The recorded controller status therefore remains **pending**, despite zero findings. This bounded review is not a full-repository scan or a release approval. Provider cost was not reported.
+The bounded remediation remains useful and passed 274 tests (5 skipped) at its recorded commit. Overall closure requires contextual triage of the broader findings and fresh, comparable scan evidence. No repository-wide pass is claimed.
 
-[**Zero-findings evidence, changes and limitations →**](docs/reviews/norma-zero-findings-2026-09-20.md) · [Integration and limits](docs/integrations/norma.md) · [Previous round](docs/reviews/norma-round2-2026-09-20.md)
+[**Reconciled scopes, counts and priorities →**](docs/reviews/norma-scope-reconciliation-2026-09-20.md) · [Bounded code-review evidence](docs/reviews/norma-zero-findings-2026-09-20.md) · [Integration and limits](docs/integrations/norma.md)
 
 ## What comes next
 

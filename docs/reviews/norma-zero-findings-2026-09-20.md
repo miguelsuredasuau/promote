@@ -1,5 +1,7 @@
 # Norma: zero reported findings in the tracked scope
 
+**Scope correction:** broader repository and prompt findings remain outstanding. See the [121-item export and 450-issue dashboard reconciliation](norma-scope-reconciliation-2026-09-20.md). This report never establishes repository-wide closure.
+
 The final retained results report **zero findings across ten files**, including all six files from the previous 35-finding review. Every response still has reduced coverage. The consolidated advisory status is **pending**, not an independent passing gate.
 
 [Structured evidence](norma-zero-findings-2026-09-20.json) binds the results to candidate `caa1e98`. A ten-file live review at `4acc475` left two findings; both affected files were corrected and reviewed at `caa1e98`. Each of the other eight files was byte-for-byte unchanged, verified against its recorded SHA-256. The report records each response's source commit, timestamp and raw-report hash. This is a consolidation of retained responses, not a claim that all ten ran again at the final commit.

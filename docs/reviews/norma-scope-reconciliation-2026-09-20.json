@@ -1,0 +1,1641 @@
+{
+  "schemaVersion": 1,
+  "sourceExportSha256": "fa2b39f0dacb5d7e56ed290560c79659452ab90f6123480eb4a658b1820b2c30",
+  "reviewedCheckoutSha": "8478199138081554bd752920c36d8a78cb7de00a",
+  "exportIssues": 121,
+  "uniqueIds": 121,
+  "commitInExport": null,
+  "dashboard": {
+    "source": "user-provided text; not independently retrieved",
+    "score": 55,
+    "issues": 450,
+    "displayedScanTime": "20/09/2026 07:52",
+    "timezone": null,
+    "rulesets": 9,
+    "rules": 192
+  },
+  "counts": {
+    "tool": {
+      "Prompts Analysis": 118,
+      "Agentic Rules Analyzer": 3
+    },
+    "severity": {
+      "HIGH": 37,
+      "MEDIUM": 51,
+      "LOW": 33
+    },
+    "area": {
+      "maintainability": 36,
+      "architecture": 17,
+      "security": 14,
+      "manageability": 31,
+      "performance": 18,
+      "scalability": 5
+    },
+    "rule": {
+      "prompt-misinterp-1.0": 9,
+      "prompt-chaining-1.0": 4,
+      "prompt-format-1.0": 11,
+      "prompt-citations-1.0": 4,
+      "prompt-context-1.0": 4,
+      "prompt-sequencing-1.0": 1,
+      "prompt-injection-1.0": 1,
+      "sensitive-data-exposure-1.0": 2,
+      "prompt-no-halluc-1.0": 1,
+      "prompt-expectations-1.0": 3,
+      "prompt-length-1.0": 8,
+      "prompt-verbosity-1.0": 3,
+      "prompt-examples-1.0": 8,
+      "prompt-overload-1.0": 3,
+      "prompt-errorhandle-1.0": 7,
+      "prompt-benchmark-1.0": 5,
+      "prompt-tokenlimit-1.0": 3,
+      "architectural-consistency-1.0": 1,
+      "prompt-versioning-1.0": 3,
+      "prompt-eval-1.0": 6,
+      "prompt-openended-1.0": 1,
+      "prompt-scope-1.0": 5,
+      "prompt-positive-1.0": 10,
+      "prompt-target-1.0": 10,
+      "prompt-voice-1.0": 4,
+      "prompt-role-1.0": 2,
+      "prompt-language-1.0": 2
+    }
+  },
+  "historicalPromptFindings": 30,
+  "items": [
+    {
+      "id": "00287097-6e12-4c56-8de9-ae93ea31f735",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "055b3e4e-0582-4070-bd22-9afea3e68d06",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-chaining-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "16b29249-98fb-4ed8-b314-6d72f7ae8f8a",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "2298baa0-78b1-4dd5-8f03-edfdf1b52a15",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-citations-1.0",
+      "severity": "HIGH",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "2dbffcd0-cc9e-4407-a4bc-0f9721f36c35",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "31e4f590-8a09-489f-b601-b01905e3aa26",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-chaining-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "36e83a04-f318-4569-8583-124ca52a438e",
+      "files": [
+        "scripts/generate-decision-demo.mjs"
+      ],
+      "rule": "prompt-context-1.0",
+      "severity": "HIGH",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "42ce3e42-442e-40b5-8866-dfde2e1172f7",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-sequencing-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "4f26e0d0-e8da-419b-9dfd-a169697ee1e8",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "53737d55-c002-44be-8331-09fbd636f1a2",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "53e3e920-acd5-4f33-9c03-3c8de0fd6a7e",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-injection-1.0",
+      "severity": "HIGH",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "575cf5b0-7c8e-46ec-9c25-17dbf5814bfb",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "6705e15b-1a2b-4861-8bdf-65153111e617",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-context-1.0",
+      "severity": "HIGH",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "6db78204-6345-4e00-bcb8-e8577df933d2",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "6dfc339d-15ce-4ec2-a657-74008dca8f34",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "70de9fd8-f043-447e-a23a-79db506464ac",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "738814d0-af34-45a3-ac2c-3fd3e543e41c",
+      "files": [
+        "studio/server.mjs"
+      ],
+      "rule": "sensitive-data-exposure-1.0",
+      "severity": "HIGH",
+      "area": "security",
+      "tool": "Agentic Rules Analyzer",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "738a8a48-c769-4f96-b5bc-bee6fad750d7",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "73ef942a-d979-4b6a-b8e6-5e0870b91cdc",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-chaining-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "73f38ab5-cee2-45a5-9813-6d47bb806e50",
+      "files": [
+        "scripts/generate-decision-demo.mjs"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "770258fc-d31f-47e8-9e03-f1d2c5192124",
+      "files": [
+        "scripts/generate-decision-demo.mjs"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "87467807-ea22-4327-a26b-211eeec27ecc",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "8ea00a33-5e40-4c87-b83e-b080b74b6129",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-context-1.0",
+      "severity": "HIGH",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "8eb29674-eded-4f95-96bf-d6ca374e9f6d",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "9badec34-39f7-49b1-b957-2a9d35ce32ab",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-citations-1.0",
+      "severity": "HIGH",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "a420c523-0209-4d08-bd76-8370180ee6ae",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "b8d2352a-50e4-42a3-8645-d6e8812cb2be",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-context-1.0",
+      "severity": "HIGH",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "bc6557b9-0a9b-427b-91b8-6b99cc95d7a6",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "d00a7df0-9eee-4a2f-9331-891aea4a8a30",
+      "files": [
+        "server/http.ts"
+      ],
+      "rule": "sensitive-data-exposure-1.0",
+      "severity": "HIGH",
+      "area": "security",
+      "tool": "Agentic Rules Analyzer",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "d81f95c7-f7e2-44b4-826c-c6641a6857ae",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-misinterp-1.0",
+      "severity": "HIGH",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "e0f3c773-4fc7-44b9-a2eb-a29123d6c9ab",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-no-halluc-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "e233654c-74a9-4d35-9026-64780e92f1d7",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-chaining-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "e7b1ebc4-adf9-4e43-920c-4b8042c27720",
+      "files": [
+        "prompts/engineer-v2.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "ea15a482-6921-4209-bf88-ba8b6f933081",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "f62fea5c-8811-4ba3-b3b6-608a4d57325d",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-citations-1.0",
+      "severity": "HIGH",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "f8c340c0-9c71-4c2b-8a04-623b58b60a17",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-format-1.0",
+      "severity": "HIGH",
+      "area": "architecture",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "f9f8fd05-314c-4064-867c-11bf97cc3ea0",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-citations-1.0",
+      "severity": "HIGH",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "04a43627-c7ce-495e-bd7b-0163b1ad0498",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-expectations-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "0d4699f6-41e0-48e8-848d-02a08c1edf7e",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "0e0b07b9-574c-4cc2-a489-2042117e3135",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-verbosity-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "16927e42-00bb-470d-973e-7b05340974e1",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "1dbdcc59-35e1-4f3d-80f2-4a75c91b38e5",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-overload-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "1f963e9b-d2ce-4cd1-8054-ef2dc6e82c13",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-errorhandle-1.0",
+      "severity": "MEDIUM",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "20527fc4-ddb5-4075-9a28-21c57bfb644e",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-benchmark-1.0",
+      "severity": "MEDIUM",
+      "area": "scalability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "214379ba-4cb6-4624-8567-4faae79c8990",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-errorhandle-1.0",
+      "severity": "MEDIUM",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "2716eeae-e6ab-40fe-9eaf-29b8e41f449a",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-tokenlimit-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "2d98111a-3558-483b-8b1c-833ae614532a",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-errorhandle-1.0",
+      "severity": "MEDIUM",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "2e899120-2315-4d73-9fb6-4251e79a103c",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "3286f471-9c1e-46a5-9cc7-c801b892c9d3",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-tokenlimit-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "362abe47-96a9-4c63-ab27-74a53ad15068",
+      "files": [
+        "server/improvements.ts"
+      ],
+      "rule": "architectural-consistency-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Agentic Rules Analyzer",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "363444d1-8274-4408-babd-a154311615e3",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "36839fd8-fc02-475d-a5a4-835b46f764fe",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-benchmark-1.0",
+      "severity": "MEDIUM",
+      "area": "scalability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "3be91fa4-3830-4a9b-8405-5b7006c12f25",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "44baf784-481d-4753-ac8b-d8bc9755eb44",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-versioning-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "45dd121d-12a5-4c85-a8dc-cf6e5606004a",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-expectations-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "4c6a0fa1-ba42-4dbc-a453-1d2e54cf3386",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "4ce66fd2-af8d-4216-bd82-33ce13c508fc",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "4dc67bd9-3ee0-453d-ae00-f2a24d6798c6",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "52bfae3b-6df8-43eb-8406-c4f2e3eeb612",
+      "files": [
+        "prompts/engineer-v3.md"
+      ],
+      "rule": "prompt-overload-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "533d3730-4c5c-4b8e-b002-c4b87d1ec3d0",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "5f2ebe51-3186-4726-b34d-8a924f2c8b25",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-benchmark-1.0",
+      "severity": "MEDIUM",
+      "area": "scalability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "60216285-d0ff-4254-907d-8b530cdda362",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-errorhandle-1.0",
+      "severity": "MEDIUM",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "64902dc1-bca6-418d-8233-db824e005f5c",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-errorhandle-1.0",
+      "severity": "MEDIUM",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "6b7bf10f-1340-486d-824b-c072ed3fcd8d",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-eval-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "6cea6909-38c3-4257-8c9b-b9d26d694e17",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "7a2cb0da-dbcf-4d6d-bda9-d0abfd7db7a5",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-overload-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "8243c1d8-d578-4c4e-bdf0-86fa3a1124cf",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "8a8123e1-3378-451d-aaae-1bb5b404a86f",
+      "files": [
+        "prompts/engineer-v3.md"
+      ],
+      "rule": "prompt-verbosity-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "8a8a67d1-3564-4cce-a34b-e3fde1ebf468",
+      "files": [
+        "prompts/engineer-v2.md"
+      ],
+      "rule": "prompt-verbosity-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "a10980b3-6eca-4535-a6e5-aaf46040c478",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-expectations-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "a422ea0e-350e-4af2-9d2f-349bcffb9861",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-eval-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "a6da37fe-42e0-499a-90b0-60614ea7f21f",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "a8bcb455-aedc-4c74-99b8-65e5050fcacb",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "b5cc4a89-be4b-4dad-a0c9-54f8af5ec8ad",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "c2da4e91-48b9-49e8-ac54-c3b657eb0b60",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-length-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "cf6ad45e-ca85-40a4-a141-67d56120ff8f",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-errorhandle-1.0",
+      "severity": "MEDIUM",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "dd8ebd6d-9213-4dbe-809f-65e4d8e4f045",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-benchmark-1.0",
+      "severity": "MEDIUM",
+      "area": "scalability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "e5bd9f77-5239-4f5b-998a-bd45a827c5d9",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-versioning-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "e8a40ac1-5bfc-49f8-ab36-0c912ce77d23",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-eval-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "e99da9e4-b21b-438a-93b0-d9c247b3a045",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-versioning-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "ec0308c4-85ae-4bc8-ad8c-07b55caa2caa",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-eval-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "edecffd7-21e3-45ac-8f90-b43d54440ec2",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-examples-1.0",
+      "severity": "MEDIUM",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "f63e7d2e-104c-41bd-86fd-f3b5f3a416b4",
+      "files": [
+        "prompts/engineer-v3.md"
+      ],
+      "rule": "prompt-tokenlimit-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "f9752be5-9893-4d69-b5ba-039b2c10ce7a",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-benchmark-1.0",
+      "severity": "MEDIUM",
+      "area": "scalability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "fbff8a6c-eee6-47ea-ac65-63a73e08a669",
+      "files": [
+        "scripts/generate-decision-demo.mjs"
+      ],
+      "rule": "prompt-errorhandle-1.0",
+      "severity": "MEDIUM",
+      "area": "security",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "fcb53cd3-80b4-4df9-863e-c0fe602e6eb3",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-eval-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "fdf29fa7-9b2d-4510-9104-c41ba2c5f2f8",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-eval-1.0",
+      "severity": "MEDIUM",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "ff627d99-5563-4d55-a0d8-1cdaf5f66d9d",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-openended-1.0",
+      "severity": "MEDIUM",
+      "area": "performance",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "00fcd2bc-9be0-4bd1-a268-6cc73e2a18a4",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-scope-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "0132376d-8012-45d6-b8f0-c731833ab843",
+      "files": [
+        "prompts/engineer-v3.md"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "047b6012-6fdc-4f3a-8a3a-04db5c05fdce",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "0be9ff39-fcd4-4777-9329-0362b4d13439",
+      "files": [
+        "scripts/generate-decision-demo.mjs"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "0f4fb1a5-01aa-4cad-b1b7-dc45145b97a6",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-voice-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "17f2e9ed-1f4f-4b59-816e-84682107fb69",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "18839c45-13ca-411f-9898-adc394ceddfa",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "21464d6f-db3b-4ac9-9775-46254a9f07f6",
+      "files": [
+        "prompts/engineer-v2.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "23a0623a-359b-4c5f-90f1-cb2f63238c32",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-scope-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "266b6d1d-f9a9-4c54-84c2-4c51f7aaf19c",
+      "files": [
+        "prompts/engineer-v2.md"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "40ce3ef9-444b-4b35-aeb1-da7c1ef2f7e8",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-scope-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "42b49db1-73b4-4b9c-9527-4361326a848d",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-role-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "4bb779fb-0af7-425a-acd9-07227e754dc6",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "5759fcde-7d7b-40b6-87b9-3dd94c641c29",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-language-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "6ff28e04-b3bb-45ac-96f2-b7cfe3a0d52d",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "755780d2-bba6-45b9-aa26-975499e16b4e",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-scope-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "755d08de-d6ea-40fa-865d-67127cbe241e",
+      "files": [
+        "prompts/orchestrator-v1.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "8b2e8113-84d1-485a-9ffe-64b613348642",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "972ab7bf-2752-40ec-9672-5d763c6b14f7",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "981e0164-a375-48a5-82b8-1a661283fd15",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "9dca13d7-7997-4b37-9081-598cef959ca5",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-role-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "9f1c9b34-1de9-4c0b-8c77-0bc52cc2ff5c",
+      "files": [
+        "scripts/generate-decision-demo.mjs"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "b00809a3-61be-4776-9eaf-b9c1897e2002",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "b447b409-c5aa-41b4-a637-ca33930e147f",
+      "files": [
+        "prompts/explorer-v1.md"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "ba69cdb6-98e4-4a5b-8376-c15f7fdf277d",
+      "files": [
+        "prompts/feedback-v1.md"
+      ],
+      "rule": "prompt-voice-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "c37178ab-553c-4228-8652-d4e8e8d99883",
+      "files": [
+        "prompts/engineer-v1.md"
+      ],
+      "rule": "prompt-voice-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "db2d46da-1b96-41e8-9296-b2fdbd3cdb64",
+      "files": [
+        "studio/models.mjs"
+      ],
+      "rule": "prompt-scope-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "dc4b0cb6-211e-4637-a1a6-d1ea80a7d3f4",
+      "files": [
+        ".agents/skills/testing-owner-desk/SKILL.md"
+      ],
+      "rule": "prompt-target-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "e94ee206-563d-4375-885b-c2c05ecc9418",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "ecdca369-ccec-4b7e-9c45-f41ded107955",
+      "files": [
+        "prompts/qa-v1.md"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "efaa2cc6-e3de-4931-9f51-7acd19e0ef57",
+      "files": [
+        "studio/review.mjs"
+      ],
+      "rule": "prompt-positive-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "f72cc3d7-d68f-419a-a23d-f04f2dd07af8",
+      "files": [
+        "prompts/engineer-v3.md"
+      ],
+      "rule": "prompt-language-1.0",
+      "severity": "LOW",
+      "area": "maintainability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": true,
+      "disposition": "unresolved_requires_contextual_triage"
+    },
+    {
+      "id": "ff52889f-bb21-4a72-bb02-575676d82ab5",
+      "files": [
+        "prompts/product-v1.md"
+      ],
+      "rule": "prompt-voice-1.0",
+      "severity": "LOW",
+      "area": "manageability",
+      "tool": "Prompts Analysis",
+      "detectionDate": "2026-09-20T07:45:50Z",
+      "historicalPromptVersion": false,
+      "disposition": "unresolved_requires_contextual_triage"
+    }
+  ]
+}
