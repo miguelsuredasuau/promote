@@ -8,7 +8,7 @@ Las cuatro propuestas pertenecen a la librería Xarts: formato numérico, layout
 
 El primer ensayo autorizado implementa solo una parte de la propuesta de formato: corregir el signo negativo antes del prefijo monetario de waterfall. No implementa aún numberFormat global ni precisión configurable. El límite de esta reparación es 20 ACU.
 
-El candidato vuelve por una rama, pasa comprobación de identidad y alcance, compilación aislada y pruebas de consumidor. El replay usa el SQL original y verifica su hash; para esta reparación exige etiquetas monetarias negativas correctas. Solo entonces se activa el paquete en el registro. Que haya un candidato o una imagen bonita no demuestra entrega ni adopción en el chat.
+El candidato vuelve por una rama, pasa comprobación de identidad y alcance, compilación aislada y pruebas de consumidor. El replay usa el SQL original y verifica su hash; para esta reparación exige etiquetas monetarias negativas correctas. Solo entonces se activa el paquete en el registro. A continuación Promote realiza un replay exacto a través del MCP real del chat y guarda el resultado, SQL y hashes en el historial; ese paso es determinista y se identifica como promote-exact-replay, sin atribuirle una llamada a Claude. Que haya un candidato o una imagen bonita no demuestra entrega ni adopción en el chat.
 
 ## Operación
 

@@ -28,10 +28,12 @@ async function pollEngineering() {
   try {
     const config = loadDevin(root);
     const running=store.engineeringReservations().filter(r=>r.state==='running');
-    store.providerStatus(running.length?{...config.status,status:'engineering_running',explanation:'Devin is working on an authorized task. Usage is reported by the provider; release still requires independent verification.'}:config.status);
-    if (providerState !== config.status.status) {
-      providerState = config.status.status;
-      store.recordActivity('provider', 'Engineering provider readiness changed', config.status);
+    const candidate=executionBindings(root).some(b=>store.engineeringReservation(b.task.incidentId)?.candidateSha);
+    const status=running.length?{...config.status,status:'engineering_running',explanation:'Devin is working on an authorized task. Usage is reported by the provider; release still requires independent verification.'}:candidate?{...config.status,status:'candidate_returned',explanation:'Devin returned a candidate. Follow verification and release in the Xarts proposal; no additional paid repair has been launched.'}:config.status;
+    store.providerStatus(status);
+    if (providerState !== status.status) {
+      providerState = status.status;
+      store.recordActivity('provider', 'Engineering provider readiness changed', status);
     }
     if (config.adapter) { await observeEngineering(store, config.adapter); await observeExplorations(store,config.adapter); }
     if(executionBindings(root).some(b=>{const r=store.engineeringReservation(b.task.incidentId);return r?.state==='stopped'&&r.candidateSha&&!store.workQueue().some(w=>w.payload?.proposalId===b.proposalId&&w.payload?.deliveryTask?.candidateSha===r.candidateSha&&w.payload?.deliveryTask?.attempt===b.delivery.attempt);}))void orchestrate().catch(()=>console.error('Proposal delivery scheduling failed; evidence retained'));

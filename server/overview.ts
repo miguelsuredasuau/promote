@@ -1,3 +1,4 @@
+import {executionBindings} from './improvements';
 import { evaluationSnapshots } from './qa';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -28,6 +29,8 @@ export async function overview(root: string, store: ControllerStore, checkout?: 
   const snapshot = store.operatorSnapshot();
   const inbox = store.inboxSnapshot();
   const report = ownerReport(snapshot.incidents);
+  const scoped=executionBindings(root);
+  if(scoped.length){report.mandate.status='scoped_tasks_configured';report.mandate.routineWork='Only exact configured tasks are authorized; general routine-work authority is not configured.';}
   const history = store.ownerDecisions();
   const decisions = store.proposals().map(proposal => {
     const revision = decisionRevision(proposal);

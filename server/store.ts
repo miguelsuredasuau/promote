@@ -255,7 +255,7 @@ export class ControllerStore {
       const created = incident ? this.createIncident(incident) : null;
       this.db.prepare('INSERT INTO inbox VALUES (?, ?, ?, ?, ?, ?)').run(sourceKey, digest,
         canonicalJson(record), created?.id ?? null, created ? 'incident_linked' : 'observed', new Date().toISOString());
-      this.recordActivity('intake', 'Demo record received', { sourceKey, incidentId: created?.id ?? null, disposition: created ? 'incident_linked' : 'awaiting_triage' });
+      this.recordActivity('intake', 'Project evidence received', { sourceKey, incidentId: created?.id ?? null, disposition: created ? 'incident_linked' : 'awaiting_triage' });
       return { incidentId: created?.id ?? null, duplicate: false };
     });
   }

@@ -62,6 +62,10 @@ Four illustrated proposals explore improvements to **Xarts, the chart library be
 
 Generated with GPT Image 2.5 through fal, using the office’s art direction. [How the demo and generation work](docs/visual-decisions.md).
 
+**One real loop completed:** Devin corrected negative currency labels in Xarts waterfall charts (`€-110.3k` → `-€110.3k`). Promote built and independently checked the package, activated release `xarts-cde20023de2e-55522dc3`, and replayed the original SQL-backed chart through Xarts Chat with identical data and zero workarounds. This delivers the sign correction, not the whole number-format feature. [Evidence and recording handoff](docs/xarts-video-loop.md).
+
+![Xarts Chat consuming the verified package](docs/images/xarts-after.png)
+
 The **3D office** makes the team visible. The **operations journal** makes its decisions readable. Both reflect the same controller state.
 
 ![The live Promote office: engineering desk, QA conveyor, strategy wall, backlog and finance vault](docs/images/office.png)

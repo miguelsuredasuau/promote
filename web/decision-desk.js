@@ -6,7 +6,7 @@ export function createDecisionDesk({onSaved,pullRequests}){
  const items=()=>(data?.ownerReport?.decisions??[]).filter(d=>d.ownerAttention||d.resolution);
  const routine=()=>data?.ownerReport?.routineWork?.tracked??0;
  function mount(container,snapshot,currentMode){root=container;data=snapshot;mode=currentMode;stamp=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);render();}
- function update(snapshot,currentMode){if(mode==='demo'&&currentMode==='demo')return;if(busy||root?.querySelector('textarea')===document.activeElement)return;data=snapshot;mode=currentMode;const next=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);if(next===stamp||busy)return;stamp=next;if(tab==='prs')return;render();}
+ function update(snapshot,currentMode){if(root?.improvementsBusy)return;if(mode==='demo'&&currentMode==='demo')return;if(busy||root?.querySelector('textarea')===document.activeElement)return;data=snapshot;mode=currentMode;const next=JSON.stringify([data?.ownerReport?.decisions,data?.ownerReport?.decisionWork,mode]);if(next===stamp||busy)return;stamp=next;if(tab==='prs')return;render();}
  async function decide(item,action){
   const feedback=drafts.get(item.id)??'';
   if(action==='request_changes'&&!feedback.trim()){notice='Tell your CEO what should change first.';render();root.querySelector('textarea')?.focus();return;}

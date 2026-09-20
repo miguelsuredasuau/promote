@@ -1,3 +1,4 @@
+import {replayPublishedChart} from './chat-replay';
 import {executionBindings} from './improvements';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -96,6 +97,8 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
   if(reservation?.state==='stopped'&&reservation.candidateSha){
    const deliveryTask=DeliveryTask.parse({...binding.delivery,candidateSha:reservation.candidateSha,sourceBranch:binding.task.providerExtension.branch});
    const workId=`improvement-delivery:${hashCanonical(deliveryTask)}`;
+   const completed=store.workQueue().find(w=>w.id===workId&&w.state==='completed');
+   if(completed?.result?.releaseId)await replayPublishedChart(root,store,deliveryTask,completed.result.releaseId);
    if(!store.workQueue().some(w=>w.id===workId)){
     const inspection=await inspectCandidate(store,binding.task.incidentId,deliveryTask.checkout);
     if(inspection.result.reason==='independent_runtime_checks_pending')store.enqueueWork({id:workId,kind:'candidate_review',role:'qa',lane:'reliability',priority:100,payload:{deliveryTask,proposalId:binding.proposalId},promptHash:rolePrompt('qa').hash});
@@ -128,6 +131,7 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
    }else if(work.kind==='candidate_review'){
     const review=work.payload.deliveryTask?await runXartsDelivery(store,root,work.payload.deliveryTask):await inspectCandidate(store,String(work.payload.incidentId),checkout);
     store.finishWork(work.id,work.token,review.state,review.result);
+    if(work.payload.proposalId&&work.payload.deliveryTask&&review.state==='completed'&&'releaseId' in review.result&&typeof review.result.releaseId==='string')await replayPublishedChart(root,store,DeliveryTask.parse(work.payload.deliveryTask),review.result.releaseId);
     if('candidateSha' in review.result&&review.result.candidateSha)store.updateEngineering(String(work.payload.incidentId),{reason:review.result.reason});
    }else{
     const current=loadDevin(root);
