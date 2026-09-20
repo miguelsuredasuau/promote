@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "mode": "advisory",
+  "repo": "miguelsuredasuau/promote",
+  "baseSha": "f43b06fd45d2d311b681b8a837b147b5dbec8f11",
+  "candidateSha": "2724df6ef67a79263b3c263faf5f85af016271a7",
+  "startedAt": "2026-09-20T06:11:41.496Z",
+  "finishedAt": "2026-09-20T06:12:14.572Z",
+  "status": "pending",
+  "rules": {
+    "agentic-rules-analyzer-1.0": {
+      "version": "1.0",
+      "sha256": "d44aa59d8392cafc6161d114de2c93f5cf012824b442a652c563a81766e221dc"
+    },
+    "javascript-norma-ruleset": {
+      "version": "1.0",
+      "sha256": "268cbc2eef53105173a5086c9881d9de920701b6a95bf1f4c930d27846bae8dc"
+    },
+    "prompts-analysis": {
+      "version": "1.0",
+      "sha256": "5f5f154be7a68f1f9386779733ff767be0981a8b1ff839efdad27249b2558291"
+    },
+    "typescript-norma-ruleset": {
+      "version": "1.0",
+      "sha256": "c3e22e8942448be0c87b7049146307924a47cf3de121923ef42b9408960df995"
+    }
+  },
+  "files": [
+    {
+      "path": "server/engineering.ts",
+      "status": "pending",
+      "sha256": "dc4525b78cceed14d095a18a021991731d8cb300f0bfa7012e36d62524e5ee39",
+      "totalIssues": 4,
+      "findings": [
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "line": 33,
+          "column": 27
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "line": 39,
+          "column": 22
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "line": 43,
+          "column": 25
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "line": 47,
+          "column": 27
+        }
+      ],
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "reason": "coverage_incomplete"
+    },
+    {
+      "path": "server/orchestrator.ts",
+      "status": "pending",
+      "sha256": "00484e7abcb0099d3b64c914dc55d76000c15543c91382dbd571e0a4729b7cdf",
+      "totalIssues": 14,
+      "findings": [
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 53,
+          "column": 36
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 54,
+          "column": 6
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 56,
+          "column": 2
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 57,
+          "column": 5
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 59,
+          "column": 14
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 70,
+          "column": 36
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 71,
+          "column": 8
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 72,
+          "column": 4
+        },
+        {
+          "ruleId": "js-no-error-handling-async",
+          "line": 73,
+          "column": 66
+        },
+        {
+          "ruleId": "ts-any-type-usage",
+          "line": 16,
+          "column": 38
+        },
+        {
+          "ruleId": "js-nested-ternary",
+          "line": 31,
+          "column": 19
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "line": 108,
+          "column": 44
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "line": 108,
+          "column": 105
+        },
+        {
+          "ruleId": "js-scl-await-in-loop",
+          "line": 114,
+          "column": 23
+        }
+      ],
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "reason": "coverage_incomplete"
+    },
+    {
+      "path": "tests/orchestrator.test.ts",
+      "status": "pending",
+      "sha256": "474857c4af7b4b38061b5a269c9f211aae14bd25cea9a387a6693edf0c20030e",
+      "totalIssues": 0,
+      "findings": [],
+      "rulesets": [
+        "javascript-norma-ruleset",
+        "nodejs-norma-ruleset",
+        "react-norma-ruleset",
+        "supabase-norma-ruleset",
+        "typescript-norma-ruleset",
+        "vite-norma-ruleset"
+      ],
+      "reason": "coverage_incomplete"
+    }
+  ],
+  "totalIssues": 18,
+  "costUsd": null,
+  "sourceReportSha256": "62bdb079cca0e98c2a101e41a1b3cc7678f4a44f4abe0a9a6e435e1330df9fb1"
+}

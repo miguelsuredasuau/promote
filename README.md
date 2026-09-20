@@ -154,25 +154,20 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 </details>
 
-## Live quality review · Norma
+## Quality review · Norma
 
-Norma is now wired into future Devin task instructions and Promote’s independent candidate review, in **advisory mode**. Results are bound to commits and file hashes; incomplete coverage remains pending. Devin needs its own authenticated MCP connection. [Setup, behavior and limits →](docs/integrations/norma.md)
+Norma is integrated into Devin’s engineering instructions and Promote’s independent candidate review in **advisory mode**. Reviews record the candidate commit, file hashes and observed rule snapshots; incomplete coverage stays **pending**. Devin requires its own authenticated MCP connection.
 
+**Updated September 20, 2026:** diagnostic inputs now receive schema validation, records that break classification are quarantined, and a failed orchestration cycle no longer prevents the scheduled review from running. Intake and triage changes have behavioral tests; the scheduler change has been inspected in code. None establishes verified closure of Norma’s earlier findings.
 
-We ran [Norma MCP](https://github.com/qualityclouds/norma-mcp) against **three critical files** at commit [`464acab`](https://github.com/miguelsuredasuau/promote/tree/464acab3ba54b17c0622203aed8c5051b98e90df), on September 19, 2026.
+| Recorded review | Scope | Findings | Coverage |
+| --- | --- | ---: | --- |
+| September 19 · `464acab` | Chat intake, Devin adapter, release registry | 26 | Reduced |
+| September 20 · `2724df6` | Engineering dispatch, orchestrator, orchestrator tests | 18 | Incomplete · pending |
 
-| Reviewed component | High | Medium | Findings |
-| --- | ---: | ---: | ---: |
-| Chat evidence intake | 10 | 8 | **18** |
-| Devin adapter | 3 | 5 | **8** |
-| Release registry | 0 | 0 | **0** |
-| **Total · 242 lines** | **13** | **13** | **26** |
+The scopes differ, so these counts are **not a before/after improvement score**. The latest recorded Norma review predates the subsequent fixes. A same-scope recheck is still needed to establish which findings are resolved; no completed full-repository scan is recorded, and provider cost remains unknown.
 
-**Coverage was reduced in all three checks:** one Semgrep rule could not be evaluated. The findings concern async error handling, nested conditionals and sequential awaits. They need contextual triage; some error handling is already centralized, and several findings overlap the same expression.
-
-This is a real, bounded review—not a full repository scan or a passing release gate. No application fixes were made in this run. No complete Norma repository scan exists yet, and provider cost was not reported.
-
-[**Read the findings, coverage limits and next steps →**](docs/reviews/norma-pilot-2026-09-19.md) · [Structured results](docs/reviews/norma-pilot-2026-09-19.json)
+[**Changes, evidence and remaining work →**](docs/reviews/norma-follow-up-2026-09-20.md) · [Setup and limits](docs/integrations/norma.md) · [Original pilot](docs/reviews/norma-pilot-2026-09-19.md)
 
 ## What comes next
 

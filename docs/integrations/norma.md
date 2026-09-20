@@ -14,7 +14,7 @@ The Claude Code connection on your computer is not shared with Devin.
 
 These are Devin's [documented MCP setup steps](https://docs.devin.ai/work-with-devin/mcp). If the provider requires manual OAuth application setup, follow the callback URL shown in Devin. Never paste tokens into an engineering prompt.
 
-Engineer prompt v3 tells Devin to load the applicable rules before editing, check changed source files, recheck fixes and return `normaReview` with commit, checked files, findings, coverage and limitations. The structured output requires that report. Missing authentication must be reported as pending; normal authorized repair work and required tests can continue. Reported diagnostics are recorded as **engineering-agent evidence**, not independent acceptance. A missing, invalid or mismatched report becomes pending when the candidate is observed.
+Engineer prompt v4 (building on v3) tells Devin to load the applicable rules before editing, check changed source files, recheck fixes and return `normaReview` with commit, checked files, findings, coverage and limitations. The structured output requires that report. Missing authentication must be reported as pending; normal authorized repair work and required tests can continue. Reported diagnostics are recorded as **engineering-agent evidence**, not independent acceptance. A missing, invalid or mismatched report becomes pending when the candidate is observed.
 
 ## 2. Configure Promote's independent client
 
@@ -70,3 +70,5 @@ Tests exercise frozen Git bytes, repository mismatch, symlinks, excluded credent
 The [initial live pilot](../reviews/norma-pilot-2026-09-19.md) is historical evidence from the manual client. It is not proof that Devin's separate MCP connection has been configured. No paid Devin session is launched to validate this integration automatically.
 
 Local integration check (September 20, 2026): the manual command used the configured keychain credential source and persisted `pending / authentication_required` because the existing token had expired. This validates the unavailable-authentication path, not a successful live scan by the new client. The implementation passed TypeScript and 222 unit/integration tests; five optional Docker tests were skipped. Devin's separate OAuth connection remains an operator setup step.
+
+The [September 20 follow-up](../reviews/norma-follow-up-2026-09-20.md) records a subsequent controller review and distinguishes later application fixes from findings that have not been rechecked.

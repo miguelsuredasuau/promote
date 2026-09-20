@@ -1,5 +1,7 @@
 # Norma review: first live pilot
 
+Historical result for the frozen September 19 commit. See the [September 20 follow-up](norma-follow-up-2026-09-20.md) for subsequent review evidence and implementation changes.
+
 **26 findings across three files, with reduced rule coverage.** This is a bounded static review, not a repository-wide scan, security certification or release acceptance result.
 
 ## Scope and provenance
