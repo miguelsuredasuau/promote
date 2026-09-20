@@ -34,9 +34,9 @@ const assets: Record<string, { file: string; mime: string }> = {
 };
 export function createOperatorServer(options: { root: string; store: ControllerStore; checkout?: string; testCheckout?:string }) {
   const ownerToken = randomBytes(32).toString('hex');
-  const ownerAuthorized = (req: IncomingMessage, host: string, origin: string | undefined) => {
+  const ownerAuthorized = (req: IncomingMessage, host: string, origin: string | undefined, requireOrigin = true) => {
     const presented = req.headers['x-owner-token'];
-    return origin === `http://${host}` && typeof presented === 'string' && presented.length === ownerToken.length
+    return (origin === `http://${host}` || (!requireOrigin && origin === undefined)) && typeof presented === 'string' && /^[a-f0-9]{64}$/.test(presented)
       && timingSafeEqual(Buffer.from(presented), Buffer.from(ownerToken));
   };
   return createServer(async (req, res) => {
@@ -145,7 +145,7 @@ export function createOperatorServer(options: { root: string; store: ControllerS
       }
       if (url.pathname === '/api/pull-requests') {
         // Fans out to GitHub; Origin-less loads (<img>, navigations) must not be able to trigger it.
-        if (req.headers['x-owner-token'] !== ownerToken) { res.writeHead(403).end('Owner session required'); return; }
+        if (!ownerAuthorized(req, host, origin, false)) { res.writeHead(403).end('Owner session required'); return; }
         const config = loadPullRequestConfig(options.root);
         res.setHeader('Content-Type', 'application/json');
         if (!config) { res.end(JSON.stringify({ configured: false, repos: [], items: [] })); return; }

@@ -202,5 +202,6 @@ it('hands the owner session token only to same-origin fetches and refuses near-m
  const post=(presented:string)=>fetch(`${base}/api/owner-decisions`,{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-Owner-Token':presented},body:'{}'});
  expect((await post(token.slice(0,-1)+(token.endsWith('0')?'1':'0'))).status).toBe(403);
  expect((await post(token+'0')).status).toBe(403);
+ expect((await post('é'.repeat(64))).status).toBe(403);
  expect((await post(token)).status).toBe(400);
 });
