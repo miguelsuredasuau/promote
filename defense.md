@@ -59,7 +59,23 @@ These demonstrate complementary parts of the use case: a real engineering-and-de
 
 ![Norma dashboard for visx-anlak: 81/100, partial coverage, 2,324 issues](docs/images/norma-visx-anlak-2026-09-20.png)
 
-User-supplied Xarts snapshot: **81/100 · 9 rulesets · 192 rules**, scan displayed as September 20, 2026, 10:48. This is the **pre-remediation, partial** scan: 2,324 issues remain in that snapshot, including four high security findings. The post-fix Xarts score and same-scope issue delta await a fresh scan; no score increase is claimed.
+The image above is **historical**: the supplied partial scan displayed **81/100 and 2,324 issues** at September 20, 2026, 10:48. The **newer supplied dashboard** displays **63/100 and 3,004 issues**, with **Security at 6% (241 entries)**, at 11:23. We have not independently retrieved a newer score. The drop is not presented as improvement, and the totals alone do not establish which code changes or scan differences caused it.
+
+### Current investigation: fix the causes, verify the signal
+
+We parsed the complete 3,004-entry export. **Six repeated rules account for 2,620 entries (87.2%)**, making shared-cause remediation more useful than 3,004 mechanical edits. This is an inventory analysis, not a completed review of every finding.
+
+| Observed evidence | Engineering response |
+| --- | --- |
+| 3,004 entries across 933 paths, but only 2,699 distinct provider IDs | Preserve every occurrence. IDs are reused across locations, including live code and historical copies; deduplicating only by ID would lose work. |
+| Some “open redirect” matches are array `.push()` calls; some “async forEach” matches have synchronous callbacks | Check receiver and callback types before proposing a repair. These examples do not establish that every match in either family is false. |
+| Initial review of the 20 high-security entries assesses 16 as contextual false positives | Examples include design-token names, per-tab PNG captures, deliberately invalid connection-string fixtures, and dedicated-worker messages. This is our assessment, not a provider-confirmed dismissal. |
+| Three image renderers accept URLs beyond their documented embedded-image contract; production preview lacks CSP | Local changes restrict those image sources and add a production policy. Capture payload validation is also strengthened. These changes are not yet a published repair or verified Norma closure. |
+| 54 targeted image/storage and spreadsheet tests, TypeScript and production build passed | Behavioral evidence supports the local changes; it does not establish a clean repository, a new dashboard score or complete browser compatibility. |
+
+**Why this belongs in the runtime:** an autonomous engineer must distinguish a real defect from a misapplied rule, test the repair and retain the reasoning. Otherwise, increasing autonomy just accelerates unnecessary rewrites. Our next implementation milestone is a complete finding ledger and scoped remediation tasks; automated dispatch of the entire scan is not implemented yet.
+
+[Repository-wide remediation plan →](docs/reviews/xarts-repository-remediation-plan.md) · [Export counts and provenance →](docs/reviews/norma-xarts-export-summary-2026-09-20.json)
 
 Norma currently runs in **advisory mode**. Missing authentication or incomplete coverage stays pending, while mandatory release gates retain authority. The independent review is bounded to ten changed source files per candidate, not a full-repository scan. [Coverage and operating limits →](docs/integrations/norma.md)
 
@@ -73,7 +89,7 @@ Norma currently runs in **advisory mode**. Missing authentication or incomplete 
 >
 > One fix prevents a failed annotation capture from navigating away without useful feedback. One accepted finding preserves an async test’s rejected promise: the test runner already treats that as failure, so catching and continuing would make the check worse.
 >
-> We have a recorded scan–fix–rescan trail on Promote’s controller and an 81-point pre-fix Xarts snapshot. The new Xarts score still needs its rescan. The value is the repeatable workflow: evidence reaches the engineer, candidate reviews stay traceable, and accepted changes return to the product.
+> We have a recorded scan–fix–rescan trail on Promote’s controller. Xarts’ newer supplied dashboard is 63/100 with 3,004 entries; we are reconciling that export and repairing confirmed defects, without claiming it is clean. The value is the repeatable workflow: evidence reaches the engineer, candidate reviews stay traceable, and accepted changes return to the product.
 
 ---
 

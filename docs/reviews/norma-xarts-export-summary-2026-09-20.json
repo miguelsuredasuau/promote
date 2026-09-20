@@ -1,0 +1,150 @@
+{
+  "source_sha256": "faab8e759a92618069816733902a5cf9ae1419d613059a1854bc9116996b20f0",
+  "export_entries": 3004,
+  "unique_provider_ids": 2699,
+  "unique_rule_file_line_keys": 2999,
+  "distinct_paths": 933,
+  "source_commit": null,
+  "provider_scan_id": null,
+  "detection_dates": [
+    "2026-09-20T10:59:52Z"
+  ],
+  "counts_by_rule": {
+    "js-no-error-handling-async-1.0": 671,
+    "js-nested-linear-search-1.0": 14,
+    "rct-prf-setstate-in-useeffect-1.0": 40,
+    "js-localstorage-token-1.0": 2,
+    "js-empty-catch-block-1.0": 13,
+    "rct-useeffect-no-deps-1.0": 5,
+    "rct-sec-credential-logging-1.0": 4,
+    "rct-unsafe-href-binding-1.0": 5,
+    "ts-db-connection-string-1.0": 6,
+    "js-unbounded-promise-all-1.0": 2,
+    "vite-missing-csp-1.0": 1,
+    "js-mng-loopback-url-1.0": 2,
+    "js-postmessage-no-origin-1.0": 2,
+    "js-scl-foreach-async-1.0": 420,
+    "js-console-log-only-1.0": 544,
+    "rct-open-redirect-1.0": 181,
+    "js-nested-ternary-1.0": 408,
+    "js-scl-await-in-loop-1.0": 133,
+    "ts-any-type-usage-1.0": 396,
+    "js-fetch-no-timeout-1.0": 4,
+    "js-function-in-loop-1.0": 38,
+    "rct-unvalidated-url-params-1.0": 39,
+    "js-pipeline-allocations-1.0": 27,
+    "js-prf-loop-invariant-case-1.0": 1,
+    "vite-missing-referrer-policy-1.0": 1,
+    "js-deeply-nested-conditional-1.0": 2,
+    "vite-hardcoded-config-1.0": 1,
+    "rct-prf-jsonstringify-deps-1.0": 1,
+    "js-for-in-array-1.0": 1,
+    "js-mnt-double-negation-1.0": 40
+  },
+  "counts_by_area": {
+    "scalability": 1267,
+    "performance": 90,
+    "security": 241,
+    "manageability": 956,
+    "maintainability": 450
+  },
+  "counts_by_top_level_path": {
+    "docs": 348,
+    "render-cli": 981,
+    "playground": 32,
+    "packages": 79,
+    "core": 218,
+    "cards": 85,
+    "lib": 10,
+    "addons": 6,
+    "transform": 13,
+    "app": 28,
+    "adaptadores": 70,
+    "charts": 1129,
+    "index.html": 2,
+    "vite.config.ts": 3
+  },
+  "top_paths": [
+    {
+      "path": "render-cli/deriva-metadatos.ts",
+      "entries": 134
+    },
+    {
+      "path": "render-cli/revisa-pantalla.ts",
+      "entries": 56
+    },
+    {
+      "path": "render-cli/sdk/check-consumer.mjs",
+      "entries": 55
+    },
+    {
+      "path": "render-cli/revisa-huecos.ts",
+      "entries": 45
+    },
+    {
+      "path": "render-cli/revisa-desbordamiento.ts",
+      "entries": 45
+    },
+    {
+      "path": "render-cli/revisa-vocabulario.ts",
+      "entries": 42
+    },
+    {
+      "path": "render-cli/revisa-iconos.ts",
+      "entries": 39
+    },
+    {
+      "path": "render-cli/revisa-concepto.ts",
+      "entries": 36
+    },
+    {
+      "path": "adaptadores/__tests__/memoria.test.ts",
+      "entries": 34
+    },
+    {
+      "path": "render-cli/revisa-consulta.ts",
+      "entries": 32
+    },
+    {
+      "path": "docs/analysis/evidence/tooltip-installed-negative.mjs",
+      "entries": 30
+    },
+    {
+      "path": "render-cli/revisa-paleta.ts",
+      "entries": 30
+    },
+    {
+      "path": "render-cli/deriva.ts",
+      "entries": 27
+    },
+    {
+      "path": "docs/analysis/evidence/2026-09-09-contract-coverage/measure.mjs",
+      "entries": 26
+    },
+    {
+      "path": "render-cli/sdk/build-spreadsheets.mjs",
+      "entries": 26
+    },
+    {
+      "path": "render-cli/cli.ts",
+      "entries": 23
+    },
+    {
+      "path": "packages/geo/scripts/build-geo.mjs",
+      "entries": 23
+    },
+    {
+      "path": "render-cli/new-chart.ts",
+      "entries": 23
+    },
+    {
+      "path": "render-cli/mide-texto.ts",
+      "entries": 22
+    },
+    {
+      "path": "render-cli/revisa-laminas.ts",
+      "entries": 22
+    }
+  ],
+  "note": "Aggregate analysis only. Counts are export occurrences, not validated defects or verified closures. No raw source snippets or credentials included."
+}
