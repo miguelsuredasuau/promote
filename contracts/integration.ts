@@ -20,6 +20,16 @@ export const ChatRunRecord = z.object({
 }).passthrough();
 export type ChatRunRecord = z.infer<typeof ChatRunRecord>;
 
+/** Replaceable sweep output (coverage.json / quality.json). Shapes are checked before the orchestrator reads them. */
+export const ChatDiagnostics = z.object({
+  summary: z.object({
+    total: z.number().int().nonnegative().optional(), fail: z.number().int().nonnegative().optional(), error: z.number().int().nonnegative().optional(),
+    release: z.object({ shims: z.array(z.object({ id: z.string().min(1).max(200) }).passthrough()).max(1000).optional() }).passthrough().nullable().optional(),
+  }).passthrough(),
+  results: z.array(z.object({ id: z.string().min(1).max(500), status: z.string().min(1).max(50) }).passthrough()).max(10000),
+}).passthrough();
+export type ChatDiagnostics = z.infer<typeof ChatDiagnostics>;
+
 const FeedbackSubject = z.object({
   runId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/), artifact: z.string().regex(/^chart-\d+$/),
   request: z.string(), chartId: z.string(), dataHash: Sha256.nullable(), svgHash: Sha256.nullable(),

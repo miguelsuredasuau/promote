@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile, lstat, mkdir, writeFile, rename } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { ChatRunRecord, ChatFeedback } from '../contracts/integration';
+import { ChatRunRecord, ChatFeedback, ChatDiagnostics } from '../contracts/integration';
 import { hashCanonical } from '../contracts/hash';
 import type { ControllerStore } from './store';
 
@@ -71,8 +71,9 @@ export async function importChatDiagnostics(store: ControllerStore, runs: string
     const path = join(runs, `${kind}.json`);
     const stat = await lstat(path).catch(() => null);
     if (!stat?.isFile() || stat.size > 16 * 1024 * 1024) continue;
-    const raw = JSON.parse(await readFile(path, 'utf8'));
-    if (!raw.summary || !Array.isArray(raw.results)) throw new Error('invalid_diagnostics');
+    const parsed = ChatDiagnostics.safeParse(JSON.parse(await readFile(path, 'utf8')));
+    if (!parsed.success) throw new Error('invalid_diagnostics');
+    const raw = parsed.data;
     const digest = hashCanonical(raw);
     const snapshot = { schema: 'xarts-chat/quality-snapshot@1', kind, digest,
       summary: `${kind}: ${raw.summary.total ?? '?'} forms, ${raw.summary.fail ?? raw.summary.error ?? '?'} reported failures`,

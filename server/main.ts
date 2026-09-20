@@ -72,7 +72,9 @@ async function heartbeat() {
   try {
     const prior=store.orchestratorHeartbeat();
     if (!prior || Date.parse(prior.nextCheckAt)<=Date.now()) {
-      await runOrchestrator(store,root,process.env.PROMOTE_PROJECT_PATH);
+      // The review must persist its heartbeat even when a cycle fails, or the failure retries on every tick.
+      try { await runOrchestrator(store,root,process.env.PROMOTE_PROJECT_PATH); }
+      catch { console.error('Orchestration cycle failed; the scheduled review continues'); }
       await reviewProject(store, process.env.PROMOTE_PROJECT_PATH);
     }
   }

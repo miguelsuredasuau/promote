@@ -38,10 +38,12 @@ export function classifyRecord(record:any):Proposal[] {
   if(feature)add('feature',{chart:subject?.chartId??null,note:record.note},`Feature request: ${record.note}`,45,'Draft user outcome, acceptance examples, scope and a cost proposal; do not implement without authorization.');
   else if(record.value==='down'||record.kind==='preference')add('feedback',{chart:subject?.chartId??null,kind:record.kind,reasons:[...(record.reasons??[])].sort(),note:record.note??''},`Review ${record.kind} feedback for ${subject?.chartId??'chart'}`,55,'Compare the referenced renders and user reasons; classify preference versus reproducible defect.');
  }else if(record.schema==='xarts-chat/quality-snapshot@1'){
-  for(const r of record.observations?.results??[]){
-   if(['fail','error'].includes(r.status))add('bug',{kind:record.kind,id:r.id,release:record.observations?.summary?.release??null},`${record.kind} failure: ${r.id}`,r.status==='error'?85:75,reproduction);
+  const list=(value:unknown)=>Array.isArray(value)?value.filter(item=>item&&typeof item==='object'):[];
+  const release=record.observations?.summary?.release;
+  for(const r of list(record.observations?.results)){
+   if(['fail','error'].includes(r.status))add('bug',{kind:record.kind,id:r.id,release:release??null},`${record.kind} failure: ${r.id}`,r.status==='error'?85:75,reproduction);
   }
-  for(const shim of record.observations?.summary?.release?.shims??[])add('bug',{kind:'packaging_workaround',code:shim.id},`Remove package workaround: ${shim.id}`,90,'Reproduce installation outside the monorepo and run the standalone consumer check.');
+  for(const shim of list(release?.shims))add('bug',{kind:'packaging_workaround',code:shim.id},`Remove package workaround: ${shim.id}`,90,'Reproduce installation outside the monorepo and run the standalone consumer check.');
  }
  return proposals;
 }
@@ -86,7 +88,11 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
   }
  }
  const feedback=rolePrompt('feedback');let triaged=0;
- for(const source of store.untriagedRecords(100))if(store.triageRecord(source.sourceKey,classifyRecord(source.record),feedback.hash))triaged++;
+ for(const source of store.untriagedRecords(100)){
+  // One malformed record must not wedge the scheduler: quarantine it and keep triaging the rest.
+  try{if(store.triageRecord(source.sourceKey,classifyRecord(source.record),feedback.hash))triaged++;}
+  catch{store.quarantineRecord(source.sourceKey,'classification_failed');}
+ }
  for(const proposal of store.proposals()){
   const role=proposal.category==='feature'?'product':'feedback';
   store.enqueueWork({id:`assess:${proposal.id}`,kind:'proposal_assessment',role,lane:['feature','feedback'].includes(proposal.category)?'discovery':'reliability',priority:proposal.priority,payload:{proposalId:proposal.id},promptHash:rolePrompt(role).hash});

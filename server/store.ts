@@ -293,6 +293,15 @@ export class ControllerStore {
     });
   }
 
+  quarantineRecord(sourceKey:string, reason:string) {
+    return this.transaction(()=>{
+      const result=this.db.prepare("UPDATE inbox SET disposition='quarantined' WHERE source_key=? AND disposition='observed'").run(sourceKey);
+      if(result.changes!==1)return false;
+      this.recordActivity('orchestration','Record quarantined; triage skipped',{sourceKey,reason,nextAction:'Inspect the stored record; it is retained as evidence but produces no proposals.'});
+      return true;
+    });
+  }
+
   proposals() {
     return this.db.prepare('SELECT record FROM proposals ORDER BY rowid').all().map(row=>{
       const p=JSON.parse(String(row.record));

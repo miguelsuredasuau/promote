@@ -24,6 +24,18 @@ it('distinguishes feature requests, preferences, recovered signals and failed qu
  expect(classifyRecord({schema:'xarts-chat/feedback@1',kind:'preference',note:'I prefer green',subject:{chartId:'bar'}})[0].category).toBe('feedback');
  expect(classifyRecord({schema:'xarts-chat/run-record@1',signals:[{kind:'input_error',code:'bad',recovered:true}]})).toEqual([]);
  expect(classifyRecord({schema:'xarts-chat/quality-snapshot@1',kind:'quality',observations:{summary:{},results:[{id:'x',status:'fail'},{id:'y',status:'pass'}]}})).toHaveLength(1);
+ expect(classifyRecord({schema:'xarts-chat/quality-snapshot@1',kind:'quality',observations:{summary:{release:{shims:1}},results:[null,'x',{id:'z',status:'error'}]}})).toHaveLength(1);
+});
+it('quarantines a record whose classification throws and keeps triaging the rest',async()=>{
+ const s=setup();const poison={schema:'promote/exploration@1',report:{findings:[null]}};
+ expect(()=>classifyRecord(poison)).toThrow();
+ s.store.ingest('poison',hashCanonical(poison),poison,null);
+ const good={schema:'xarts-chat/run-record@1',signals:[{kind:'possible_library_defect',code:'clipping',recovered:false}]};
+ s.store.ingest('good',hashCanonical(good),good,null);
+ expect((await runOrchestrator(s.store,s.root)).triaged).toBe(1);
+ expect(s.store.reviewInputs().pendingRecords).toBe(0);
+ expect(s.store.inboxSnapshot().map(r=>[r.sourceKey,r.disposition]).sort()).toEqual([['good','triaged'],['poison','quarantined']]);
+ expect((await runOrchestrator(s.store,s.root)).triaged).toBe(0);
 });
 it('reserves every fifth eligible assessment for discovery and preserves claims across restart',()=>{
  const s=setup();
