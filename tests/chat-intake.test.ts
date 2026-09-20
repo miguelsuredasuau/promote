@@ -39,6 +39,11 @@ it('archives quality versions and imports partial progress safely',async()=>{
  const {importChatDiagnostics,importChatProgress}=await import('../server/chat-intake');
  const s=setup();writeFileSync(join(s.root,'quality.json'),JSON.stringify({summary:{total:391,fail:27},results:[]}));
  expect(await importChatDiagnostics(s.store,s.root)).toBe(1);expect(await importChatDiagnostics(s.store,s.root)).toBe(0);
+ for(const bad of [{summary:{},results:[null]},{summary:{release:{shims:1}},results:[]},{summary:{},results:[{id:'x'}]}]){
+  writeFileSync(join(s.root,'coverage.json'),JSON.stringify(bad));
+  await expect(importChatDiagnostics(s.store,s.root)).rejects.toThrow('invalid_diagnostics');
+ }
+ expect(s.store.inboxSnapshot()).toHaveLength(1);
  const runId='20260919T100000-1234abcd';mkdirSync(join(s.root,runId));
  const event={schema:'xarts-chat/progress@1',runId,eventId:'test',at:'2026-09-19T10:00:00Z',t:'request',message:'Synthetic request'};
  writeFileSync(join(s.root,runId,'events.jsonl'),JSON.stringify(event)+'\n'+'{incomplete');
