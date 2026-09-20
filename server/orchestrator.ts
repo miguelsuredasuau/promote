@@ -29,7 +29,9 @@ export function classifyRecord(record:any):Proposal[] {
    // A recovered library/transport failure is still a defect worth investigating.
    // Successful recovery only removes ordinary corrected input errors from triage.
    if(signal.recovered&&signal.kind==='input_error')continue;
-   const category=signal.kind==='possible_library_defect'||signal.kind==='packaging_workaround'?'bug':signal.kind==='tool_delivery_error'?'infrastructure':'feedback';
+   let category: Proposal['category'] = 'feedback';
+   if (signal.kind === 'tool_delivery_error') category = 'infrastructure';
+   if (signal.kind === 'possible_library_defect' || signal.kind === 'packaging_workaround') category = 'bug';
    add(category,{kind:signal.kind,code:signal.code,source:record.release?.sourceSha??null},`${signal.kind}: ${signal.code}`,category==='bug'?85:60,reproduction);
   }
   if(record.agent?.completion==='missing')add('infrastructure',{kind:'missing_completion'},'Chat agent ended without confirmed completion',80,'Inspect the saved turn and tool-delivery evidence; distinguish transport failure from chart failure.');

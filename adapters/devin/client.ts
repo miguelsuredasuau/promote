@@ -97,11 +97,18 @@ export class DevinAdapter implements HarnessAdapter {
     const s=await this.read(remoteId),now=new Date().toISOString();
     const state = sessionState(s);
     const output=z.object({candidateSha:GitSha}).passthrough().safeParse(s.structured_output);
-    const proposed=output.success?(s.structured_output as {normaReview?:object}).normaReview:undefined;
-    const quality=AgentQualityReview.safeParse({...proposed,provider:'norma'});
-    const qualityReview=output.success?(quality.success&&quality.data.candidateSha===output.data.candidateSha
-      ? {...quality.data,status:quality.data.coverageReduced||!quality.data.checkedFiles.length?'pending' as const:quality.data.status==='clean'&&quality.data.findings.length?'issues' as const:quality.data.status}
-      : {provider:'norma' as const,status:'pending' as const,candidateSha:output.data.candidateSha,checkedFiles:[],findings:[],coverageReduced:true,limitations:['Agent review missing, invalid or bound to a different commit.']}):undefined;
+    let qualityReview: z.infer<typeof AgentQualityReview> | undefined;
+    if (output.success) {
+      const proposed = (s.structured_output as {normaReview?: unknown}).normaReview;
+      const quality = AgentQualityReview.safeParse({...((proposed && typeof proposed === 'object') ? proposed : {}), provider:'norma'});
+      if (!quality.success || quality.data.candidateSha !== output.data.candidateSha) {
+        qualityReview = {provider:'norma',status:'pending',candidateSha:output.data.candidateSha,checkedFiles:[],findings:[],coverageReduced:true,limitations:['Agent review missing, invalid or bound to a different commit.']};
+      } else {
+        qualityReview = {...quality.data};
+        if (qualityReview.coverageReduced || !qualityReview.checkedFiles.length) qualityReview.status = 'pending';
+        else if (qualityReview.status === 'clean' && qualityReview.findings.length) qualityReview.status = 'issues';
+      }
+    }
     return SessionObservation.parse({qualityReview,remoteId:remote(remoteId),state,rawStatusArtifactId:null,observedAt:now,
       providerTime:s.updated_at && Number.isFinite(new Date(s.updated_at*1000).getTime())?new Date(s.updated_at*1000).toISOString():null,
       candidateSha:output.success?output.data.candidateSha:null,

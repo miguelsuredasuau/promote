@@ -71,3 +71,12 @@ it('records a safe source error without exporting malformed source contents',asy
  expect(result.failures).toEqual([{stage:'progress',reason:'invalid_json_or_incomplete_write'}]);
  expect(JSON.stringify(result)).not.toContain('private malformed');
 });
+
+it('prioritizes an importer failure over quarantine attention, then recovers to attention',async()=>{
+ const {importChatCycle}=await import('../server/chat-intake');
+ const s=setup();writeFileSync(join(s.outbox,'bad.json'),'{}');
+ writeFileSync(join(s.root,'quality.json'),'{');
+ expect(await importChatCycle(s.store,s.outbox,s.receipts)).toMatchObject({status:'error',records:{quarantined:1}});
+ writeFileSync(join(s.root,'quality.json'),JSON.stringify({summary:{},results:[]}));
+ expect(await importChatCycle(s.store,s.outbox,s.receipts)).toMatchObject({status:'attention',records:{quarantined:1},failures:[]});
+});
