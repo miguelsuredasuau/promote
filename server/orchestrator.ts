@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { serialWork, markFailure, failureBoundaries } from './serial-work';
 import {executionBindings} from './improvements';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -14,8 +16,30 @@ import { ownerAttention } from './owner-decisions';
 import { originMatchesRepo } from './repo-identity';
 const exec=promisify(execFile);
 
+// Historical inbox records predate today's full producer contracts. Validate only
+// the projection used for classification, retaining extra fields in evidence hashes.
+const objectsOnly = (value: unknown) => {
+ if (!Array.isArray(value)) return [];
+ return value.filter(item => item !== null && typeof item === 'object' && !Array.isArray(item));
+};
+const historicalRelease = z.object({kind:z.string().optional(),sourceSha:z.string().optional(),
+ shims:z.preprocess(objectsOnly,z.array(z.object({id:z.string()}).passthrough())).optional()}).passthrough();
+const historicalSubject = z.object({chartId:z.string().optional()}).passthrough();
+const ClassificationRecord = z.object({
+ schema:z.string().optional(),testMode:z.string().optional(),repository:z.string().optional(),baseSha:z.string().optional(),
+ release:historicalRelease.nullish(),
+ report:z.object({findings:z.array(z.object({title:z.string(),steps:z.array(z.string()).optional(),severity:z.string().optional()}).passthrough()).optional()}).nullish(),
+ signals:z.array(z.object({kind:z.string(),code:z.string(),recovered:z.boolean().optional()}).passthrough()).optional(),
+ agent:z.object({completion:z.string().optional()}).nullish(),
+ subject:historicalSubject.nullish(),chosen:historicalSubject.nullish(),rejected:historicalSubject.nullish(),
+ note:z.string().nullish(),value:z.string().optional(),kind:z.string().optional(),reasons:z.array(z.string()).nullish(),
+ observations:z.object({summary:z.object({release:historicalRelease.nullish()}).passthrough().nullish(),
+ results:z.preprocess(objectsOnly,z.array(z.object({id:z.string(),status:z.string()}).passthrough())).optional()}).nullish(),
+}).passthrough();
+
 /** Versioned local rules. No model inference or paid calls are claimed by classification. */
-export function classifyRecord(record:any):Proposal[] {
+export function classifyRecord(input:unknown):Proposal[] {
+ const record=ClassificationRecord.parse(input);
  const proposals:Proposal[]=[];
  if(record.testMode==='ui-fixture'||record.release?.kind==='fixture')return proposals;
  const add=(category:Proposal['category'],key:unknown,title:string,priority:number,nextAction:string)=>{
@@ -42,17 +66,17 @@ export function classifyRecord(record:any):Proposal[] {
   if(feature)add('feature',{chart:subject?.chartId??null,note:record.note},`Feature request: ${record.note}`,45,'Draft user outcome, acceptance examples, scope and a cost proposal; do not implement without authorization.');
   else if(record.value==='down'||record.kind==='preference')add('feedback',{chart:subject?.chartId??null,kind:record.kind,reasons:[...(record.reasons??[])].sort(),note:record.note??''},`Review ${record.kind} feedback for ${subject?.chartId??'chart'}`,55,'Compare the referenced renders and user reasons; classify preference versus reproducible defect.');
  }else if(record.schema==='xarts-chat/quality-snapshot@1'){
-  const list=(value:unknown)=>Array.isArray(value)?value.filter(item=>item&&typeof item==='object'):[];
   const release=record.observations?.summary?.release;
-  for(const r of list(record.observations?.results)){
+  for(const r of record.observations?.results??[]){
    if(['fail','error'].includes(r.status))add('bug',{kind:record.kind,id:r.id,release:release??null},`${record.kind} failure: ${r.id}`,r.status==='error'?85:75,reproduction);
   }
-  for(const shim of list(release?.shims))add('bug',{kind:'packaging_workaround',code:shim.id},`Remove package workaround: ${shim.id}`,90,'Reproduce installation outside the monorepo and run the standalone consumer check.');
+  for(const shim of release?.shims??[])add('bug',{kind:'packaging_workaround',code:shim.id},`Remove package workaround: ${shim.id}`,90,'Reproduce installation outside the monorepo and run the standalone consumer check.');
  }
  return proposals;
 }
 
 export async function inspectCandidate(store:ControllerStore,incidentId:string,checkout?:string) {
+ try {
  const reservation=store.engineeringReservation(incidentId);
  if(!checkout||!reservation?.candidateSha||reservation.state!=='stopped')return {state:'blocked' as const,result:{reason:'candidate_or_checkout_not_ready'}};
  const task=reservation.task,sha=reservation.candidateSha;
@@ -66,9 +90,11 @@ export async function inspectCandidate(store:ControllerStore,incidentId:string,c
  const inside=(file:string,paths:string[])=>paths.some(p=>file===p||file.startsWith(`${p}/`));
  const outside=files.filter(file=>!inside(file,task.allowedPaths)||inside(file,task.protectedPaths));
  return{state:'blocked' as const,result:{reason:outside.length?'candidate_scope_violation':'independent_runtime_checks_pending',candidateSha:sha,baseSha:task.baseSha,changedPaths:files,outsideAllowedPaths:outside,checks:{identity:'pass',ancestry:'pass',scope:outside.length?'fail':'pass',runtime:'not_run'},nextAction:outside.length?'Review the exact additional paths and authorize a revised scope, or obtain a candidate restricted to the approved paths.':'Run protected SDK build and regression gates in the isolated runner before release.'}};
+ } catch(error) { throw markFailure(error, 'inspectCandidate'); }
 }
 
 export async function runOrchestrator(store:ControllerStore,root:string,checkout?:string) {
+ try {
  const deliveryPath=join(root,'.local/delivery-task.json');
  if(existsSync(deliveryPath)){
   let deliveryTask=DeliveryTask.parse(JSON.parse(readFileSync(deliveryPath,'utf8')));
@@ -118,8 +144,10 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
  if(provider.status.paidDispatchEnabled&&provider.task&&!store.engineeringReservation(provider.task.incidentId))
   store.enqueueWork({id:`dispatch:${hashCanonical(provider.task)}`,kind:'engineering_dispatch',role:'engineer',lane:'reliability',priority:95,payload:{taskHash:hashCanonical(provider.task)},promptHash:rolePrompt('engineer').hash});
  let executed=0;
- for(let i=0;i<50;i++){
-  const work=store.claimWork();if(!work)break;
+ let exhausted = false;
+ await serialWork(Array.from({length:50}), async () => {
+  if (exhausted) return;
+  const work=store.claimWork();if(!work){exhausted=true;return;}
   try{
    if(work.kind==='proposal_assessment'){
     const proposal=work.payload.ownerDecision ? work.payload.approvedProposal : store.proposals().find(p=>p.id===work.payload.proposalId);
@@ -134,8 +162,9 @@ export async function runOrchestrator(store:ControllerStore,root:string,checkout
     if(!current.status.paidDispatchEnabled||!current.adapter||hashCanonical(current.task)!==work.payload.taskHash)store.finishWork(work.id,work.token,'blocked',{reason:'authorization_changed'});
     else{const result=await dispatchEngineering(store,current.adapter,current.mandate,current.task);store.finishWork(work.id,work.token,'completed',{outcome:result});}
    }
-  }catch{store.finishWork(work.id,work.token,'blocked',{reason:'role_execution_failed',nextAction:'Inspect and reconcile this work item; no automatic retry of external effects.'});}
+  }catch(error){store.finishWork(work.id,work.token,'blocked',{boundaries:failureBoundaries(error),reason:'role_execution_failed',nextAction:'Inspect and reconcile this work item; no automatic retry of external effects.'});}
   executed++;
- }
+ });
  return{triaged,executed,promptHash:rolePrompt('orchestrator').hash,executionMode:'local_scheduler'};
+ } catch(error) { throw markFailure(error, 'runOrchestrator'); }
 }

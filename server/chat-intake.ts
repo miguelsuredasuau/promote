@@ -1,3 +1,4 @@
+import { serialWork, markFailure, failureBoundaries } from './serial-work';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, lstat, mkdir, writeFile, rename } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -17,12 +18,13 @@ function intakeFailureReason(error: unknown): string {
 
 /** A failed source must not stop independent evidence streams. Error details contain no input text. */
 export async function importChatCycle(store: ControllerStore, outbox: string, receiptRoot: string) {
-  const failures: { stage: string; reason: string }[] = [];
+  try {
+  const failures: { stage: string; reason: string; boundaries?: readonly string[] }[] = [];
   async function stage<T>(name: string, run: () => Promise<T>): Promise<T | null> {
     try { return await run(); }
     catch (error) {
       const reason = intakeFailureReason(error);
-      failures.push({ stage: name, reason });
+      failures.push({ stage: name, reason, boundaries: failureBoundaries(error) });
       return null;
     }
   }
@@ -34,14 +36,16 @@ export async function importChatCycle(store: ControllerStore, outbox: string, re
   if (failures.length) status = 'error';
   return { status,
     configured: true, records, diagnostics, progress, failures };
+  } catch (error) { throw markFailure(error, 'importChatCycle'); }
 }
 
 /** Read-only source, durable receiver. No automatic engineering authority is inferred from user feedback. */
 export async function importChatOutbox(store: ControllerStore, outbox: string, receiptRoot: string) {
+  try {
   await mkdir(receiptRoot, { recursive: true });
   const counts = { imported: 0, duplicates: 0, quarantined: 0 };
   const files = (await readdir(outbox)).filter(name => /^[A-Za-z0-9_-]+\.json$/.test(name)).sort();
-  for (const file of files) {
+  await serialWork(files, async file => {
     const path = join(outbox, file);
     let receipt: Record<string, unknown>;
     try {
@@ -68,18 +72,20 @@ export async function importChatOutbox(store: ControllerStore, outbox: string, r
     const temp = join(receiptRoot, `${file}.${process.pid}.tmp`);
     await writeFile(temp, JSON.stringify({ ...receipt, observedAt: new Date().toISOString() }) + '\n');
     await rename(temp, join(receiptRoot, file));
-  }
+  });
   return counts;
+  } catch (error) { throw markFailure(error, 'importChatOutbox'); }
 }
 
 
 /** Archive replaceable sweep results under immutable receiver identities. No gate authority. */
 export async function importChatDiagnostics(store: ControllerStore, runs: string) {
+  try {
   let imported = 0;
-  for (const kind of ['coverage', 'quality']) {
+  await serialWork(['coverage', 'quality'], async kind => {
     const path = join(runs, `${kind}.json`);
     const stat = await lstat(path).catch(() => null);
-    if (!stat?.isFile() || stat.size > 16 * 1024 * 1024) continue;
+    if (!stat?.isFile() || stat.size > 16 * 1024 * 1024) return;
     const parsed = ChatDiagnostics.safeParse(JSON.parse(await readFile(path, 'utf8')));
     if (!parsed.success) throw new Error('invalid_diagnostics');
     const raw = parsed.data;
@@ -88,17 +94,19 @@ export async function importChatDiagnostics(store: ControllerStore, runs: string
       summary: `${kind}: ${raw.summary.total ?? '?'} forms, ${raw.summary.fail ?? raw.summary.error ?? '?'} reported failures`,
       observations: raw };
     if (!store.ingest(`xarts-chat:${kind}:${digest}`, digest, snapshot, null).duplicate) imported++;
-  }
+  });
   return imported;
+  } catch (error) { throw markFailure(error, 'importChatDiagnostics'); }
 }
 
 export async function importChatProgress(store: ControllerStore, runs: string) {
+  try {
   let imported = 0;
   const dirs = (await readdir(runs)).filter(name => /^[0-9TZ]+-[a-f0-9]{8}$/.test(name));
-  for (const runId of dirs) {
+  await serialWork(dirs, async runId => {
     const path = join(runs, runId, 'events.jsonl');
     const stat = await lstat(path).catch(() => null);
-    if (!stat?.isFile() || stat.size > 16 * 1024 * 1024) continue;
+    if (!stat?.isFile() || stat.size > 16 * 1024 * 1024) return;
     const lines = (await readFile(path, 'utf8')).split('\n');
     // Incomplete trailing writes are retried at the next poll, never acknowledged early.
     for (let i=0; i<lines.length-1; i++) {
@@ -107,6 +115,7 @@ export async function importChatProgress(store: ControllerStore, runs: string) {
       if (event.schema !== 'xarts-chat/progress@1' || event.runId !== runId || typeof event.t !== 'string') throw new Error('invalid_progress');
       if (store.ingestProgress(runId, i+1, hashCanonical(event), event)) imported++;
     }
-  }
+  });
   return imported;
+  } catch (error) { throw markFailure(error, 'importChatProgress'); }
 }

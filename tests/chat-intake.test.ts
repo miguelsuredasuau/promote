@@ -68,7 +68,7 @@ it('records a safe source error without exporting malformed source contents',asy
  const runId='20260919T100000-1234abcd';mkdirSync(join(s.root,runId));
  writeFileSync(join(s.root,runId,'events.jsonl'),'private malformed transcript\n');
  const result=await importChatCycle(s.store,s.outbox,s.receipts);
- expect(result.failures).toEqual([{stage:'progress',reason:'invalid_json_or_incomplete_write'}]);
+ expect(result.failures).toEqual([{stage:'progress',reason:'invalid_json_or_incomplete_write',boundaries:['importChatProgress']}]);
  expect(JSON.stringify(result)).not.toContain('private malformed');
 });
 
@@ -79,4 +79,14 @@ it('prioritizes an importer failure over quarantine attention, then recovers to 
  expect(await importChatCycle(s.store,s.outbox,s.receipts)).toMatchObject({status:'error',records:{quarantined:1}});
  writeFileSync(join(s.root,'quality.json'),JSON.stringify({summary:{},results:[]}));
  expect(await importChatCycle(s.store,s.outbox,s.receipts)).toMatchObject({status:'attention',records:{quarantined:1},failures:[]});
+});
+
+it('stops ordered intake when a receipt cannot commit and resumes without losing or duplicating evidence',async()=>{
+ const s=setup();mkdirSync(s.receipts);mkdirSync(join(s.receipts,'a.json'));
+ for(const runId of ['a','b'])writeFileSync(join(s.outbox,runId+'.json'),JSON.stringify({...record(),runId}));
+ await expect(importChatOutbox(s.store,s.outbox,s.receipts)).rejects.toThrow();
+ expect(s.store.inboxSnapshot()).toHaveLength(1);
+ rmSync(join(s.receipts,'a.json'),{recursive:true});
+ expect(await importChatOutbox(s.store,s.outbox,s.receipts)).toEqual({imported:1,duplicates:1,quarantined:0});
+ expect(s.store.inboxSnapshot()).toHaveLength(2);
 });
