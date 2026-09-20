@@ -5,17 +5,23 @@ import { ChatRunRecord, ChatFeedback, ChatDiagnostics } from '../contracts/integ
 import { hashCanonical } from '../contracts/hash';
 import type { ControllerStore } from './store';
 
+/** Only stable, non-sensitive reason codes leave the importer. */
+function intakeFailureReason(error: unknown): string {
+  if (error instanceof SyntaxError) return 'invalid_json_or_incomplete_write';
+  const detail = error as { code?: string; message?: string } | null;
+  if (['ENOENT', 'EACCES', 'EPERM', 'ENOSPC', 'SQLITE_BUSY', 'SQLITE_LOCKED'].includes(detail?.code ?? '')) return detail!.code!;
+  if (['invalid_diagnostics', 'invalid_progress'].includes(detail?.message ?? '')) return detail!.message!;
+  if (typeof detail?.message === 'string' && detail.message.includes('history changed')) return 'progress_history_changed';
+  return 'read_or_persistence_failed';
+}
+
 /** A failed source must not stop independent evidence streams. Error details contain no input text. */
 export async function importChatCycle(store: ControllerStore, outbox: string, receiptRoot: string) {
   const failures: { stage: string; reason: string }[] = [];
   async function stage<T>(name: string, run: () => Promise<T>): Promise<T | null> {
     try { return await run(); }
     catch (error) {
-      const e = error as { code?: string; message?: string };
-      const reason = error instanceof SyntaxError ? 'invalid_json_or_incomplete_write'
-        : ['ENOENT', 'EACCES', 'EPERM', 'ENOSPC', 'SQLITE_BUSY', 'SQLITE_LOCKED'].includes(e?.code ?? '') ? e.code!
-        : ['invalid_diagnostics', 'invalid_progress'].includes(e?.message ?? '') ? e.message!
-        : e?.message?.includes('history changed') ? 'progress_history_changed' : 'read_or_persistence_failed';
+      const reason = intakeFailureReason(error);
       failures.push({ stage: name, reason });
       return null;
     }

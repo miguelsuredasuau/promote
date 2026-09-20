@@ -13,6 +13,20 @@ const Session = z.object({ session_id: z.string().min(1), status: z.string(), st
   structured_output: z.unknown().optional() }).passthrough();
 const remote = (id: string) => { if (!/^(?:devin-)?[A-Za-z0-9_-]{1,160}$/.test(id)) throw new Error('invalid_remote_id'); return id.startsWith('devin-') ? id : `devin-${id}`; };
 
+/** Preserve provider precedence: terminal status overrides any stale detail. */
+function sessionState(session: z.infer<typeof Session>): SessionObservation['state'] {
+  if (session.status === 'error') return 'failed';
+  if (session.status === 'exit') {
+    if (session.status_detail === 'user_request') return 'cancelled';
+    return 'finished';
+  }
+  if (session.status_detail === 'finished') return 'finished';
+  if (['waiting_for_user', 'waiting_for_approval'].includes(session.status_detail ?? '')) return 'waiting';
+  if (['running', 'resuming', 'claimed'].includes(session.status)) return 'running';
+  if (session.status === 'new') return 'queued';
+  return 'unknown';
+}
+
 /** API v3 transport. No implicit retries; the controller owns durable intent and budgets. */
 export class DevinAdapter implements HarnessAdapter {
   readonly id = 'devin';
@@ -81,9 +95,7 @@ export class DevinAdapter implements HarnessAdapter {
   }
   async inspect(remoteId: string): Promise<SessionObservation> {
     const s=await this.read(remoteId),now=new Date().toISOString();
-    const state=s.status==='error'?'failed':s.status==='exit'?(s.status_detail==='user_request'?'cancelled':'finished'):
-      s.status_detail==='finished'?'finished':['waiting_for_user','waiting_for_approval'].includes(s.status_detail??'')?'waiting':
-      ['running','resuming','claimed'].includes(s.status)?'running':s.status==='new'?'queued':'unknown';
+    const state = sessionState(s);
     const output=z.object({candidateSha:GitSha}).passthrough().safeParse(s.structured_output);
     const proposed=output.success?(s.structured_output as {normaReview?:object}).normaReview:undefined;
     const quality=AgentQualityReview.safeParse({...proposed,provider:'norma'});

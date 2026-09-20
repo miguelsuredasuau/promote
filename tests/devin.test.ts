@@ -120,3 +120,12 @@ it('marks a reduced-coverage agent claim pending and binds it to the candidate',
  const candidateSha='a'.repeat(40);const fetcher=vi.fn(async()=>Response.json({session_id:'review',status:'exit',structured_output:{candidateSha,normaReview:{candidateSha,status:'clean',checkedFiles:['a.ts'],findings:[],coverageReduced:true,limitations:[]}}}));
  const observation=await adapter(fetcher).inspect('review');expect(observation.qualityReview?.status).toBe('pending');expect(observation.qualityReview?.candidateSha).toBe(candidateSha);
 });
+
+it.each([
+ ['error','finished','failed'], ['exit','user_request','cancelled'], ['exit','waiting_for_user','finished'],
+ ['running','finished','finished'], ['running','waiting_for_user','waiting'], ['new','waiting_for_approval','waiting'],
+ ['running',null,'running'], ['resuming',null,'running'], ['claimed',null,'running'], ['new',null,'queued'], ['future',null,'unknown'],
+])('preserves provider status precedence for %s / %s',async(status,status_detail,expected)=>{
+ const fetcher=vi.fn().mockResolvedValue(response({session_id:'s',status,status_detail}));
+ expect((await adapter(fetcher).inspect('devin-s')).state).toBe(expected);
+});

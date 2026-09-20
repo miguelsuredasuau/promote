@@ -1,3 +1,4 @@
+import { createScheduledReview } from './scheduled-review';
 import { mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,22 +66,15 @@ store.recordActivity('service', 'Promoted service started', { intakeConfigured: 
 if (!outbox) store.serviceHeartbeat({ status: 'not_configured', configured: false });
 await importFeedback();
 await pollEngineering();
-let heartbeatRunning=false;
-async function heartbeat() {
-  if(heartbeatRunning)return;
-  heartbeatRunning=true;
-  try {
-    const prior=store.orchestratorHeartbeat();
-    if (!prior || Date.parse(prior.nextCheckAt)<=Date.now()) {
-      // The review must persist its heartbeat even when a cycle fails, or the failure retries on every tick.
-      try { await runOrchestrator(store,root,process.env.PROMOTE_PROJECT_PATH); }
-      catch { console.error('Orchestration cycle failed; the scheduled review continues'); }
-      await reviewProject(store, process.env.PROMOTE_PROJECT_PATH);
-    }
-  }
-  catch { console.error('Scheduled project review failed; retrying on the next check'); }
-  finally { heartbeatRunning=false; }
-}
+const heartbeat = createScheduledReview({
+  due: () => {
+    const prior = store.orchestratorHeartbeat();
+    return !prior || Date.parse(prior.nextCheckAt) <= Date.now();
+  },
+  orchestrate: () => runOrchestrator(store, root, process.env.PROMOTE_PROJECT_PATH),
+  review: () => reviewProject(store, process.env.PROMOTE_PROJECT_PATH),
+  report: message => console.error(message),
+});
 // Verification can take minutes; the activity server must remain observable.
 void heartbeat();
 const heartbeatTimer = setInterval(heartbeat, 30000);
