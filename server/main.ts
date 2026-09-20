@@ -1,3 +1,5 @@
+import { projectEnvironment } from './environment.mjs';
+import { createMaintenanceLoop } from './maintenance';
 import {executionBindings} from './improvements';
 import { createScheduledReview } from './scheduled-review';
 import { mkdirSync, existsSync, readFileSync } from 'node:fs';
@@ -13,13 +15,16 @@ import { reviewProject } from './heartbeat';
 import { runOrchestrator } from './orchestrator';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const database = process.env.PROMOTE_DATABASE ?? join(root, '.local/controller.sqlite');
+const environment = projectEnvironment(root);
+const checkout = environment.PROMOTE_PROJECT_PATH;
+const testCheckout = environment.PROMOTE_TEST_PROJECT_PATH ?? join(root, '../xarts-chat');
+const database = environment.PROMOTE_DATABASE ?? join(root, '.local/controller.sqlite');
 const port = Number(process.env.PORT ?? 4310);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be a valid TCP port');
 mkdirSync(dirname(database), { recursive: true });
 const store = new ControllerStore(database);
 let orchestrating=false;
-async function orchestrate(){if(orchestrating)return;orchestrating=true;try{await runOrchestrator(store,root,process.env.PROMOTE_PROJECT_PATH);}finally{orchestrating=false;}}
+async function orchestrate(){if(orchestrating)return;orchestrating=true;try{await runOrchestrator(store,root,checkout);}finally{orchestrating=false;}}
 let observing = false;
 let providerState = '';
 async function pollEngineering() {
@@ -29,7 +34,16 @@ async function pollEngineering() {
     const config = loadDevin(root);
     const running=store.engineeringReservations().filter(r=>r.state==='running');
     const candidate=executionBindings(root).some(b=>store.engineeringReservation(b.task.incidentId)?.candidateSha);
-    const status=running.length?{...config.status,status:'engineering_running',explanation:'Devin is working on an authorized task. Usage is reported by the provider; release still requires independent verification.'}:candidate?{...config.status,status:'candidate_returned',explanation:'Devin returned a candidate. Follow verification and release in the Xarts proposal; no additional paid repair has been launched.'}:config.status;
+    const operating = store.operatingPolicy()?.policy;
+    const autonomous = !!operating && !operating.paused && Date.parse(operating.expiresAt) > Date.now()
+      && !!config.adapter && config.status.status !== 'awaiting_billing_verification';
+    const status = running.length ? {...config.status,status:'engineering_running',automaticDispatch:autonomous,
+      paidDispatchEnabled:autonomous || config.status.paidDispatchEnabled,
+      explanation:`${running.length} Devin sessions running. Promote independently checks returned candidates.`}
+      : autonomous ? {...config.status,status:'autonomous_review_active',automaticDispatch:true,paidDispatchEnabled:true,
+        explanation:'Promote reviews scoped maintenance work and sandbox tests within the saved operating limits.'}
+      : candidate ? {...config.status,status:'candidate_returned',explanation:'A historical candidate is recorded; no new autonomous session is running.'}
+      : config.status;
     store.providerStatus(status);
     if (providerState !== status.status) {
       providerState = status.status;
@@ -73,22 +87,25 @@ store.recordActivity('service', 'Promoted service started', { intakeConfigured: 
 if (!outbox) store.serviceHeartbeat({ status: 'not_configured', configured: false });
 await importFeedback();
 await pollEngineering();
+const maintenance = createMaintenanceLoop(store, root, testCheckout);
 const heartbeat = createScheduledReview({
   due: () => {
     const prior = store.orchestratorHeartbeat();
     return !prior || Date.parse(prior.nextCheckAt) <= Date.now();
   },
   orchestrate,
-  review: () => reviewProject(store, process.env.PROMOTE_PROJECT_PATH),
+  review: () => reviewProject(store, checkout, Date.now(), store.operatingPolicy()?.policy.reviewMinutes),
   report: message => console.error(message),
 });
 // Verification can take minutes; the activity server must remain observable.
 void heartbeat();
+void maintenance.tick();
+const maintenanceTimer = setInterval(() => { void maintenance.tick(); }, 10000);
 const heartbeatTimer = setInterval(heartbeat, 30000);
 const engineeringTimer = setInterval(() => { void pollEngineering().catch(() => console.error('Engineering observation failed')); }, 15000);
 const inboxTimer = outbox ? setInterval(importFeedback, 3000) : null;
-const server = createOperatorServer({ root, store, checkout: process.env.PROMOTE_PROJECT_PATH, testCheckout:process.env.PROMOTE_TEST_PROJECT_PATH ?? join(root,"../xarts-chat") });
+const server = createOperatorServer({ root, store, checkout: checkout, testCheckout });
 server.listen(port, '127.0.0.1', () => console.log(`Promoted operator: http://127.0.0.1:${port} (owner planning decisions enabled)`));
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  process.once(signal, () => { clearInterval(heartbeatTimer); clearInterval(engineeringTimer); if (inboxTimer) clearInterval(inboxTimer); server.close(() => { process.exit(0); }); });
+  process.once(signal, () => { clearInterval(maintenanceTimer); clearInterval(heartbeatTimer); clearInterval(engineeringTimer); if (inboxTimer) clearInterval(inboxTimer); server.close(() => { process.exit(0); }); });
 }

@@ -1,3 +1,4 @@
+import { MaintenanceJournal } from './maintenance';
 import {executeImprovement,projectImprovements} from './improvements';
 import { createServer, type IncomingMessage } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -10,8 +11,13 @@ import { overview } from './overview';
 import { GateResult } from '../contracts/records';
 import { listPullRequests, loadPullRequestConfig, mergePullRequest } from './pull-requests';
 import { expungedArtifact, RETENTION_POLICY } from './retention';
+import { defaultOperatingPolicy } from './operating-policy';
 
 const assets: Record<string, { file: string; mime: string }> = {
+  '/office-runtime.js': {file:'office-runtime.js',mime:'text/javascript; charset=utf-8'},
+  '/operating': {file:'operating.html',mime:'text/html; charset=utf-8'},
+  '/operating.js': {file:'operating.js',mime:'text/javascript; charset=utf-8'},
+  '/operating.css': {file:'operating.css',mime:'text/css; charset=utf-8'},
   '/testing': {file:'testing.html',mime:'text/html; charset=utf-8'},
   '/testing.js': {file:'testing.js',mime:'text/javascript; charset=utf-8'},
   '/testing.css': {file:'testing.css',mime:'text/css; charset=utf-8'},
@@ -41,6 +47,14 @@ const assets: Record<string, { file: string; mime: string }> = {
   '/styles.css': { file: 'styles.css', mime: 'text/css; charset=utf-8' },
 };
 export function createOperatorServer(options: { root: string; store: ControllerStore; checkout?: string; testCheckout?:string }) {
+  const policySnapshot = () => {
+    const saved = options.store.operatingPolicy();
+    return {configured:!!saved, revision:saved?.revision??0, policy:saved?.policy??defaultOperatingPolicy(),
+      updatedAt:saved?.updatedAt??null, budget:options.store.operatingBudget(),
+      runtime:{heartbeat:options.store.orchestratorHeartbeat(), provider:options.store.serviceSnapshot().provider,
+        engineering:options.store.engineeringReservations().map(r=>({id:r.id,state:r.state,remoteId:r.remoteId??null,reason:r.reason??null})),
+        explorations:options.store.explorations().map(r=>({id:r.spec.id,state:r.state,remoteId:r.remoteId??null,reason:r.reason??null}))}};
+  };
   const ownerToken = randomBytes(32).toString('hex');
   const ownerAuthorized = (req: IncomingMessage, host: string, origin: string | undefined, requireOrigin = true) => {
     const presented = req.headers['x-owner-token'];
@@ -58,6 +72,24 @@ export function createOperatorServer(options: { root: string; store: ControllerS
     const origin = req.headers.origin;
     if (!allowedHost || (origin && origin !== `http://${host}`)) {
       res.writeHead(403).end('Forbidden'); return;
+    }
+    if (req.method === 'POST' && req.url === '/api/operating-policy') {
+      if (!ownerAuthorized(req, host, origin)) { res.writeHead(403).end('Owner session required'); return; }
+      if (req.headers['content-type'] !== 'application/json') { res.writeHead(415).end('JSON required'); return; }
+      try {
+        let body = '';
+        for await (const chunk of req) {
+          body += chunk.toString();
+          if (Buffer.byteLength(body) > 12000) { res.writeHead(413).end('Request too large'); return; }
+        }
+        options.store.saveOperatingPolicy(JSON.parse(body));
+        res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify(policySnapshot()));
+      } catch (error) {
+        const status = error instanceof StoreConflictError ? 409 : error instanceof ZodError || error instanceof SyntaxError ? 400 : 503;
+        const message = status === 409 && error instanceof Error ? error.message : status === 400 ? 'Invalid settings. Check limits, expiry and the test repository.' : 'Settings could not be saved.';
+        res.writeHead(status, {'Content-Type':'application/json'}).end(JSON.stringify({error:message}));
+      }
+      return;
     }
     if(req.method==='POST' && (req.url==='/api/explorations'||req.url==='/api/explorations/stop')) {
       if(!ownerAuthorized(req, host, origin)){res.writeHead(403).end('Owner session required');return;}
@@ -122,6 +154,20 @@ export function createOperatorServer(options: { root: string; store: ControllerS
     }
     try {
       const url = new URL(req.url ?? '/', `http://${host}`);
+      if (url.pathname === '/api/maintenance') {
+        const journal = new MaintenanceJournal(options.root);
+        try {
+          const jobs = journal.all().map(job => { const reservation = options.store.engineeringReservation(job.id); return {
+            id:job.id,title:job.profile.title,repo:job.profile.repo,baseSha:job.baseSha,attempt:job.attempt,state:job.state,
+            createdAt:job.createdAt,updatedAt:job.updatedAt,remoteId:reservation?.remoteId??null,candidateSha:reservation?.candidateSha??null,reason:job.reason??null,
+          }; });
+          res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({jobs,source:'promote_scheduler'}));
+        } finally { journal.close(); }
+        return;
+      }
+      if (url.pathname === '/api/operating-policy') {
+        res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify(policySnapshot())); return;
+      }
       const gateLogRoute=url.pathname.match(/^\/api\/incidents\/([A-Za-z0-9._:-]+)\/gates\/([A-Za-z0-9._:-]+)\/log$/);
       if(gateLogRoute){
         const result=options.store.incidentEvents(gateLogRoute[1],0,1000).filter(e=>e.type==='gate.finished').map(e=>GateResult.parse(e.payload.result)).find(r=>r.id===gateLogRoute[2]);

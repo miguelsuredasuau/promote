@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Operating controls · Promote</title><link rel="stylesheet" href="/operating.css"><script type="module" src="/operating.js"></script></head>
+<body><header><a href="/">↙ Office</a><span>PROMOTE / THE SAFE</span><a href="/activity">Activity journal ↗</a></header>
+<main><section class="intro"><p class="eyebrow">YOUR TEAM. YOUR TERMS.</p><h1>Put Devin to work.</h1><p>Give the team a budget, a rhythm and a clear stopping point.</p></section>
+<section class="summary" aria-label="Recorded operating status"><div><small>Dispatch</small><strong id="state">Loading…</strong></div><div><small>Reserved ceiling · ACU</small><strong id="committed">—</strong></div><div><small>Available ceiling · ACU</small><strong id="remaining">—</strong></div></section>
+<section class="runtime" aria-label="Recorded runtime activity"><div><small>Sessions active</small><strong id="active">—</strong></div><div><small>Latest review</small><strong id="last-review">—</strong></div><div><small>Campaign remaining · ACU</small><strong id="total-remaining">—</strong></div><div><small>Next review</small><strong id="next-review">—</strong></div></section><p id="runtime-note"></p><p id="accounting">ACU limits are not billed currency or measured token spend.</p>
+<form id="policy-form"><fieldset id="fields" disabled><legend>Operating mandate</legend>
+<label class="toggle"><input id="paused" type="checkbox" checked> Pause new paid dispatches</label><p class="hint">Pausing blocks new work. Existing sessions need an explicit stop from their activity or testing controls.</p>
+<div class="grid"><label>Campaign ceiling · ACU<input id="totalAcu" type="number" min="0" max="10000" step="1" required></label><label>Daily ceiling · ACU<input id="dailyAcu" type="number" min="0" max="10000" step="1" required></label><label>Per-session ceiling · ACU<input id="sessionAcu" type="number" min="1" max="100" step="1" required></label><label>Review every · minutes<input id="reviewMinutes" type="number" min="1" max="60" step="1" required></label><label>Concurrent sessions<input id="maxConcurrentSessions" type="number" min="1" max="20" step="1" required></label><label>Authorization expires · local time<input id="expiresAt" type="datetime-local" required></label></div>
+<label class="toggle"><input id="approvedRepairs" type="checkbox"> Dispatch repairs within their approved scope</label>
+<p class="hint">Each repair still needs its task mandate, independent gates and release permissions. A budget never bypasses them.</p>
+<h2>A fresh pair of eyes</h2><label class="toggle"><input id="proactiveTests" type="checkbox"> Schedule exploratory sandbox tests</label>
+<div class="grid"><label>Test every · minutes<input id="testEveryMinutes" type="number" min="15" max="1440" step="1" required></label><label>Test duration · minutes<input id="testMinutes" type="number" min="5" max="120" step="1" required></label></div>
+<label>Verified test repository<input id="testRepository" type="text" placeholder="owner/repository" pattern="[\w.\-]+/[\w.\-]+" autocomplete="off"></label>
+<label>Testing brief<textarea id="testFocus" rows="5" required maxlength="2000"></textarea></label>
+<p class="hint">Tests share the daily and per-session ceilings. The configured sandbox must match this repository. Provider availability and retained evidence determine what can actually run.</p>
+<div class="actions"><button id="save">Save paused settings</button><button id="reload" type="button" class="secondary">Reload saved settings</button></div>
+</fieldset><p id="message" role="status" aria-live="polite"></p></form><p id="revision" class="hint"></p></main></body></html>

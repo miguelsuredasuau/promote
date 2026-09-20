@@ -1,3 +1,4 @@
+import { officeTickerValues } from './office-runtime.js';
 import * as THREE from '/vendor/three.module.js';
 import { GLTFLoader } from '/vendor/GLTFLoader.js';
 import { HDRLoader } from '/vendor/HDRLoader.js';
@@ -382,16 +383,16 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     parcel.visible = Boolean(q.candidateId);
     paint(parcelFace, '#fffcf0', c => { text(c, q.candidateId ? 'CANDIDATE' : 'No candidate', 20, 25, 45, '#244f4a', 480); text(c, `Attempt ${q.attempt || 0}`, 20, 105, 35); });
     if (reduced.matches || q.status === 'failed' || q.status === 'idle') parcel.position.x = gateX[Math.min(3, Math.max(0, Number(q.stageIndex) || 0))];
-    paint(safeDisplay, '#153a37', c => { text(c, 'BUDGET / SPENT', 25, 20, 29, '#b5c6a0'); text(c, currency(model.finance?.budget), 25, 76, 64, '#fffcf0', 790); text(c, currency(model.finance?.spent), 25, 163, 43, '#e3af62', 790); text(c, `Reserved ${currency(model.finance?.reserved)}`, 25, 255, 28, '#fffcf0', 790); });
+    paint(safeDisplay, '#153a37', c => { text(c, model.finance?.unit==='ACU'?'CEILING / AVAILABLE · ACU':'BUDGET / SPENT', 25, 20, 29, '#b5c6a0'); text(c, currency(model.finance?.budget), 25, 76, 64, '#fffcf0', 790); text(c, currency(model.finance?.unit==='ACU'?model.finance?.remaining:model.finance?.spent), 25, 163, 43, '#e3af62', 790); text(c, `Reserved ${currency(model.finance?.reserved)}`, 25, 255, 28, '#fffcf0', 790); });
     paint(safeLedger,'#f8f5eb',(c,w)=>{
       const f=model.finance||{};const money=v=>v==null?'Not reported':`${f.currency||'—'} ${Number(v).toFixed(2)}`;
-      text(c,'TREASURY',40,38,36);text(c,'Observed spend',40,112,26,'#637973');text(c,money(f.spent),40,156,62,'#238078',w-80);
-      const rows=[['Approved budget',money(f.budget)],['Reserved',money(f.reserved)],['Available',f.budget==null||f.spent==null||f.reserved==null?'Unknown':money(f.budget-f.spent-f.reserved)],['Burn / hour',f.burnRate==null?'Not reported':money(f.burnRate)],['Usage',model.usage??'Not connected']];
-      rows.forEach(([label,value],i)=>{const y=284+i*100;c.fillStyle='#cbd5c9';c.fillRect(40,y-16,w-80,1);text(c,label,40,y,25,'#64736c');text(c,value,40,y+33,30,'#244f4a',w-80);});text(c,model.mode==='demo'?'Illustrative demo':'Recorded costs only',40,816,23,'#637973');
+      text(c,'TREASURY',40,38,36);text(c,f.unit==='ACU'?'Campaign ceiling · ACU':'Observed spend',40,112,26,'#637973');text(c,money(f.unit==='ACU'?f.budget:f.spent),40,156,62,'#238078',w-80);
+      const rows=[['Approved budget',money(f.budget)],['Reserved',money(f.reserved)],['Available',f.unit==='ACU'?money(f.remaining):f.budget==null||f.spent==null||f.reserved==null?'Unknown':money(f.budget-f.spent-f.reserved)],[f.unit==='ACU'?'Daily available':'Burn / hour',f.unit==='ACU'?money(f.dailyRemaining):f.burnRate==null?'Not reported':money(f.burnRate)],[f.unit==='ACU'?'Running sessions':'Usage',f.unit==='ACU'?String((model.runtime?.engineering??0)+(model.runtime?.testing??0)):model.usage??'Not connected']];
+      rows.forEach(([label,value],i)=>{const y=284+i*100;c.fillStyle='#cbd5c9';c.fillRect(40,y-16,w-80,1);text(c,label,40,y,25,'#64736c');text(c,value,40,y+33,30,'#244f4a',w-80);});text(c,f.unit==='ACU'?'Reserved ceilings · not billed spend':model.mode==='demo'?'Illustrative demo':'Recorded costs only',40,816,23,'#637973');
     });
     paint(ticker,'#071822',(c,w,h)=>{
       const count=(model.kanban?.columns||[]).reduce((n,col)=>n+col.cards.length,0);
-      const values=[['XARTS / OPS',model.mode==='demo'?'DEMO':'LIVE'],['USAGE',model.usage??'—'],['ERRORS',model.errors??'—'],['BACKLOG',count],['QA',String(q.status||'idle').toUpperCase()],['SPEND',currency(model.finance?.spent)]];
+      const values=officeTickerValues(model);
       values.forEach(([label,value],i)=>{const x=i*w/6+30; text(c,label,x,38,31,'#7ca4be');text(c,value,x,112,61,i===4&&q.status==='failed'?'#ff785c':'#55e4c3',w/6-65);});
       c.fillStyle='#06131a88';for(let x=0;x<w;x+=7)c.fillRect(x,0,1,h);for(let y=0;y<h;y+=7)c.fillRect(0,y,w,1);
     });
@@ -400,7 +401,7 @@ export function createOfficeScene(host, { onSelect = () => {}, detailElement, na
     activityBubble(engBubble,`Engineering · ${model.engineering?.status||'idle'}`,engineeringActive?(model.engineering?.task||'Task in progress'):'',model.engineering?.status==='stopped'?'attention':'working');
     const currentStage=q.stages?.[q.stageIndex];
     const copy=currentStage?qaStageCopy(currentStage,model.mode):null;
-    activityBubble(qaBubble,q.status==='failed'?'QA · Needs attention':q.status==='running'?'QA · Checking':q.status==='completed'?'QA · Complete':'QA',q.candidateId?(q.status==='failed'&&model.operations?.heading?model.operations.heading:copy?.headline||'Waiting for verification'):'',q.status==='failed'?'attention':q.status==='running'?'working':'complete');
+    if(model.runtime){const running=model.runtime.qaJobs;activityBubble(qaBubble,running>0?'QA · Checking':running===null?'QA · Status unavailable':'QA · Waiting',running>0?(model.runtime.qaTask??`${running} independent verification job${running===1?'':'s'}`):'',running>0?'working':'neutral');}else activityBubble(qaBubble,q.status==='failed'?'QA · Needs attention':q.status==='running'?'QA · Checking':q.status==='completed'?'QA · Complete':'QA',q.candidateId?(q.status==='failed'&&model.operations?.heading?model.operations.heading:copy?.headline||'Waiting for verification'):'',q.status==='failed'?'attention':q.status==='running'?'working':'complete');
     const proposals=model.ownerDecisions??(model.strategy?.ideas||[]).filter(i=>!['completed','done','cancelled','refused'].includes(i.status)).length;
     activityBubble(ceoBubble,'CEO · Decision queue',proposals?`${proposals} decision${proposals===1?'':'s'} need your direction`:'','neutral');
     requestRender();

@@ -1,3 +1,5 @@
+import { OperatingPolicy, PolicyUpdate } from './operating-policy';
+import { ExplorationSpec } from '../contracts/exploration';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
@@ -447,15 +449,85 @@ export class ControllerStore {
     return this.db.prepare('SELECT run_id, MAX(ordinal) AS events FROM chat_progress GROUP BY run_id ORDER BY run_id DESC LIMIT 30').all();
   }
 
+  operatingPolicy(): {revision:number;policy:import('./operating-policy').OperatingPolicy;updatedAt:string;budgetStartedAt?:string} | null {
+    const row=this.db.prepare("SELECT record FROM service_state WHERE id='operating_policy'").get();
+    return row ? z.object({ revision: z.number().int().positive(), policy: OperatingPolicy, budgetStartedAt:z.string().datetime().optional(), updatedAt: z.string().datetime() }).strict().parse(JSON.parse(String(row.record))) : null;
+  }
+
+  saveOperatingPolicy(input:unknown, now=Date.now()) {
+    const update=PolicyUpdate.parse(input);
+    if(Date.parse(update.policy.expiresAt)<=now || Date.parse(update.policy.expiresAt)>now+31*86400000)
+      throw new StoreConflictError('Choose an expiry within the next 31 days');
+    return this.transaction(()=>{
+      const prior=this.operatingPolicy();
+      if((prior?.revision??0)!==update.revision)throw new StoreConflictError('Settings changed; reload before saving');
+      const record={revision:update.revision+1,policy:update.policy,budgetStartedAt:prior?.budgetStartedAt??prior?.updatedAt??new Date(now).toISOString(),updatedAt:new Date(now).toISOString()};
+      this.db.prepare("INSERT INTO service_state VALUES ('operating_policy',?) ON CONFLICT(id) DO UPDATE SET record=excluded.record").run(canonicalJson(record));
+      this.recordActivity('owner','Operating policy saved',{revision:record.revision,...update.policy});
+      return record;
+    });
+  }
+
+  operatingBudget(now=Date.now()) {
+    const day=new Date(now).toISOString().slice(0,10);
+    const engineering=this.engineeringReservations().map(r=>({maxAcu:r.maxAcu,usage:r.usageAcu,
+      createdAt:r.createdAt??this.getOperation(r.operationId)?.createdAt,stoppedAt:r.stoppedAt,terminal:r.state==='stopped'}));
+    const tests=this.explorations().map(r=>({maxAcu:r.spec.maxAcu,usage:r.usageAcu,createdAt:r.reservedAt,
+      stoppedAt:r.stoppedAt,terminal:['stopped','rejected'].includes(r.state)}));
+    // Charge ceilings, not billed spend. A carryover closing today keeps its reservation today.
+    // Missing/invalid historical timestamps are retained conservatively, never silently refunded.
+    const utcDay=(value:unknown)=>typeof value==='string'&&Number.isFinite(Date.parse(value))?new Date(value).toISOString().slice(0,10):null;
+    const reservations=[...engineering,...tests].filter(r=>!r.terminal||!utcDay(r.createdAt)||utcDay(r.createdAt)===day||!utcDay(r.stoppedAt)||utcDay(r.stoppedAt)===day);
+    const charge=(r:typeof reservations[number])=>{
+      if(typeof r.maxAcu!=='number'||!Number.isFinite(r.maxAcu)||r.maxAcu<0||
+        (r.usage!=null&&(typeof r.usage!=='number'||!Number.isFinite(r.usage)||r.usage<0)))
+        throw new StoreConflictError('Invalid budget evidence; reconcile before dispatch');
+      return Math.max(r.maxAcu,r.usage??0);
+    };
+    const committedAcu=reservations.reduce((n,r)=>n+charge(r),0);
+    const saved=this.operatingPolicy();
+    const budgetStartedAt=saved?.budgetStartedAt??saved?.updatedAt??null;
+    const start=budgetStartedAt===null?Infinity:Date.parse(budgetStartedAt);
+    // Total authorization never resets on day changes, expiry extensions or policy edits.
+    const totalCommittedAcu=[...engineering,...tests]
+      .filter(r=>!r.terminal||!utcDay(r.createdAt)||!utcDay(r.stoppedAt)||Date.parse(r.createdAt)>=start||Date.parse(r.stoppedAt)>=start)
+      .reduce((n,r)=>n+charge(r),0);
+    const totalCeilingAcu=saved?.policy.totalAcu??null;
+    const ceiling=saved?.policy.dailyAcu??null;
+    return {day,committedAcu,totalCommittedAcu,totalCeilingAcu,budgetStartedAt,totalRemainingAcu:totalCeilingAcu===null?null:Math.max(0,totalCeilingAcu-totalCommittedAcu),remainingAcu:ceiling===null?null:Math.max(0,ceiling-committedAcu),ceilingAcu:ceiling,
+      accounting:'UTC daily session ceilings plus unresolved carryover; not billed spend'};
+  }
+
+  private assertOperatingBudget(acu:number,now=Date.now()) {
+    if(!Number.isFinite(acu)||acu<=0)throw new StoreConflictError('Invalid session ceiling');
+    const saved=this.operatingPolicy();if(!saved)return;
+    const p=saved.policy;
+    if(p.paused)throw new StoreConflictError('New paid dispatch is paused');
+    if(Date.parse(p.expiresAt)<=now)throw new StoreConflictError('Operating policy expired');
+    if(acu>p.sessionAcu)throw new StoreConflictError('Session exceeds operating ceiling');
+    const budget=this.operatingBudget(now);
+    if(budget.totalCommittedAcu+acu>p.totalAcu)throw new StoreConflictError('Total operating ceiling exhausted');
+    if(budget.committedAcu+acu>p.dailyAcu)throw new StoreConflictError('Daily operating ceiling exhausted');
+  }
+
+  private assertOperatingCapacity() {
+    const limit=this.operatingPolicy()?.policy.maxConcurrentSessions??1;
+    const engineering=Number(this.db.prepare("SELECT COUNT(*) AS n FROM engineering_reservations WHERE state != 'stopped'").get()!.n);
+    const tests=Number(this.db.prepare("SELECT COUNT(*) AS n FROM explorations WHERE state NOT IN ('stopped','rejected')").get()!.n);
+    if(engineering+tests>=limit)throw new StoreConflictError('Devin capacity slot occupied or unresolved');
+  }
+
   explorations(): any[] {
     return this.db.prepare('SELECT record FROM explorations ORDER BY rowid DESC').all().map(r=>JSON.parse(String(r.record)));
   }
-  reserveExploration(spec: import('../contracts/exploration').ExplorationSpec) {
+  reserveExploration(input: import('../contracts/exploration').ExplorationSpec) {
+    const spec=ExplorationSpec.parse(input);
     return this.transaction(()=>{
       const prior=this.db.prepare('SELECT record FROM explorations WHERE id=?').get(spec.id);
       if(prior) { const record=JSON.parse(String(prior.record)); if(canonicalJson(record.spec)!==canonicalJson(spec)) throw new StoreConflictError('Test request changed');return {claimed:false,record}; }
-      if(this.db.prepare("SELECT id FROM explorations WHERE state NOT IN ('stopped','rejected') LIMIT 1").get() || this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Devin capacity occupied or unresolved');
-      const record={spec,state:'dispatching',remoteId:null,usageAcu:null,report:null,reason:null};
+      this.assertOperatingCapacity();
+      this.assertOperatingBudget(spec.maxAcu);
+      const record={spec,reservedAt:new Date().toISOString(),state:'dispatching',remoteId:null,usageAcu:null,report:null,reason:null};
       this.db.prepare('INSERT INTO explorations VALUES (?,?,?)').run(spec.id,record.state,canonicalJson(record));
       this.recordActivity('provider','Exploratory test budget reserved',{id:spec.id,maxAcu:spec.maxAcu,repository:spec.repository,baseSha:spec.baseSha});
       return {claimed:true,record};
@@ -464,7 +536,10 @@ export class ControllerStore {
   updateExploration(id:string,patch:Record<string,unknown>) {
     return this.transaction(()=>{
       const row=this.db.prepare('SELECT record FROM explorations WHERE id=?').get(id);if(!row)throw new StoreConflictError('Unknown test');
-      const prior=JSON.parse(String(row.record));const record={...prior,...patch};
+      const prior=JSON.parse(String(row.record));
+      if(['spec','reservedAt','stoppedAt'].some(key=>Object.hasOwn(patch,key)))throw new StoreConflictError('Exploration reservation identity is immutable');
+      const record={...prior,...patch};
+      if(['stopped','rejected'].includes(record.state)&&!['stopped','rejected'].includes(prior.state))record.stoppedAt=new Date().toISOString();
       if(typeof patch.usageAcu==='number' && Number.isFinite(patch.usageAcu) && patch.usageAcu>=0) record.usageAcu=Math.max(prior.usageAcu??0,patch.usageAcu);
       else record.usageAcu=prior.usageAcu;
       this.db.prepare('UPDATE explorations SET state=?,record=? WHERE id=?').run(record.state,canonicalJson(record),id);
@@ -481,9 +556,13 @@ export class ControllerStore {
       const taskHash = hashCanonical(task);
       const prior = this.engineeringReservation(incident.id);
       if (prior) { if (prior.taskHash !== taskHash || prior.mandateId !== mandate.id) throw new StoreConflictError('Reservation scope changed'); return prior; }
+      this.assertOperatingBudget(mandate.maxSessionAcu);
+      if(this.operatingPolicy()?.policy.approvedRepairs===false)throw new StoreConflictError('Approved repair dispatch is disabled');
       const oldMandate = this.db.prepare('SELECT record FROM engineering_mandates WHERE id = ?').get(mandate.id);
       if (oldMandate && oldMandate.record !== canonicalJson(mandate)) throw new StoreConflictError('Mandate revision changed');
-      if (this.db.prepare("SELECT id FROM explorations WHERE state NOT IN ('stopped','rejected') LIMIT 1").get() || this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Engineering slot occupied or unresolved');
+      this.assertOperatingCapacity();
+      const mandateActive=Number(this.db.prepare("SELECT COUNT(*) AS n FROM engineering_reservations WHERE mandate_id=? AND state != 'stopped'").get(mandate.id)!.n);
+      if(mandateActive>=mandate.maxConcurrentSessions)throw new StoreConflictError('Mandate concurrency exhausted');
       const committed = Number(this.db.prepare('SELECT COALESCE(SUM(max_acu), 0) AS n FROM engineering_reservations WHERE mandate_id = ?').get(mandate.id)!.n);
       if (committed + mandate.maxSessionAcu > mandate.totalAcu) throw new StoreConflictError('Mandate budget exhausted');
       this.db.prepare('INSERT OR IGNORE INTO engineering_mandates VALUES (?, ?)').run(mandate.id, canonicalJson(mandate));
@@ -495,7 +574,7 @@ export class ControllerStore {
       } else if (incident.status !== 'engineering') throw new StoreConflictError('Incident is not ready for engineering');
       const operation = this.enqueueOperation({ id: `create:${incident.id}`, incidentId: incident.id, harnessId: 'devin' });
       const record = { incidentId: incident.id, mandateId: mandate.id, taskHash, task, operationId: operation.id,
-        maxAcu: mandate.maxSessionAcu, state: 'reserved', remoteId: null, usageAcu: null, usageObservedAt: null, candidateSha: null };
+        createdAt:new Date().toISOString(), maxAcu: mandate.maxSessionAcu, state: 'reserved', remoteId: null, usageAcu: null, usageObservedAt: null, candidateSha: null };
       this.db.prepare('INSERT INTO engineering_reservations VALUES (?, ?, ?, ?, ?, ?)').run(incident.id, mandate.id, taskHash, mandate.maxSessionAcu, 'reserved', canonicalJson(record));
       this.recordActivity('provider', 'Engineering capacity and ACU budget reserved', { incidentId: incident.id, mandateId: mandate.id, maxAcu: mandate.maxSessionAcu, dollarCost: 'unknown' });
       return record;
@@ -517,7 +596,7 @@ export class ControllerStore {
       if (!prior) throw new StoreConflictError('Missing engineering reservation');
       if (patch.usageAcu != null && (!Number.isFinite(patch.usageAcu) || patch.usageAcu < 0)) throw new Error('Invalid usage');
       // Cumulative observations never add repeatedly, and stale/lower values never refund budget.
-      const record = { ...prior, ...patch, usageAcu: patch.usageAcu == null ? prior.usageAcu : Math.max(prior.usageAcu ?? 0, patch.usageAcu) };
+      const record = { ...prior, ...patch, stoppedAt:patch.state==='stopped'&&prior.state!=='stopped'?new Date().toISOString():prior.stoppedAt??null, usageAcu: patch.usageAcu == null ? prior.usageAcu : Math.max(prior.usageAcu ?? 0, patch.usageAcu) };
       this.db.prepare('UPDATE engineering_reservations SET state = ?, record = ? WHERE incident_id = ?').run(record.state, canonicalJson(record), id);
       if (record.state !== prior.state || record.usageAcu !== prior.usageAcu || record.candidateSha !== prior.candidateSha)
         this.recordActivity('provider', 'Devin session observation', { incidentId: id, state: record.state, remoteId: record.remoteId, usageAcu: record.usageAcu, candidateSha: record.candidateSha, reason: record.reason ?? null });

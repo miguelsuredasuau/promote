@@ -5,7 +5,8 @@ import { isTerminal } from '../contracts/lifecycle';
 export const HEARTBEAT_MS = 10 * 60 * 1000;
 
 /** Review the controller's current evidence; never mint spending authority. */
-export async function reviewProject(store: ControllerStore, checkout?: string, now = Date.now()) {
+export async function reviewProject(store: ControllerStore, checkout?: string, now = Date.now(), reviewMinutes = 10) {
+  const intervalMs = Math.max(1, Math.min(60, reviewMinutes)) * 60000;
   const prior = store.orchestratorHeartbeat();
   if (prior && Date.parse(prior.nextCheckAt) > now) return false;
   const project = await projectReadiness(checkout);
@@ -31,8 +32,8 @@ export async function reviewProject(store: ControllerStore, checkout?: string, n
   for (const work of service.workQueue) if(work.state==='blocked') actions.push({kind:'work_blocked',summary:work.result?.nextAction??'Review the blocked work item before continuing.'});
   if (incidents.some(i=>!isTerminal(i.status)) && !service.provider.paidDispatchEnabled)
     actions.push({ kind: 'dispatch_blocked', summary: service.provider.explanation ?? 'Finalize provider and task authorization.' });
-  return store.saveOrchestratorHeartbeat({ checkedAt:new Date(now).toISOString(),nextCheckAt:new Date(now+HEARTBEAT_MS).toISOString(),
-    intervalMs:HEARTBEAT_MS,status:actions.length?'attention':'healthy',project,actions,
+  return store.saveOrchestratorHeartbeat({ checkedAt:new Date(now).toISOString(),nextCheckAt:new Date(now+intervalMs).toISOString(),
+    intervalMs,status:actions.length?'attention':'healthy',project,actions,
     stats:{receivedRecords:service.receivedRecords,progressEvents:service.progressEvents,pendingRecords,incidents:incidents.length,runningSessions:service.engineeringSpend.sessions.filter(s=>s.state==='running').length},
     executionMode:'local_review',paidCalls:0 });
 }

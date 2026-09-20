@@ -1,3 +1,4 @@
+import { applyOfficeRuntime, officeTickerValues } from '/office-runtime.js';
 import { createDecisionDesk } from '/decision-desk.js';
 import { createPullRequestDesk } from '/pull-requests.js';
 import { createOfficeScene } from '/office-scene.js';
@@ -20,7 +21,7 @@ let scene;
 try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detailElement:$('desk'),nativeSurfaces})}catch(error){ console.error('Office initialization failed',error); $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}
 function update(force=false){
- model=createOfficeModel(snapshot,mode,demoState);
+ model=applyOfficeRuntime(createOfficeModel(snapshot,mode,demoState),snapshot?.operatingPolicy,snapshot?.maintenance);
  model.ownerDecisions=mode==='live'?list(snapshot?.ownerReport?.decisions).filter(d=>d.ownerAttention&&!d.resolution).length:0;
  const stamp=JSON.stringify(model);const changed=stamp!==lastModel;lastModel=stamp;
  if(changed||force)scene?.update(model);
@@ -28,7 +29,7 @@ function update(force=false){
  if(mode==='demo')count[1]=demoState.phase>0&&demoState.phase<6?1:0;
  ['backlog','engineering','strategy','qa','finance'].forEach((key,i)=>setText(`count-${key}`,String(count[i])));
  const finance=model.finance;const money=v=>v==null?'Not reported':`${finance.currency??'?'} ${v.toFixed(2)}`;
- const ticker=[['USAGE',model.usage??'—'],['ERRORS',model.errors??'—'],['BACKLOG',count[0]],['CANDIDATES',model.qa.candidateId?1:'—'],['QA',model.qa.status==='idle'?'—':human(model.qa.status)],['SPEND',finance.spent==null?'—':money(finance.spent)]];
+ const ticker=officeTickerValues(model);
  $('ticker-values').replaceChildren(...ticker.map(([key,value])=>{const item=node('span',undefined,'ticker-item');item.append(node('small',key),node('b',String(value)));return item}));
  setText('ticker-source',mode==='demo'?'ILLUSTRATIVE DEMO':'RECORDED SNAPSHOT');
  document.body.dataset.mode=mode;$('demo-banner').hidden=mode!=='demo';
@@ -95,9 +96,10 @@ function renderDesk(key=desk,shell=document.getElementById('desk')){
  }
  if(desk==='finance'){
   const f=model.finance;const money=v=>v==null?'Not reported':`${f.currency??'(currency unknown)'} ${v.toFixed(2)}`;
-  const box=node('div',undefined,'ledger');box.append(node('span',mode==='demo'?'ILLUSTRATIVE SPEND':'OBSERVED SPEND','eyebrow'),node('div',money(f.spent),'amount'));
-  const dl=node('dl');[['Approved budget',money(f.budget)],['Reserved commitments',money(f.reserved)],['Uncommitted',f.budget==null||f.spent==null||f.reserved==null?'Unknown':money(f.budget-f.spent-f.reserved)],['Burn / hour',f.burnRate==null?'Insufficient cost history':money(f.burnRate)],['Usage',model.usage==null?'Not connected':String(model.usage)]].forEach(([key,value])=>{const row=node('div');row.append(node('dt',key),node('dd',value));dl.append(row)});box.append(dl);content.append(box);
+  const box=node('div',undefined,'ledger');box.append(node('span',f.unit==='ACU'?'CAMPAIGN CEILING · ACU':mode==='demo'?'ILLUSTRATIVE SPEND':'OBSERVED SPEND','eyebrow'),node('div',money(f.unit==='ACU'?f.budget:f.spent),'amount'));
+  const dl=node('dl');[['Approved budget',money(f.budget)],['Reserved commitments',money(f.reserved)],['Uncommitted',f.unit==='ACU'?money(f.remaining):f.budget==null||f.spent==null||f.reserved==null?'Unknown':money(f.budget-f.spent-f.reserved)],['Burn / hour',f.burnRate==null?'Insufficient cost history':money(f.burnRate)],['Usage',model.usage==null?'Not connected':String(model.usage)]].forEach(([key,value])=>{const row=node('div');row.append(node('dt',key),node('dd',value));dl.append(row)});box.append(dl);content.append(box);
   content.append(node('p','Costs appear when usage reporting is connected. Budget changes require your approval.','facts'));
+  const controls=node('a','Set operating limits & review cadence →');controls.href='/operating';content.append(controls);
  }
  if(desk==='ticker'){
   if(model.operations){const pulse=node('div',undefined,'operations-pulse');pulse.append(node('strong',model.operations.heading),node('p',model.operations.next));const link=node('a','Open the operations journal ↗');link.href='/activity';pulse.append(link);content.append(pulse);}
@@ -112,7 +114,7 @@ function renderDesk(key=desk,shell=document.getElementById('desk')){
 document.addEventListener('click',e=>{const target=e.target.closest('[data-open]');if(target)openDesk(target.dataset.open,target)});
 $('close-desk').onclick=()=>$('desk').close();$('desk').addEventListener('close',()=>{if(desk==='briefing')closeOfficeDesk();});
 $('desk').addEventListener('click',e=>{if(e.target===$('desk')){const r=$('desk').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('desk').close()}});
-async function refresh(){const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),8000);try{const r=await fetch('/api/overview',{signal:abort.signal,cache:'no-store'});if(!r.ok)throw Error();const data=await r.json();if(!data.project||!data.implementation)throw Error();snapshot=data;update();setText('connection-status','Local office connected');$('connection-light').classList.add('ready');setText('observed',`Provider ${human(data.project.providerStatus)} · updated ${new Date(data.observedAt).toLocaleTimeString()}`);$('error-banner').hidden=true}catch{setText('connection-status',snapshot?'Office disconnected · last snapshot':'Controller unavailable');$('connection-light').classList.remove('ready');setText('error-banner','Waiting for controller updates. The last snapshot remains visible.');$('error-banner').hidden=false}finally{clearTimeout(timeout);setTimeout(refresh,5000)}}
+async function refresh(){const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),8000);try{const r=await fetch('/api/overview',{signal:abort.signal,cache:'no-store'});if(!r.ok)throw Error();const data=await r.json();if(!data.project||!data.implementation)throw Error();const extra=await Promise.allSettled(['/api/operating-policy','/api/maintenance'].map(async url=>{const response=await fetch(url,{signal:abort.signal,cache:'no-store'});if(!response.ok)return null;return response.json();}));data.operatingPolicy=extra[0].status==='fulfilled'?extra[0].value:null;data.maintenance=extra[1].status==='fulfilled'?extra[1].value:null;snapshot=data;update();setText('connection-status','Local office connected');$('connection-light').classList.add('ready');setText('observed',`Provider ${human(data.project.providerStatus)} · updated ${new Date(data.observedAt).toLocaleTimeString()}`);$('error-banner').hidden=true}catch{setText('connection-status',snapshot?'Office disconnected · last snapshot':'Controller unavailable');$('connection-light').classList.remove('ready');setText('error-banner','Waiting for controller updates. The last snapshot remains visible.');$('error-banner').hidden=false}finally{clearTimeout(timeout);setTimeout(refresh,5000)}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopStory()});
 const showImprovements=new URLSearchParams(location.search).has('improvements')||new URLSearchParams(location.search).get('demo')==='decisions';
 if(showImprovements)document.body.dataset.improvements='true';
