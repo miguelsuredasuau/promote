@@ -25,7 +25,7 @@ function update(force=false){
  model.ownerDecisions=mode==='live'?list(snapshot?.ownerReport?.decisions).filter(d=>d.ownerAttention&&!d.resolution).length:0;
  const stamp=JSON.stringify(model);const changed=stamp!==lastModel;lastModel=stamp;
  if(changed||force)scene?.update(model);
- const count=[allCards().filter(c=>c.status!=='completed'&&c.status!=='done').length,list(snapshot?.operations).length,model.strategy.ideas.length,model.qa.candidateId?1:0,model.finance.currency??'—'];
+ const count=[allCards().filter(c=>c.status!=='completed'&&c.status!=='done').length,model.runtime?model.runtime.engineering+model.runtime.testing:list(snapshot?.operations).length,model.strategy.ideas.length,model.qa.candidateId?1:0,model.finance.currency??'—'];
  if(mode==='demo')count[1]=demoState.phase>0&&demoState.phase<6?1:0;
  ['backlog','engineering','strategy','qa','finance'].forEach((key,i)=>setText(`count-${key}`,String(count[i])));
  const finance=model.finance;const money=v=>v==null?'Not reported':`${finance.currency??'?'} ${v.toFixed(2)}`;
@@ -50,15 +50,17 @@ function closeOfficeDesk(){desk=null;$('main').inert=false;for(const s of Object
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&desk){e.preventDefault();if($('desk').open)$('desk').close();else closeOfficeDesk();}});
 
 function moveCard(id,columnId){demoState=moveDemoCard(demoState,id,columnId);update()}
-function kanban(){
+function kanban(boardModel=model.kanban){
  const board=node('div',undefined,'kanban');
- model.kanban.columns.forEach(column=>{
+ boardModel.columns.forEach(column=>{
   const col=node('section',undefined,'kanban-column');col.dataset.column=column.id;
   const h=node('h3',column.label);h.append(node('span',String(column.cards.length)));col.append(h);
   if(mode==='demo'){col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drag-target')});col.addEventListener('dragleave',()=>col.classList.remove('drag-target'));col.addEventListener('drop',e=>{e.preventDefault();col.classList.remove('drag-target');moveCard(e.dataTransfer.getData('text/plain'),column.id)})}
   column.cards.forEach(card=>{
    const tile=node('article',undefined,`kanban-card kind-${card.kind}`);tile.dataset.card=card.id;
    tile.append(badge(card.kind),node('h4',card.title),node('small',card.id));
+   if(card.detail)tile.append(node('p',card.detail));
+   if(card.next)tile.append(node('small',card.next));
    const pipelineOwned=card.id==='demo-repair';
    if(mode==='demo'&&!pipelineOwned){tile.draggable=true;tile.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',card.id));const select=node('select');select.setAttribute('aria-label',`Move ${card.title}`);for(const c of model.kanban.columns){const option=node('option',c.label);option.value=c.id;option.selected=c.id===column.id;select.append(option)}select.addEventListener('change',()=>moveCard(card.id,select.value));tile.append(select)}
    else tile.append(node('span',pipelineOwned?'Follows the repair story':human(card.status),'card-status'));
@@ -72,24 +74,25 @@ function renderDesk(key=desk,shell=document.getElementById('desk')){
  const [eye,title,sub]=config[desk];setText('desk-eyebrow',eye);setText('desk-title',title);setText('desk-subtitle',sub);$('desk').classList.toggle('wide',desk==='backlog'||desk==='qa');
  const content=$('desk-content');content.replaceChildren();
  if(mode==='demo')content.append(node('p','INTERACTIVE DEMO · Cards, logs, candidates and costs are illustrative. No provider calls or stored changes.','demo-note'));
- if(desk==='backlog'){content.append(kanban());content.append(node('p',mode==='demo'?'Move proposal cards between columns by dragging or using their dropdown. The repair card follows the story to keep QA and engineering consistent.':'Live work queue · read-only','facts'))}
+ if(desk==='backlog'){if(model.maintenancePipeline){const p=model.maintenancePipeline;content.append(node('p',`${p.total} approved tasks · ${p.queued} queued · ${p.active} Devin working · ${p.checking} checking · ${p.qaQueued} awaiting QA · ${p.attention} need attention · ${p.verified} verified. Verification does not publish a release.`,'facts'));}content.append(kanban());if(model.maintenancePipeline&&model.proposalKanban){const proposals=node('details');proposals.append(node('summary','Other recorded proposals and incidents'),kanban(model.proposalKanban));content.append(proposals);}content.append(node('p',mode==='demo'?'Move proposal cards between columns by dragging or using their dropdown. The repair card follows the story to keep QA and engineering consistent.':'Live work queue · read-only','facts'))}
  if(desk==='engineering'){
   content.append(record(model.engineering.task,'Recorded task activity.',model.engineering.status));
   const terminal=node('div',undefined,'terminal');terminal.append(node('div',mode==='demo'?'DEMO / ENGINEERING TERMINAL':'RECORDED ENGINEERING EVENTS','terminal-label'),node('div',model.engineering.lines.join('\n')||'Waiting for the engineering provider.\nNo terminal output has been recorded.'));content.append(terminal);
-  if(mode==='live')list(snapshot?.operations).forEach(o=>content.append(record(o.harnessId,`Dispatch ${o.id} · Incident ${o.incidentId}`,o.status)));
+  if(mode==='live'&&model.runtime){for(const session of model.engineering.sessions??[])content.append(record(session.title,session.remoteId??session.id,session.state));const controls=node('a','Review all sessions and independent QA →');controls.href='/operating';content.append(controls);}else if(mode==='live')list(snapshot?.operations).forEach(o=>content.append(record(o.harnessId,`Dispatch ${o.id} · Incident ${o.incidentId}`,o.status)));
  }
  if(desk==='strategy'){
   if(!model.strategy.ideas.length)content.append(empty('No proposals have been recorded. Connecting customer feedback and prioritization will populate this wall.'));
   model.strategy.ideas.forEach(idea=>{const card=node('article',undefined,'sticky');card.append(node('h3',idea.title),node('p',idea.body),badge(idea.status));content.append(card)});
  }
  if(desk==='qa'){
-  const qa=model.qa;if(qa.candidateId)content.append(record(qa.candidateId??'No candidate on the line',`Attempt ${qa.attempt||'—'} · ${human(qa.status)}`,qa.status));
+  const qa=model.qa;if(qa.candidateId)content.append(record(qa.candidateId??'No candidate on the line',`Attempt ${qa.attempt||'—'} · ${qa.historical?'Recorded result · ':''}${human(qa.status)}`,qa.status));
   const problem=qa.stages.find(s=>s.outcome==='fail'||s.outcome==='error');
   const summary=problem?qaStageCopy(problem,mode):null;
   const banner=node('div',undefined,`outcome-banner ${qa.status==='failed'?'red':qa.status==='completed'?'green':''}`);
-  banner.append(node('strong',summary?.headline??(qa.status==='completed'?'All checks passed':qa.status==='running'?'Checking the candidate':'Waiting for a candidate')),node('p',summary?.detail??'Only recorded checks can change the state of this line.'));if(qa.status!=='idle')content.append(banner);
+  banner.append(node('strong',qa.headline??summary?.headline??(qa.status==='completed'?'All checks passed':qa.status==='running'?'Checking the candidate':'Waiting for a candidate')),node('p',qa.progress?.next??summary?.detail??'Only recorded checks can change the state of this line.'));if(qa.status!=='idle'||qa.executionMode==='maintenance')content.append(banner);
+  if(qa.executionMode==='maintenance')content.append(node('p','Verification does not publish a release.'));
   const evidence=node('section',undefined,'stage-evidence');evidence.id='stage-evidence';evidence.setAttribute('aria-live','polite');
-  const pipeline=node('div',undefined,'pipeline');qa.stages.forEach(s=>{const copy=qaStageCopy(s,mode);const color=s.outcome==='pass'?'green':s.outcome==='fail'?'red':['pending','error'].includes(s.outcome)?'amber':'';const n=node('button',undefined,`stage ${color}`);n.dataset.qaStage=s.id;n.append(node('b',s.outcome==='pass'?'✓':s.outcome==='fail'?'×':s.outcome==='not_run'?'—':'•'),node('strong',copy.title),node('p',copy.headline),node('small','Inspect checks ↓'));n.onclick=()=>{evidence.replaceChildren(node('h3',copy.title),node('p',copy.detail),badge(s.outcome));};pipeline.append(n)});content.append(pipeline,evidence);
+  const pipeline=node('div',undefined,'pipeline');(qa.executionMode==='maintenance'?[]:qa.stages).forEach(s=>{const copy=qaStageCopy(s,mode);const color=s.outcome==='pass'?'green':s.outcome==='fail'?'red':['pending','error'].includes(s.outcome)?'amber':'';const n=node('button',undefined,`stage ${color}`);n.dataset.qaStage=s.id;n.append(node('b',s.outcome==='pass'?'✓':s.outcome==='fail'?'×':s.outcome==='not_run'?'—':'•'),node('strong',copy.title),node('p',copy.headline),node('small','Inspect checks ↓'));n.onclick=()=>{evidence.replaceChildren(node('h3',copy.title),node('p',copy.detail),badge(s.outcome));};pipeline.append(n)});content.append(pipeline,evidence);
   if(mode==='demo'){const next=node('button',demoState.phase>=6?'Restart story':'Advance repair story →','action');next.onclick=()=>{if(demoState.phase>=6){demoState=createDemoState();update()}else nextStep()};content.append(next)}
   const catalog=node('details');catalog.append(node('summary','Gate definitions & evidence requirements'));content.append(catalog);
   list(snapshot?.project?.catalog?.entries).forEach(g=>{const d=node('details');d.append(node('summary',`${g.label} · ${human(g.executionStatus)}`),node('p',g.limitations,'facts'),node('pre',JSON.stringify({command:g.argv,prerequisites:g.prerequisites,independence:g.oracleIndependence,mapping:g.autonomyGateIds},null,2),'detail'));catalog.append(d)});

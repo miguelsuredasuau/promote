@@ -489,13 +489,23 @@ export class ControllerStore {
     const budgetStartedAt=saved?.budgetStartedAt??saved?.updatedAt??null;
     const start=budgetStartedAt===null?Infinity:Date.parse(budgetStartedAt);
     // Total authorization never resets on day changes, expiry extensions or policy edits.
-    const totalCommittedAcu=[...engineering,...tests]
-      .filter(r=>!r.terminal||!utcDay(r.createdAt)||!utcDay(r.stoppedAt)||Date.parse(r.createdAt)>=start||Date.parse(r.stoppedAt)>=start)
-      .reduce((n,r)=>n+charge(r),0);
+    const totalReservations=[...engineering,...tests]
+      .filter(r=>!r.terminal||!utcDay(r.createdAt)||!utcDay(r.stoppedAt)||Date.parse(r.createdAt)>=start||Date.parse(r.stoppedAt)>=start);
+    const totalCommittedAcu=totalReservations.reduce((n,r)=>n+charge(r),0);
+    // Provider reads report cumulative usage, without a settlement marker or a bound on
+    // late adjustments. Surface the retained amount without treating it as spendable.
+    const reconciliation={
+      reservedCeilingsAcu:totalReservations.reduce((n,r)=>n+r.maxAcu,0),
+      knownReportedUsageAcu:totalReservations.reduce((n,r)=>n+(r.usage??0),0),
+      unknownUsageSessions:totalReservations.filter(r=>r.usage==null).length,
+      retainedTerminalAcu:totalReservations.filter(r=>r.terminal).reduce((n,r)=>n+Math.max(0,r.maxAcu-(r.usage??0)),0),
+      releasableAcu:0,
+      reason:'provider_usage_not_settled',
+    };
     const totalCeilingAcu=saved?.policy.totalAcu??null;
     const ceiling=saved?.policy.dailyAcu??null;
     return {day,committedAcu,totalCommittedAcu,totalCeilingAcu,budgetStartedAt,totalRemainingAcu:totalCeilingAcu===null?null:Math.max(0,totalCeilingAcu-totalCommittedAcu),remainingAcu:ceiling===null?null:Math.max(0,ceiling-committedAcu),ceilingAcu:ceiling,
-      accounting:'UTC daily session ceilings plus unresolved carryover; not billed spend'};
+      reconciliation,accounting:'UTC daily session ceilings plus unresolved carryover; not billed spend'};
   }
 
   private assertOperatingBudget(acu:number,now=Date.now()) {
@@ -590,7 +600,12 @@ export class ControllerStore {
     return this.db.prepare('SELECT record FROM engineering_reservations ORDER BY rowid').all().map(row => JSON.parse(String(row.record)));
   }
 
-  updateEngineering(id: string, patch: { state?: 'reserved' | 'running' | 'held' | 'stopped'; remoteId?: string; usageAcu?: number | null; usageObservedAt?: string; candidateSha?: string | null; reason?: string }) {
+  engineeringMandate(id: string): unknown | null {
+    const row=this.db.prepare('SELECT record FROM engineering_mandates WHERE id = ?').get(id);
+    return row?JSON.parse(String(row.record)):null;
+  }
+
+  updateEngineering(id: string, patch: { state?: 'reserved' | 'running' | 'held' | 'stopped'; remoteId?: string; usageAcu?: number | null; usageObservedAt?: string; candidateSha?: string | null; reason?: string; continuations?: Array<{id:string;at:string;outcome:string}> }) {
     this.transaction(() => {
       const prior = this.engineeringReservation(id);
       if (!prior) throw new StoreConflictError('Missing engineering reservation');

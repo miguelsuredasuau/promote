@@ -1,3 +1,4 @@
+import {defaultOperatingPolicy} from '../server/operating-policy';
 import {afterEach,expect,it,vi} from 'vitest';
 import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -55,4 +56,76 @@ it('deadline termination proceeds even when report retrieval fails',async()=>{
  const {store}=setup(),s={...spec(),deadline:new Date(Date.now()-1000).toISOString()};store.reserveExploration(s);store.updateExploration(s.id,{state:'running',remoteId:'devin-abc'});
  const fetcher=vi.fn().mockResolvedValueOnce(response({session_id:'abc',status:'running'})).mockRejectedValueOnce(Error('report unavailable')).mockResolvedValueOnce(response({})).mockResolvedValueOnce(response({session_id:'abc',status:'exit'}));
  await observeExplorations(store,adapter(fetcher));expect(store.explorations()[0].state).toBe('stopped');
+});
+
+function waitingSetup(detail='waiting_for_user',overrides:Record<string,unknown>={}) {
+ const {store,dir}=setup(),s=spec();
+ store.saveOperatingPolicy({revision:0,policy:{...defaultOperatingPolicy(),paused:false,proactiveTests:true,testRepository:s.repository,totalAcu:10,dailyAcu:10,sessionAcu:2}});
+ store.reserveExploration(s);store.updateExploration(s.id,{state:'running',remoteId:'devin-abc'});
+ let stopped=false;
+ const fetcher=vi.fn(async(_url:string,options:RequestInit)=>{
+  if(options.method==='DELETE')stopped=true;
+  return response({session_id:'abc',status:stopped?'exit':'running',status_detail:detail,acus_consumed:0.5,...overrides});
+ });
+ return {store,dir,s,fetcher};
+}
+it('durably records a bounded continuation before transport and observes held until provider resumes',async()=>{
+ const {store,s,fetcher}=waitingSetup();const a=adapter(fetcher);
+ const original=a.continueExploration.bind(a);
+ const resume=vi.spyOn(a,'continueExploration').mockImplementation(async(...args)=>{
+  expect(store.explorations()[0].continuations.at(-1).outcome).toBe('pending');return original(...args);
+ });
+ const now=Date.now();await observeExplorations(store,a,now);
+ expect(store.explorations()[0]).toMatchObject({state:'held',reason:'continuation_sent_awaiting_observation'});
+ await observeExplorations(store,a,now+1000);expect(resume).toHaveBeenCalledTimes(1);
+ await observeExplorations(store,a,now+120001);expect(resume).toHaveBeenCalledTimes(2);
+ await observeExplorations(store,a,now+240002);expect(resume).toHaveBeenCalledTimes(2);
+ expect(store.explorations()[0].reason).toBe('continuation_limit_reached');
+ const message=fetcher.mock.calls.find(([,o])=>o.method==='POST')![1];
+ expect(JSON.parse(String(message.body)).message).toContain(s.baseSha);
+ expect(JSON.parse(String(message.body)).message).toContain('Never bypass an approval');
+});
+it('never automatically approves provider approval requests',async()=>{
+ const {store,fetcher}=waitingSetup('waiting_for_approval');await observeExplorations(store,adapter(fetcher));
+ expect(store.explorations()[0]).toMatchObject({state:'held',reason:'provider_approval_required'});
+ expect(fetcher.mock.calls.some(([,o])=>o.method==='POST')).toBe(false);
+});
+it('stops and ingests an already complete report instead of restarting finished tests',async()=>{
+ const {store,s,fetcher}=waitingSetup('waiting_for_user',{structured_output:{baseSha:'a'.repeat(40),mode:'ui-fixture',summary:'Finished sandbox review',coverage:['history'],findings:[],limitations:[]}});
+ await observeExplorations(store,adapter(fetcher));
+ expect(store.explorations()[0]).toMatchObject({state:'stopped',reason:'report_received_unverified'});
+ expect(store.explorations()[0].report.baseSha).toBe(s.baseSha);
+ expect(fetcher.mock.calls.some(([,o])=>o.method==='POST')).toBe(false);
+});
+it('does not resend uncertain continuation after store reopen',async()=>{
+ const {store,dir,fetcher}=waitingSetup();const a=adapter(fetcher);
+ vi.spyOn(a,'continueExploration').mockResolvedValue({kind:'unknown_outcome',reason:'timeout'});
+ await observeExplorations(store,a);
+ const reopened=new ControllerStore(join(dir,'db'));
+ try{await observeExplorations(reopened,a,Date.now()+120001);expect(a.continueExploration).toHaveBeenCalledTimes(1);expect(reopened.explorations()[0].reason).toBe('continuation_outcome_uncertain');}finally{reopened.close();}
+});
+it.each(['paused','acu_exhausted','budget'])('does not resume outside original authorization: %s',async condition=>{
+ const {store,s,fetcher}=waitingSetup();
+ if(condition==='acu_exhausted')store.updateExploration(s.id,{usageAcu:2});
+ else {const p=store.operatingPolicy()!;store.saveOperatingPolicy({revision:p.revision,policy:{...p.policy,paused:condition==='paused',sessionAcu:condition==='budget'?1:2}});}
+ await observeExplorations(store,adapter(fetcher));
+ expect(fetcher.mock.calls.some(([,o])=>o.method==='POST')).toBe(false);
+ if(condition==='acu_exhausted')expect(store.explorations()[0].reason).toBe('acu_ceiling_reached');
+});
+it('does not resume when waiting report retrieval failed',async()=>{
+ const {store,fetcher}=waitingSetup();const a=adapter(fetcher);vi.spyOn(a,'explorationWaitingState').mockRejectedValue(Error('unavailable'));
+ await observeExplorations(store,a);expect(store.explorations()[0]).toMatchObject({state:'held',reason:'waiting_report_unavailable'});
+ expect(fetcher.mock.calls.some(([,o])=>o.method==='POST')).toBe(false);
+});
+
+it.each(['policy','task'])('rechecks %s expiry after reading a waiting exploration report',async boundary=>{
+ const {store,s,fetcher}=waitingSetup();const a=adapter(fetcher);let now=Date.now();
+ const policy=store.operatingPolicy()!;
+ store.saveOperatingPolicy({revision:policy.revision,policy:{...policy.policy,expiresAt:new Date(now+1000).toISOString()}});
+ const waiting=a.explorationWaitingState.bind(a);
+ vi.spyOn(a,'explorationWaitingState').mockImplementation(async id=>{const result=await waiting(id);now=boundary==='task'?Date.parse(s.deadline)+1:now+2000;return result;});
+ const resume=vi.spyOn(a,'continueExploration');
+ await observeExplorations(store,a,()=>now);
+ expect(resume).not.toHaveBeenCalled();
+ expect(store.explorations()[0]).toMatchObject(boundary==='task'?{state:'stopped',reason:'deadline_reached'}:{state:'held',reason:'continuation_not_authorized'});
 });

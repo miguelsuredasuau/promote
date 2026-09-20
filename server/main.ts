@@ -1,5 +1,5 @@
 import { projectEnvironment } from './environment.mjs';
-import { createMaintenanceLoop } from './maintenance';
+import { createMaintenanceLoop, maintenanceProfiles } from './maintenance';
 import {executionBindings} from './improvements';
 import { createScheduledReview } from './scheduled-review';
 import { mkdirSync, existsSync, readFileSync } from 'node:fs';
@@ -32,17 +32,25 @@ async function pollEngineering() {
   observing = true;
   try {
     const config = loadDevin(root);
-    if (config.adapter) { await observeEngineering(store, config.adapter); await observeExplorations(store,config.adapter); }
+    if (config.adapter) {
+      // Each observer owns its lock; historical engineering usage must not delay
+      // live exploration deadline checks. Store writes remain synchronous.
+      const observations=await Promise.allSettled([observeEngineering(store,config.adapter),observeExplorations(store,config.adapter)]);
+      for(const result of observations)if(result.status==='rejected')console.error('Provider observation lane failed; other lane continued');
+    }
     const running=store.engineeringReservations().filter(r=>r.state==='running');
     const candidate=executionBindings(root).some(b=>store.engineeringReservation(b.task.incidentId)?.candidateSha);
     const operating = store.operatingPolicy()?.policy;
     const autonomous = !!operating && !operating.paused && Date.parse(operating.expiresAt) > Date.now()
       && !!config.adapter && config.status.status !== 'awaiting_billing_verification';
+    const budget = store.operatingBudget();
+    const minimumDispatchAcu = operating ? Math.min(operating.sessionAcu,...(operating.approvedRepairs?maintenanceProfiles(root).map(profile=>profile.maxAcu??operating.sessionAcu):[])) : Infinity;
+    const dispatchCapacity = !!operating && (budget.totalRemainingAcu??0)>=minimumDispatchAcu && (budget.remainingAcu??0)>=minimumDispatchAcu;
     const status = running.length ? {...config.status,status:'engineering_running',automaticDispatch:autonomous,
-      paidDispatchEnabled:autonomous || config.status.paidDispatchEnabled,
+      paidDispatchEnabled:(autonomous && dispatchCapacity) || (!operating && config.status.paidDispatchEnabled),
       explanation:`${running.length} Devin sessions running. Promote independently checks returned candidates.`}
-      : autonomous ? {...config.status,status:'autonomous_review_active',automaticDispatch:true,paidDispatchEnabled:true,
-        explanation:'Promote reviews scoped maintenance work and sandbox tests within the saved operating limits.'}
+      : autonomous ? {...config.status,status:dispatchCapacity?'autonomous_review_active':'budget_reserved',automaticDispatch:true,paidDispatchEnabled:dispatchCapacity,
+        explanation:dispatchCapacity?'Promote reviews scoped maintenance work and sandbox tests within the saved operating limits.':'Session ceilings occupy the campaign budget. Observation and QA continue; new paid sessions await budget reconciliation.'}
       : candidate ? {...config.status,status:'candidate_returned',explanation:'A historical candidate is recorded; no new autonomous session is running.'}
       : config.status;
     status.connectionVerified=store.engineeringReservations().some(r=>r.usageObservedAt && Date.now()-Date.parse(r.usageObservedAt)<60000);
@@ -88,7 +96,8 @@ async function importFeedback() {
 store.recordActivity('service', 'Promoted service started', { intakeConfigured: !!outbox, providerConnected: false, paidDispatchEnabled: false });
 if (!outbox) store.serviceHeartbeat({ status: 'not_configured', configured: false });
 await importFeedback();
-await pollEngineering();
+// Historical usage reconciliation must not hold the local UI offline at startup.
+void pollEngineering().catch(() => console.error('Initial engineering observation failed; scheduled observation will retry'));
 const maintenance = createMaintenanceLoop(store, root, testCheckout);
 const heartbeat = createScheduledReview({
   due: () => {
@@ -96,7 +105,7 @@ const heartbeat = createScheduledReview({
     return !prior || Date.parse(prior.nextCheckAt) <= Date.now();
   },
   orchestrate,
-  review: () => reviewProject(store, checkout, Date.now(), store.operatingPolicy()?.policy.reviewMinutes),
+  review: () => reviewProject(store, checkout, Date.now(), store.operatingPolicy()?.policy.reviewMinutes, maintenance.journal.all()),
   report: message => console.error(message),
 });
 // Verification can take minutes; the activity server must remain observable.

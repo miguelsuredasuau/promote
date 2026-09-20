@@ -86,6 +86,7 @@ export const SessionObservation = z
   .object({
     remoteId: z.string().min(1),
     state: SessionState,
+    waitingReason: z.enum(['user', 'approval']).optional(),
     /** Raw provider status is preserved as server evidence (artifact ID), not interpreted here. */
     rawStatusArtifactId: Id.nullable(),
     observedAt: Timestamp,
@@ -120,6 +121,8 @@ export interface HarnessAdapter {
   reconcile(operationId: string): Promise<ReconciliationOutcome>;
   inspect(remoteId: string): Promise<SessionObservation>;
   feedback(remoteId: string, feedback: RepairFeedback, operationId: string): Promise<FeedbackOutcome>;
+  /** Continue only the original authorized task; never approval or acceptance feedback. */
+  continueTask?(remoteId: string, task: EngineeringTask, operationId: string): Promise<FeedbackOutcome>;
   cancel(remoteId: string, operationId: string): Promise<CancelOutcome>;
 }
 

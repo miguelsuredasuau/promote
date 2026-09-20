@@ -5,7 +5,8 @@ import { isTerminal } from '../contracts/lifecycle';
 export const HEARTBEAT_MS = 10 * 60 * 1000;
 
 /** Review the controller's current evidence; never mint spending authority. */
-export async function reviewProject(store: ControllerStore, checkout?: string, now = Date.now(), reviewMinutes = 10) {
+export async function reviewProject(store: ControllerStore, checkout?: string, now = Date.now(), reviewMinutes = 10,
+  maintenance: Array<{id:string;state:string;updatedAt:string;reason?:string}> = []) {
   const intervalMs = Math.max(1, Math.min(60, reviewMinutes)) * 60000;
   const prior = store.orchestratorHeartbeat();
   if (prior && Date.parse(prior.nextCheckAt) > now) return false;
@@ -20,6 +21,14 @@ export async function reviewProject(store: ControllerStore, checkout?: string, n
     actions.push({ kind: 'intake_health', summary: 'Check intake health or stale intake polling.' });
   for (const incident of incidents) {
     if (isTerminal(incident.status)) continue;
+    const job=maintenance.find(job=>job.id===incident.id);
+    if(job){
+      // Candidate-only maintenance has its own durable QA lifecycle. Its incident
+      // remains engineering until a separate release decision; that is not a stall.
+      if(['blocked','retryable'].includes(job.state))actions.push({kind:'maintenance_attention',incidentId:incident.id,summary:`Maintenance ${job.state}: ${job.reason??'review recorded verification evidence'}.`});
+      else if(job.state==='verifying'&&now-Date.parse(job.updatedAt)>HEARTBEAT_MS)actions.push({kind:'stalled_verification',incidentId:incident.id,summary:'Independent maintenance verification has not reported progress for over 10 minutes.'});
+      continue;
+    }
     if (incident.status === 'blocked') actions.push({ kind: 'blocked_incident', incidentId: incident.id, summary: `Resolve incident blocker: ${incident.block?.reason ?? 'unknown'}.` });
     else if (now-Date.parse(incident.updatedAt)>HEARTBEAT_MS)
       actions.push({ kind: 'stalled_incident', incidentId: incident.id, summary: 'Review incident with no state transition for over 10 minutes.' });

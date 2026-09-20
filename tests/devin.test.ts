@@ -160,3 +160,72 @@ it('propagates inspection failures with safe boundary context and no implicit re
  await expect(adapter(fetcher).inspect('s')).rejects.toBe(failure);
  expect(failureBoundaries(failure)).toEqual(['devin_read','devin_inspect']);expect(fetcher).toHaveBeenCalledTimes(1);
 });
+
+async function waitingEngineering(detail='waiting_for_user') {
+ const s=setup();
+ s.task.deadline=new Date(Date.now()+600000).toISOString();
+ s.mandate.expiresAt=new Date(Date.now()+900000).toISOString();
+ s.mandate.taskHashes[s.task.incidentId]=hashCanonical(s.task);
+ const {defaultOperatingPolicy}=await import('../server/operating-policy');
+ s.store.saveOperatingPolicy({revision:0,policy:{...defaultOperatingPolicy(),paused:false,totalAcu:10,dailyAcu:10,sessionAcu:2}});
+ s.store.reserveEngineering(s.mandate,s.task);s.store.updateEngineering(s.task.incidentId,{state:'running',remoteId:'devin-s'});
+ let stopped=false;
+ const fetcher=vi.fn(async(_url:string,options:RequestInit)=>{
+  if(options.method==='DELETE')stopped=true;
+  return response({session_id:'s',status:stopped?'exit':'running',status_detail:detail,acus_consumed:0.5});
+ });
+ return {...s,fetcher,a:adapter(fetcher)};
+}
+it('continues the same engineering task with durable intent, cooldown and a two-message limit',async()=>{
+ const s=await waitingEngineering(),original=s.a.continueTask.bind(s.a),now=Date.now();
+ const resume=vi.spyOn(s.a,'continueTask').mockImplementation(async(...args)=>{
+  expect(s.store.engineeringReservation(s.task.incidentId).continuations.at(-1).outcome).toBe('pending');return original(...args);
+ });
+ await Promise.all([observeEngineering(s.store,s.a,now),observeEngineering(s.store,s.a,now)]);
+ expect(resume).toHaveBeenCalledTimes(1);
+ expect(s.store.engineeringReservation(s.task.incidentId)).toMatchObject({state:'held',reason:'continuation_sent_awaiting_observation'});
+ await observeEngineering(s.store,s.a,now+1000);expect(resume).toHaveBeenCalledTimes(1);
+ await observeEngineering(s.store,s.a,now+120001);expect(resume).toHaveBeenCalledTimes(2);
+ await observeEngineering(s.store,s.a,now+240002);expect(resume).toHaveBeenCalledTimes(2);
+ expect(s.store.engineeringReservation(s.task.incidentId).reason).toBe('continuation_limit_reached');
+ const body=JSON.parse(String(s.fetcher.mock.calls.find(([,o])=>o.method==='POST')![1].body));
+ expect(body.message).toContain(s.task.baseSha);expect(body.message).toContain('promote/test');expect(body.message).toContain('Never bypass an approval');
+});
+it('holds approval requests without sending a continuation',async()=>{
+ const s=await waitingEngineering('waiting_for_approval');await observeEngineering(s.store,s.a);
+ expect(s.store.engineeringReservation(s.task.incidentId)).toMatchObject({state:'held',reason:'provider_approval_required'});
+ expect(s.fetcher.mock.calls.some(([,o])=>o.method==='POST')).toBe(false);
+});
+it('never resends uncertain engineering continuation after reopening the store',async()=>{
+ const s=await waitingEngineering();vi.spyOn(s.a,'continueTask').mockResolvedValue({kind:'unknown_outcome',reason:'timeout'});
+ await observeEngineering(s.store,s.a);
+ const reopened=new ControllerStore(join(s.dir,'db.sqlite'));stores.push(reopened);
+ await observeEngineering(reopened,s.a,Date.now()+120001);
+ expect(s.a.continueTask).toHaveBeenCalledTimes(1);expect(reopened.engineeringReservation(s.task.incidentId).reason).toBe('continuation_outcome_uncertain');
+});
+it.each(['paused','policy_expired','mandate_expired','task_changed','acu_exhausted','candidate'])('does not resume unauthorized or complete engineering work: %s',async condition=>{
+ const s=await waitingEngineering();let now=Date.now();
+ if(condition==='paused'||condition==='policy_expired'){
+  const p=s.store.operatingPolicy()!;
+  s.store.saveOperatingPolicy({revision:p.revision,policy:{...p.policy,paused:condition==='paused',expiresAt:condition==='policy_expired'?new Date(now+1000).toISOString():p.policy.expiresAt}});
+  if(condition==='policy_expired')now+=2000;
+ } else if(condition==='mandate_expired')now+=1000000;
+ else if(condition==='task_changed')vi.spyOn(s.store,'engineeringMandate').mockReturnValue({...s.mandate,taskHashes:{[s.task.incidentId]:'0'.repeat(64)}});
+ else if(condition==='acu_exhausted')s.store.updateEngineering(s.task.incidentId,{usageAcu:2});
+ else s.store.updateEngineering(s.task.incidentId,{candidateSha:'a'.repeat(40),state:'held'});
+ await observeEngineering(s.store,s.a,now);
+ expect(s.fetcher.mock.calls.some(([,o])=>o.method==='POST')).toBe(false);
+ if(condition==='candidate')expect(s.store.engineeringReservation(s.task.incidentId).candidateSha).toBe('a'.repeat(40));
+});
+
+it.each(['policy','task'])('rechecks %s expiry after a slow provider observation before continuing',async boundary=>{
+ const s=await waitingEngineering();let now=Date.now();
+ const policy=s.store.operatingPolicy()!;
+ s.store.saveOperatingPolicy({revision:policy.revision,policy:{...policy.policy,expiresAt:new Date(now+1000).toISOString()}});
+ const inspect=s.a.inspect.bind(s.a);
+ vi.spyOn(s.a,'inspect').mockImplementation(async id=>{const result=await inspect(id);now=boundary==='task'?Date.parse(s.task.deadline)+1:now+2000;return result;});
+ const resume=vi.spyOn(s.a,'continueTask');
+ await observeEngineering(s.store,s.a,()=>now);
+ expect(resume).not.toHaveBeenCalled();
+ expect(s.store.engineeringReservation(s.task.incidentId)).toMatchObject(boundary==='task'?{state:'stopped',reason:'deadline_reached'}:{state:'held',reason:'continuation_not_authorized'});
+});

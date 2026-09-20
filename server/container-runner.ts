@@ -29,7 +29,7 @@ export function exportedFile(tar: Buffer, maxBytes: number): Buffer {
 /** Container execution with trusted exact command allowlists and content-addressed file mounts. */
 export class ContainerRunner implements ExecutionRunner {
   constructor(private config: { root: string; artifacts: string; commands: Record<string,{argv:string[];image:string; outputs?: Record<string,string>}> }) {}
-  async run(raw: ExecutionPlan, rawInputs: ImmutableInputs): Promise<ExecutionEvidence> {
+  async run(raw: ExecutionPlan, rawInputs: ImmutableInputs, onOutput?: (chunk:string)=>void): Promise<ExecutionEvidence> {
     const plan=ExecutionPlan.parse(raw),inputs=ImmutableInputs.parse(rawInputs);
     const allowed=this.config.commands[plan.commandId];
     if (!allowed || canonicalJson(allowed.argv)!==canonicalJson(plan.argv) || allowed.image!==plan.runtimeImage ||
@@ -71,7 +71,7 @@ export class ContainerRunner implements ExecutionRunner {
         const stop=()=>{killing??=exec('docker',['kill',name],{timeout:10000,killSignal:'SIGKILL'}).catch(()=>{});};
         const timer=setTimeout(()=>{reason='timeout';stop();},plan.ceilings.wallMs);
         const watchdog=setTimeout(()=>{reason='infrastructure_error';child.kill('SIGKILL');},plan.ceilings.wallMs+15000);
-        const capture=(chunk:Buffer)=>{const remaining=Math.max(0,plan.ceilings.outputBytes-size);if(remaining)chunks.push(chunk.subarray(0,remaining));size+=chunk.length;if(size>plan.ceilings.outputBytes){reason='resource_limit';stop();}};
+        const capture=(chunk:Buffer)=>{if(onOutput){try{onOutput(chunk.toString('utf8'));}catch{/* Observability cannot change execution evidence. */}}const remaining=Math.max(0,plan.ceilings.outputBytes-size);if(remaining)chunks.push(chunk.subarray(0,remaining));size+=chunk.length;if(size>plan.ceilings.outputBytes){reason='resource_limit';stop();}};
         child.stdout.on('data',capture);child.stderr.on('data',capture);
         child.on('error',()=>{reason='infrastructure_error';});
         child.on('close',async code=>{clearTimeout(timer);clearTimeout(watchdog);if(killing)await killing;resolveResult({code,outcome:reason,log:Buffer.concat(chunks)});});

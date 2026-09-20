@@ -40,6 +40,23 @@ it('charges ceilings not optimistic usage and prevents another daily reservation
  expect(store.operatingBudget().accounting).toContain('not billed spend');
  expect(()=>store.reserveExploration(spec())).toThrow('Daily');
 });
+it('retains authorization for delayed post-stop billing and charges later increases',()=>{
+ vi.useFakeTimers();vi.setSystemTime(new Date('2026-09-20T12:00:00Z'));
+ const {store}=setup();store.saveOperatingPolicy({revision:0,policy:{...policy(),totalAcu:4}});
+ const s=spec();store.reserveExploration(s);store.updateExploration(s.id,{state:'stopped'});
+ expect(store.operatingBudget().reconciliation).toEqual({reservedCeilingsAcu:2,knownReportedUsageAcu:0,unknownUsageSessions:1,retainedTerminalAcu:2,releasableAcu:0,reason:'provider_usage_not_settled'});
+ vi.setSystemTime(new Date('2026-09-20T13:00:00Z'));
+ store.updateExploration(s.id,{usageAcu:0.1,observedAt:new Date().toISOString()});
+ // A fresh read after termination is reported usage, not evidence of billing finality.
+ expect(store.operatingBudget()).toMatchObject({committedAcu:2,totalCommittedAcu:2});
+ expect(store.operatingBudget().reconciliation).toMatchObject({knownReportedUsageAcu:0.1,unknownUsageSessions:0,retainedTerminalAcu:1.9,releasableAcu:0});
+ store.updateExploration(s.id,{usageAcu:3,observedAt:new Date().toISOString()});
+ expect(store.operatingBudget()).toMatchObject({committedAcu:3,totalCommittedAcu:3,totalRemainingAcu:1});
+ expect(store.operatingBudget().reconciliation).toMatchObject({knownReportedUsageAcu:3,retainedTerminalAcu:0,releasableAcu:0});
+ store.updateExploration(s.id,{usageAcu:0.1,observedAt:new Date().toISOString()});
+ expect(store.operatingBudget().totalCommittedAcu).toBe(3);
+ expect(()=>store.reserveExploration(spec())).toThrow('Total');
+});
 it('only one overlapping contender reserves and duplicate replay charges once',async()=>{
  const {store,path}=setup();store.saveOperatingPolicy({revision:0,policy:policy()});const peer=new ControllerStore(path);const a=spec(),b=spec();try{
  const outcomes=await Promise.allSettled([Promise.resolve().then(()=>store.reserveExploration(a)),Promise.resolve().then(()=>peer.reserveExploration(b))]);

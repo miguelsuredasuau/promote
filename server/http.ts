@@ -1,4 +1,4 @@
-import { MaintenanceJournal } from './maintenance';
+import { MaintenanceJournal, maintenanceProfiles } from './maintenance';
 import {executeImprovement,projectImprovements} from './improvements';
 import { createServer, type IncomingMessage } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -51,7 +51,8 @@ export function createOperatorServer(options: { root: string; store: ControllerS
     const saved = options.store.operatingPolicy();
     return {configured:!!saved, revision:saved?.revision??0, policy:saved?.policy??defaultOperatingPolicy(),
       updatedAt:saved?.updatedAt??null, budget:options.store.operatingBudget(),
-      runtime:{heartbeat:options.store.orchestratorHeartbeat(), provider:options.store.serviceSnapshot().provider,
+      runtime:{minimumDispatchAcu:saved?Math.min(saved.policy.sessionAcu,...(saved.policy.approvedRepairs?maintenanceProfiles(options.root).map(profile=>profile.maxAcu??saved.policy.sessionAcu):[])):null,
+        heartbeat:options.store.orchestratorHeartbeat(), provider:options.store.serviceSnapshot().provider,
         engineering:options.store.engineeringReservations().map(r=>({id:r.incidentId,state:r.state,remoteId:r.remoteId??null,observedAt:r.usageObservedAt??null,reason:r.reason??null})),
         explorations:options.store.explorations().map(r=>({id:r.spec.id,state:r.state,remoteId:r.remoteId??null,reason:r.reason??null}))}};
   };
@@ -158,10 +159,11 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         const journal = new MaintenanceJournal(options.root);
         try {
           const jobs = journal.all().map(job => { const reservation = options.store.engineeringReservation(job.id); return {
-            id:job.id,title:job.profile.title,repo:job.profile.repo,baseSha:job.baseSha,attempt:job.attempt,state:job.state,
-            createdAt:job.createdAt,updatedAt:job.updatedAt,remoteId:reservation?.remoteId??null,candidateSha:reservation?.candidateSha??null,reason:job.reason??null,
+            id:job.id,profileId:job.profile.id,title:job.profile.title,repo:job.profile.repo,baseSha:job.baseSha,attempt:job.attempt,maxAttempts:job.profile.maxAttempts,state:job.state,
+            createdAt:job.createdAt,updatedAt:job.updatedAt,remoteId:reservation?.remoteId??null,candidateSha:reservation?.candidateSha??null,progress:job.progress??null,reason:job.reason??null,
           }; });
-          res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({jobs,source:'promote_scheduler'}));
+          const profiles=maintenanceProfiles(options.root).map(({id,title,repo,maxAttempts,maxAcu})=>({id,title,repo,maxAttempts,maxAcu:maxAcu??null}));
+          res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({jobs,profiles,source:'promote_scheduler'}));
         } finally { journal.close(); }
         return;
       }

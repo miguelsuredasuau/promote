@@ -1,4 +1,4 @@
-import {operationsStory,eventCopy,reasonText,words} from './operations-model.js';
+import {operationsStory,eventCopy,reasonText,words,serviceTelemetry} from './operations-model.js';
 const $=id=>document.getElementById(id);let cursor=0,events=[],lastStory='',lastEventKey='',lastInbox='',eventLimit=25,seenSequence=-1,lastFilter=null,storyPainted=false,summaryPainted=false;
 const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=String(text);if(cls)el.className=cls;return el;};
 const status=text=>node('span',text,'status'+(['Needs attention','Blocked'].includes(text)?' attention':text==='Working'?' working':''));
@@ -54,12 +54,13 @@ function renderStory(s){
 async function refresh(){
  if($('pause').checked){$('connection').textContent='Updates paused · showing the last recorded state';setTimeout(refresh,2000);return;}
  try{
-  const response=await fetch(`/api/activity?after=${cursor}`,{signal:AbortSignal.timeout(5000)});if(!response.ok)throw Error();
+  const [activity,policy]=await Promise.allSettled([fetch(`/api/activity?after=${cursor}`,{cache:'no-store',signal:AbortSignal.timeout(5000)}),fetch('/api/operating-policy',{cache:'no-store',signal:AbortSignal.timeout(5000)}).then(async response=>response.ok?response.json():null)]);
+  if(activity.status!=='fulfilled'||!activity.value.ok)throw Error();const response=activity.value;const operating=policy.status==='fulfilled'?policy.value:null;
   const data=await response.json();events.push(...data.events);events=events.slice(-1000);cursor=data.nextCursor;
-  const s=data.service,spend=s.engineeringSpend;renderStory(s);renderEvents();
+  const s=data.service;renderStory(s);renderEvents();
   $('summary').replaceChildren();
-  const active=(spend?.sessions??[]).filter(r=>r.state==='running').length;
-  const pairs=[['Chat intake',s.intake.status==='watching'?'Receiving normally':words(s.intake.status)],['Received records',s.receivedRecords],['Progress events',s.progressEvents],['Active AI agents',active],['Reported usage',spend?.reportedUsage==null?'Not reported':`${spend.reportedUsage} ACUs`],['Reserved ceiling',`${spend?.committedCeilings??0} ACUs`],['Estimated cost',spend?.estimatedDollarCost==null?'Not available':'$'+spend.estimatedDollarCost.toFixed(2)]];
+  const telemetry=serviceTelemetry(s,operating),pairs=telemetry.pairs;
+  $('spending-note').textContent=telemetry.note;
   for(const [label,value] of pairs){const box=node('article');box.append(node('small',label),node('strong',value));$('summary').append(summaryPainted?box:enter(box,$('summary').children.length));}
   summaryPainted=true;
   $('connection').textContent=`Live · checked ${new Date(s.observedAt).toLocaleTimeString()}`;

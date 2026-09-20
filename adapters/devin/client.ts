@@ -88,7 +88,45 @@ export class DevinAdapter implements HarnessAdapter {
     return report.success?report.data:null;
     } catch (error) { throw markFailure(error, 'devin_report'); }
   }
+  async explorationWaitingState(remoteId:string) {
+    const session=await this.read(remoteId);
+    const parsed=ExplorationReport.safeParse(session.structured_output);
+    return {waitingForUser:sessionState(session)==='waiting'&&session.status_detail==='waiting_for_user',
+      waitingForApproval:sessionState(session)==='waiting'&&session.status_detail==='waiting_for_approval',
+      report:parsed.success?parsed.data:null};
+  }
+  async continueExploration(remoteId:string,input:ExplorationSpec,operationId:string):Promise<FeedbackOutcome> {
+    const spec=ExplorationSpec.parse(input);Id.parse(operationId);
+    if(Date.parse(spec.deadline)<=Date.now())return {kind:'rejected',reason:'deadline_expired'};
+    const message=[`Promote continuation ${operationId}. Continue this same authorized exploration session only.`,
+      `Repository ${spec.repository}; exact commit ${spec.baseSha}; mode ${spec.mode}; original deadline ${spec.deadline}; original ACU ceiling ${spec.maxAcu}.`,
+      'Continue routine sandbox testing within the original specification without requesting approval again. Do not change code, branches, credentials, provider limits, payment settings or the testing scope. Do not create sessions or generate paid assets.',
+      'If blocked by external credentials, payment, access permissions or an approval requirement, report that limitation and stop. Never bypass an approval.',
+      'When testing is complete, return the required structured report with coverage, findings and limitations, then stop. Do not wait for feedback after returning the report.'
+    ].join('\n');
+    try {
+      const response=await this.request(`/${remote(remoteId)}/messages`,'POST',{message});
+      if(response.ok)return {kind:'delivered'};
+      return response.status>=400&&response.status<500&&response.status!==408?{kind:'rejected',reason:`provider_http_${response.status}`}:{kind:'unknown_outcome',reason:'continuation_response_uncertain'};
+    }catch{return {kind:'unknown_outcome',reason:'continuation_transport_uncertain'};}
+  }
   async reconcile(_operationId: string) { return {result:'unsupported' as const}; }
+  async continueTask(remoteId:string,input:EngineeringTask,operationId:string):Promise<FeedbackOutcome> {
+    const task=EngineeringTask.parse(input),extension=Extension.parse(task.providerExtension);Id.parse(operationId);
+    if(Date.parse(task.deadline)<=Date.now())return {kind:'rejected',reason:'deadline_expired'};
+    const message=[`Promote continuation ${operationId}. Continue this same authorized task and session only.`,
+      `Repository ${task.repo}; exact base ${task.baseSha}; branch ${extension.branch}; original deadline ${task.deadline}; original ACU ceiling ${extension.maxAcu}.`,
+      `Allowed paths: ${task.allowedPaths.join(', ')}. Protected paths: ${task.protectedPaths.join(', ')}.`,
+      task.contractSummary,
+      'Continue routine implementation and sandbox verification within that original scope. Do not merge, deploy, publish, create sessions, change credentials, increase provider limits, or change payment settings. Never bypass an approval.',
+      'If external credentials, access, payment or approval are required, report the limitation and stop. If work is complete, push only the authorized repair branch and return candidateSha, branch, summary and Norma diagnostics, then stop. Independent acceptance remains with Promote.'
+    ].join('\n');
+    try {
+      const response=await this.request(`/${remote(remoteId)}/messages`,'POST',{message});
+      if(response.ok)return {kind:'delivered'};
+      return response.status>=400&&response.status<500&&response.status!==408?{kind:'rejected',reason:`provider_http_${response.status}`}:{kind:'unknown_outcome',reason:'continuation_response_uncertain'};
+    }catch{return {kind:'unknown_outcome',reason:'continuation_transport_uncertain'};}
+  }
   private async read(remoteId:string) {
     try {
     const response=await this.request(`/${remote(remoteId)}`,'GET');
@@ -115,7 +153,7 @@ export class DevinAdapter implements HarnessAdapter {
         else if (qualityReview.status === 'clean' && qualityReview.findings.length) qualityReview.status = 'issues';
       }
     }
-    return SessionObservation.parse({qualityReview,remoteId:remote(remoteId),state,rawStatusArtifactId:null,observedAt:now,
+    return SessionObservation.parse({qualityReview,remoteId:remote(remoteId),state,waitingReason:state==='waiting'?(s.status_detail==='waiting_for_approval'?'approval':'user'):undefined,rawStatusArtifactId:null,observedAt:now,
       providerTime:s.updated_at && Number.isFinite(new Date(s.updated_at*1000).getTime())?new Date(s.updated_at*1000).toISOString():null,
       candidateSha:output.success?output.data.candidateSha:null,
       usage:{schemaVersion:1,provider:'devin',amount:s.acus_consumed??null,unit:'ACU',observedAt:now,source:'provider_api',reliability:s.acus_consumed==null?'unknown':'reported'}});

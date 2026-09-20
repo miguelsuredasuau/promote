@@ -15,7 +15,7 @@ export const XARTS_NODE_IMAGE = 'node@sha256:4f77a690f2f8946ab16fe1e791a3ac0667a
  */
 // The full typecheck follows app/PreviewApp.tsx into transform/, even though
 // transform is not itself a tsconfig include root. Keep this transitive UI source.
-const ARCHIVE_BASE = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'app', 'playground', 'transform', 'cards', 'adaptadores', 'docs/*.ts', 'docs/*.tsx', 'docs/*.json', 'docs/sections', 'scripts', 'specs', 'env.d.ts', 'vite.config.ts', 'vitest.config.ts', 'index.html', 'embed.html', 'LICENSE', 'LICENSE-COMMERCIAL.md'];
+const ARCHIVE_BASE = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'tsconfig.json', 'core', 'charts', 'lib', 'render-cli', 'fonts', 'packages', 'tests', 'addons', 'vendor', 'docs/SDK.md', 'docs/analysis/probes/symbolmap-external.mjs', 'app', 'playground', 'transform', 'cards', 'adaptadores', 'docs/*.ts', 'docs/*.tsx', 'docs/*.json', 'docs/sections', 'scripts', 'specs', 'env.d.ts', 'vite.config.ts', 'vitest.config.ts', 'index.html', 'embed.html', 'LICENSE', 'LICENSE-COMMERCIAL.md'];
 
 /** The SDK build snapshots every path the candidate's package.json publishes (`files`
  * and `exports` targets) plus the top-level docs/*.md it bundles as READMEs, so the

@@ -23,3 +23,11 @@ it('includes the preview application transitive transform sources without admitt
   'transform/StepBuilder.tsx', 'transform/TransformPage.tsx',
  ]);
 });
+
+it('includes the exact diagnostic script exercised by protected baseline tests, not its evidence directory', async () => {
+ const paths = await archivePaths(git({}, [
+  'docs/analysis/probes/symbolmap-external.mjs', 'docs/analysis/probes/private-report.json',
+  'docs/analysis/probes/unrelated.mjs', 'tests/consumer/sdk/symbolmap-contract-cases.mjs',
+ ]), sha);
+ expect(paths).toEqual(['docs/analysis/probes/symbolmap-external.mjs', 'tests/consumer/sdk/symbolmap-contract-cases.mjs']);
+});

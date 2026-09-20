@@ -71,6 +71,55 @@ describe('independent maintenance evaluation', () => {
     mocks.run.mockImplementation(async (...args) => ({ ...await original(...args), exitCode: 1 }));
     expect((await evaluateMaintenance(input())).status).toBe('failed');
   });
+  it('blocks missing baseline runtime fixtures before candidate execution', async () => {
+    const test='tests/unit/normaErrorBoundaries.test.ts';
+    mocks.archive.mockResolvedValue([test,'vitest.config.ts','tsconfig.json','package.json']);
+    expect((await evaluateMaintenance({...input(),tests:[test]})).reason).toBe('baseline_test_artifact_missing');
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+  it('blocks a committed baseline fixture omitted by controller archive policy', async () => {
+    const test='tests/unit/normaErrorBoundaries.test.ts', fixture='docs/analysis/probes/symbolmap-external.mjs';
+    const original=mocks.git.getMockImplementation()!;
+    mocks.git.mockImplementation((args,options)=>args[0]==='ls-tree'?`${fixture}\0`:original(args,options));
+    mocks.archive.mockResolvedValue([test,'vitest.config.ts','tsconfig.json','package.json']);
+    expect((await evaluateMaintenance({...input(),tests:[test]})).reason).toBe('baseline_test_artifact_not_archived');
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+  it('restores required baseline fixtures alongside original tests', async () => {
+    const test='tests/unit/normaErrorBoundaries.test.ts', fixture='docs/analysis/probes/symbolmap-external.mjs';
+    const original=mocks.git.getMockImplementation()!;
+    mocks.git.mockImplementation((args,options)=>args[0]==='ls-tree'?`${fixture}\0`:original(args,options));
+    mocks.archive.mockResolvedValue([test,fixture,'vitest.config.ts','tsconfig.json','package.json']);
+    await evaluateMaintenance({...input(),tests:[test]});
+    expect(mocks.git.mock.calls.some(([args])=>args[0]==='archive'&&args.includes(base)&&args.includes(fixture))).toBe(true);
+  });
+  it.each(['workspace_preparation_failed','archive_extraction_failed','command_unavailable','command_timeout','command_signalled'])('holds structured worker %s instead of funding a candidate retry', async reason => {
+    const original=mocks.run.getMockImplementation()!;
+    mocks.run.mockImplementation(async (...args)=>{
+      const evidence=await original(...args);
+      await writeFile(join(args[2].artifacts,reportDigest),JSON.stringify({candidateSha:candidate,tests:input().tests,stages:[],infrastructureFailure:reason}));
+      return {...evidence,exitCode:78};
+    });
+    expect(await evaluateMaintenance(input())).toMatchObject({status:'blocked',reason:`maintenance_${reason}`});
+  });
+  it('does not classify diagnostic strings in candidate logs as infrastructure evidence', async () => {
+    const original=mocks.run.getMockImplementation()!;
+    mocks.run.mockImplementation(async (...args)=>{
+      const evidence=await original(...args);
+      await writeFile(join(args[2].artifacts,digest),'command_unavailable Cannot find module docs/analysis/probes/symbolmap-external.mjs');
+      return {...evidence,exitCode:1};
+    });
+    expect((await evaluateMaintenance(input())).status).toBe('failed');
+  });
+  it('preserves an actual failed check even if the report also claims an infrastructure fault', async () => {
+    const original=mocks.run.getMockImplementation()!;
+    mocks.run.mockImplementation(async (...args)=>{
+      const evidence=await original(...args);
+      await writeFile(join(args[2].artifacts,reportDigest),JSON.stringify({candidateSha:candidate,tests:input().tests,stages:[{name:'typecheck',exitCode:1}],infrastructureFailure:'command_unavailable'}));
+      return {...evidence,exitCode:78};
+    });
+    expect((await evaluateMaintenance(input())).status).toBe('failed');
+  });
   it('holds timeout evidence instead of treating missing checks as passes', async () => {
     const original = mocks.run.getMockImplementation()!;
     mocks.run.mockImplementation(async (...args) => ({ ...await original(...args), outcome: 'timeout' }));
