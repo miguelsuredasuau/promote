@@ -9,6 +9,7 @@ import { explorationTarget, launchExploration } from './exploration';
 import { overview } from './overview';
 import { GateResult } from '../contracts/records';
 import { listPullRequests, loadPullRequestConfig, mergePullRequest } from './pull-requests';
+import { expungedArtifact, RETENTION_POLICY } from './retention';
 
 const assets: Record<string, { file: string; mime: string }> = {
   '/testing': {file:'testing.html',mime:'text/html; charset=utf-8'},
@@ -125,6 +126,8 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         const result=options.store.incidentEvents(gateLogRoute[1],0,1000).filter(e=>e.type==='gate.finished').map(e=>GateResult.parse(e.payload.result)).find(r=>r.id===gateLogRoute[2]);
         if(!result||!/^log:[a-f0-9]{64}$/.test(result.logArtifactId??'')){res.writeHead(404).end('Verification log unavailable');return;}
         const sha=result.logArtifactId!.slice(4);
+        const gone=expungedArtifact(options.root,result.candidateSha,sha);
+        if(gone){res.setHeader('Content-Type','application/json');res.writeHead(410).end(JSON.stringify({expunged:true,policy:RETENTION_POLICY,sha256:gone.sha256,bytes:gone.bytes,expungedAt:gone.expungedAt}));return;}
         const bytes=await readFile(join(options.root,'.local/xarts-validation',result.candidateSha,'artifacts',sha));
         if(bytes.length>4*1024*1024||createHash('sha256').update(bytes).digest('hex')!==sha){res.writeHead(409).end('Verification log failed its integrity check');return;}
         res.setHeader('Content-Type','text/plain; charset=utf-8');res.end(bytes);return;
