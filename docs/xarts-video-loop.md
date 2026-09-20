@@ -46,6 +46,6 @@ También se envió la misma pregunta libre a Claude: turno `20260920T074728-d33f
 - El replay conserva avisos de etiquetas abreviadas. No decir «todos los errores de la librería están resueltos» ni ocultarlos como si fueran pruebas verdes.
 - Norma no estuvo disponible en Devin; se registró como pendiente. No afirmar que aprobó el código.
 - El límite de Devin fue 20 ACU, sin recarga autorizada. Su API comunicó 0 ACU en la observación inicial; no es prueba de coste cero ni una factura. El crédito no se repone automáticamente.
-- El paquete está publicado en el registro local que consume este chat. El commit está en la rama de reparación de GitHub; no afirmar que se fusionó en main o se publicó en npm.
+- El paquete está publicado en el registro local que consume este chat. La reparación se fusionó en `main` de Xarts el 20 de septiembre de 2026 (merge `c95e48bd`), después de pasar 25 tests de formato/renderizado y el build del SDK. No se ha publicado en npm.
 
 Capturas: [antes](images/xarts-before.png), [después](images/xarts-after.png), [propuestas](images/visual-decisions.png). Mantener el vídeo existente intacto hasta integrar y revisar este inserto.

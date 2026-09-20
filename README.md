@@ -98,7 +98,7 @@ The intended payoff is concrete: **the same request works with a verified, repai
 | **Investigate** | Signals are grouped into proposals and scoped work. |
 | **Repair** | One real Devin session returned a candidate. |
 | **Verify** | The bounded waterfall currency-sign repair passed independent checks and deterministic SQL replay. See [recorded evidence](docs/xarts-video-loop.md). |
-| **Release** | The repaired package was activated in the local registry and consumed by Xarts Chat. This does not claim an npm publication or a merge of the repair into Xarts main. |
+| **Release** | The repaired package was activated in the local registry and consumed by Xarts Chat. The repair was merged into Xarts `main` on September 20, 2026; this does not claim an npm publication. |
 
 This integration spans three repositories:
 
