@@ -166,15 +166,15 @@ See [Studio setup and current limits](studio/README.md). Asset generation uses i
 
 ## Quality review · Norma
 
-[**Defend your code — two-minute explanation and scan/fix/rescan evidence**](defense.md)
+**Promote is the product; Xarts is the repository it maintains.** Our current Norma case study evaluates **`visx-anlak`**, the private sister repository behind Xarts—not this public Promote repository. The scores and remediation results below belong to Xarts.
 
-**Repository-wide findings remain unresolved.** A user-provided Norma dashboard summary reports **450 issues and a 55/100 score**. A supplied export contains **121 unique findings**: 118 from Prompts Analysis and 3 from Agentic Rules Analyzer. The export and dashboard have different category totals and cannot yet be reconciled to one scan; the export contains no commit SHA or scan ID.
+Norma is embedded in Devin's engineering instructions and Promote's independent candidate review. The case study shows how quality findings inform repairs, behavioral tests and documented engineering decisions in a real library.
 
-The earlier **zero findings** result applies only to a ten-file code Livecheck with incomplete rule coverage. It does **not** clear the repository scan, prompt analysis, agentic review or production-readiness score. The 121 exported findings concern 15 other paths, none of which was in that ten-file review.
+**Xarts interim result:** 63/100 · 3,004 reported issues · Security 6%, from the supplied dashboard dated September 20, 2026, 11:23. The remediation batch is published to Xarts `main` at `ea935d03`: **6,415 tests and 66 SDK tests passed**, with 23 tests skipped. A fresh Norma scan is pending; test results and our documented false-positive assessments do not change the provider score by themselves.
 
-The bounded remediation remains useful and passed 274 tests (5 skipped) at its recorded commit. Overall closure requires contextual triage of the broader findings and fresh, comparable scan evidence. No repository-wide pass is claimed.
+[**Defend your code — one fix, one deliberate non-fix, and the evidence →**](defense.md) · [Xarts remediation report](docs/reviews/xarts-security-runtime-remediation-2026-09-20.md) · [Integration and limits](docs/integrations/norma.md)
 
-[**Reconciled scopes, counts and priorities →**](docs/reviews/norma-scope-reconciliation-2026-09-20.md) · [Bounded code-review evidence](docs/reviews/norma-zero-findings-2026-09-20.md) · [Integration and limits](docs/integrations/norma.md)
+Xarts source links require access to its private repository. Public reports retain the methods, results and limitations. Earlier reviews of Promote itself are separate [historical controller evidence](docs/reviews/norma-zero-findings-2026-09-20.md), with their [scope reconciliation](docs/reviews/norma-scope-reconciliation-2026-09-20.md); they are not the Xarts baseline or its rescan.
 
 <details>
 <summary><strong>Developer map</strong></summary>
