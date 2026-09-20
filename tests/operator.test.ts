@@ -207,3 +207,13 @@ it('hands the owner session token only to same-origin fetches and refuses near-m
  expect((await post('é'.repeat(64))).status).toBe(403);
  expect((await post(token)).status).toBe(400);
 });
+
+it('serves only the shared proposal definition module through the explicit asset route',async()=>{
+ const {base,root}=await setup();mkdirSync(join(root,'contracts'));
+ writeFileSync(join(root,'contracts/decision-definitions.mjs'),'export const decisionDemos=[];');
+ writeFileSync(join(root,'contracts/private.mjs'),'PRIVATE_CONTRACT');
+ const response=await fetch(`${base}/contracts/decision-definitions.mjs`);
+ expect(response.status).toBe(200);expect(response.headers.get('content-type')).toContain('javascript');
+ expect(await response.text()).toBe('export const decisionDemos=[];');
+ expect((await fetch(`${base}/contracts/private.mjs`)).status).toBe(404);
+});

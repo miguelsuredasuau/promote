@@ -48,3 +48,11 @@ These observations justify contextual triage, not blanket dismissal of prompt-an
 4. **Comparable full scan.** Re-run the relevant analyzers on a frozen commit after accepted changes. Keep raw counts, false-positive/context decisions and accepted exceptions separate; a zero in one check must never replace the aggregate scan status.
 
 [Machine-readable inventory](norma-scope-reconciliation-2026-09-20.json) preserves issue IDs, paths, rule IDs, severity and source-export hash, without copying embedded prompts, code snippets or local private data. The raw supplied export remains local. The [previous bounded remediation](norma-zero-findings-2026-09-20.md) remains historical evidence, not an overall clean bill of health.
+
+## First implementation follow-up
+
+- Architectural finding `362abe47-96a9-4c63-ab27-74a53ad15068`: proposal definitions moved to `contracts/decision-definitions.mjs`. The server and generation script now import that shared data module; the browser module re-exports it for compatibility through an explicit allowlisted asset route.
+- Studio finding `738814d0-af34-45a3-ac2c-3fd3e543e41c`: `/progress` no longer contains the session token. A dedicated `/session` bootstrap rejects cross-site/same-site browser requests and mismatched Origin headers. Privileged writes retain same-origin plus token checks, now using bounded constant-time comparison. Local clients without Fetch Metadata can still bootstrap; this remains a local trust model, not authentication for remote users.
+- Owner-session finding `d00a7df0-9eee-4a2f-9331-891aea4a8a30` remains under contextual review. This change does not replace the owner's session mechanism with cookies or claim that token delivery to its intended UI was an exploit.
+
+Tests cover Studio origin/token rejection and allowlisted shared-module delivery. These are implementation changes awaiting analyzer recheck, not provider-confirmed issue closures. No dashboard total has been decremented. The running Studio process must reload the updated server before its browser uses the new session route.

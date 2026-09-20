@@ -11,7 +11,7 @@ import {Incident} from '../contracts/records';
 import {DeliveryTask} from './xarts-delivery';
 import {loadDevin} from './devin-config';
 import {dispatchEngineering} from './engineering';
-import {decisionDemos as definitions} from '../web/decision-demo.js';
+import {decisionDemos as definitions} from '../contracts/decision-definitions.mjs';
 
 const Binding=z.object({proposalId:z.string(),revision:z.string().length(64),task:EngineeringTask,mandate:EngineeringMandate,incident:Incident,delivery:DeliveryTask}).strict();
 export const ExecutionInput=z.object({proposalId:z.string(),revision:z.string().length(64),taskHash:z.string().length(64)}).strict();

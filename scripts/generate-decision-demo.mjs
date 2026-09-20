@@ -3,7 +3,7 @@ import {resolve,join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {projectEnvironment} from '../server/environment.mjs';
 import {officeBrand} from '../studio/brand-profile.mjs';
-import {decisionDemos,decisionDemoProject} from '../web/decision-demo.js';
+import {decisionDemos,decisionDemoProject} from '../contracts/decision-definitions.mjs';
 const root=resolve(import.meta.dirname,'..'),dir=join(root,'.local/decision-visuals'),out=join(root,'web/assets/decisions');
 const model='openai/gpt-image-2.5/flare/edit',base='https://queue.fal.run/openai/gpt-image-2.5';
 await mkdir(dir,{recursive:true});await mkdir(out,{recursive:true});

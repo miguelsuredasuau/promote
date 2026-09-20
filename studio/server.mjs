@@ -1,3 +1,4 @@
+import {localSessionRequest,studioAuthorized} from './session.mjs';
 import {startItems,resumeItems} from './items.mjs';
 import {roomCommand,roomState,resumeRoom} from './concept.mjs';
 import {randomBytes} from 'node:crypto';
@@ -15,7 +16,7 @@ createServer(async(req,res)=>{
  try{
  const url=new URL(req.url,`http://${host}`);
  if(req.method==='POST'&&['/decisions','/room-command','/draft','/generate-items'].includes(url.pathname)){
-  if(req.headers.origin!==`http://${host}`||req.headers['x-studio-token']!==token){res.writeHead(403).end();return;}
+  if(!studioAuthorized(req.headers,host,token)){res.writeHead(403).end();return;}
   let bytes=0,body='';for await(const chunk of req){bytes+=chunk.length;if(bytes>12000){res.writeHead(413).end();return;}body+=chunk;}
   res.setHeader('Content-Type','application/json');try{res.end(JSON.stringify(await (url.pathname==='/generate-items'?startItems:url.pathname==='/room-command'?roomCommand:url.pathname==='/draft'?saveDraft:decide)(JSON.parse(body))));}catch(error){res.writeHead(409).end(JSON.stringify({error:error.message}));}return;
  }
@@ -27,7 +28,8 @@ createServer(async(req,res)=>{
  if(url.pathname==='/project-logo.svg'){res.setHeader('Content-Type','image/svg+xml');res.end(await readFile(join(process.env.PROMOTE_PROJECT_PATH??join(root,'..','xarts by anlak'),'xarts.svg')));return;}
  if(/^\/native-(room|ticker)\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.slice(1))));return;}
  if(url.pathname==='/brand-reference.png'){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,'references','logo.png')));return;}
- if(url.pathname==='/progress'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({...await progress(),token}));return;}
+ if(url.pathname==='/session'){if(!localSessionRequest(req.headers,host)){res.writeHead(403).end();return;}res.setHeader('Content-Type','application/json');res.end(JSON.stringify({token}));return;}
+ if(url.pathname==='/progress'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(await progress()));return;}
  if(/^\/previews\/(chair|engineer)\.png$/.test(url.pathname)){res.setHeader('Content-Type','image/png');res.end(await readFile(join(dir,url.pathname.split('/').at(-1).replace('.png','-provider-preview.png'))));return;}
 
  if(url.pathname==='/state'){const state=await load();res.setHeader('Content-Type','application/json');res.end(JSON.stringify(state??{assets:[],brief:null}));return;}

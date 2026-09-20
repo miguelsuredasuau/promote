@@ -28,6 +28,7 @@ const assets: Record<string, { file: string; mime: string }> = {
   '/office-furniture.js': { file: 'office-furniture.js', mime: 'text/javascript; charset=utf-8' },
   '/assets/studio/studio-small-09.hdr': { file: 'assets/studio/studio-small-09.hdr', mime: 'application/octet-stream' },
   '/office-scene.js': { file: 'office-scene.js', mime: 'text/javascript; charset=utf-8' },
+  '/contracts/decision-definitions.mjs': { file: '../contracts/decision-definitions.mjs', mime: 'text/javascript; charset=utf-8' },
   '/decision-demo.js': { file: 'decision-demo.js', mime: 'text/javascript; charset=utf-8' },
   '/assets/decisions/xarts-formatting.png': { file: 'assets/decisions/xarts-formatting.png', mime: 'image/png' },
   '/assets/decisions/xarts-layout.png': { file: 'assets/decisions/xarts-layout.png', mime: 'image/png' },
