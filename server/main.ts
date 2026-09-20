@@ -5,6 +5,7 @@ import { ControllerStore } from './store';
 import { importChatCycle } from './chat-intake';
 import { createOperatorServer } from './http';
 import { loadDevin } from './devin-config';
+import { observeExplorations } from './exploration';
 import { observeEngineering } from './engineering';
 import { reviewProject } from './heartbeat';
 import { runOrchestrator } from './orchestrator';
@@ -27,7 +28,7 @@ async function pollEngineering() {
       providerState = config.status.status;
       store.recordActivity('provider', 'Engineering provider readiness changed', config.status);
     }
-    if (config.adapter) await observeEngineering(store, config.adapter);
+    if (config.adapter) { await observeEngineering(store, config.adapter); await observeExplorations(store,config.adapter); }
   } finally { observing = false; }
 }
 let importing = false;
@@ -83,7 +84,7 @@ void heartbeat();
 const heartbeatTimer = setInterval(heartbeat, 30000);
 const engineeringTimer = setInterval(() => { void pollEngineering().catch(() => console.error('Engineering observation failed')); }, 15000);
 const inboxTimer = outbox ? setInterval(importFeedback, 3000) : null;
-const server = createOperatorServer({ root, store, checkout: process.env.PROMOTE_PROJECT_PATH });
+const server = createOperatorServer({ root, store, checkout: process.env.PROMOTE_PROJECT_PATH, testCheckout:process.env.PROMOTE_TEST_PROJECT_PATH ?? join(root,"../xarts-chat") });
 server.listen(port, '127.0.0.1', () => console.log(`Promoted operator: http://127.0.0.1:${port} (owner planning decisions enabled)`));
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => { clearInterval(heartbeatTimer); clearInterval(engineeringTimer); if (inboxTimer) clearInterval(inboxTimer); server.close(() => { process.exit(0); }); });

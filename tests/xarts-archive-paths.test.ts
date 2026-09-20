@@ -1,40 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { archivePaths } from '../server/xarts-validation';
-
-const sha = 'f'.repeat(40);
-
-function fakeGit(pkg: unknown, tree: string[]) {
-  return async (args: string[]) => {
-    if (args[0] === 'show') return JSON.stringify(pkg);
-    if (args[0] === 'ls-tree') return tree.join('\n') + '\n';
-    throw new Error(`unexpected git ${args.join(' ')}`);
-  };
-}
-
-describe('archivePaths', () => {
-  it('adds published files and export targets that exist in the candidate tree', async () => {
-    const pkg = {
-      files: ['core', 'docs/catalogo-ficha.json', 'docs/primitivas-muestras', 'specs/demo', '!**/*.test.ts', 'docs/missing.json'],
-      exports: { '.': './core/index.ts', './mandos.json': './docs/mandos.json', './package.json': './package.json', './x': { import: './x.mjs' } },
-    };
-    const tree = ['core/index.ts', 'docs/catalogo-ficha.json', 'docs/mandos.json', 'docs/primitivas-muestras/a.svg', 'specs/demo/bar.json', 'package.json', 'docs/SPREADSHEETS.md', 'docs/analysis/notes.md'];
-    const paths = await archivePaths(fakeGit(pkg, tree), sha);
-    expect(paths).toContain('docs/catalogo-ficha.json');
-    expect(paths).toContain('docs/mandos.json');
-    expect(paths).toContain('docs/primitivas-muestras');
-    expect(paths).toContain('specs/demo');
-    expect(paths).not.toContain('docs/missing.json');
-    expect(paths).toContain('docs/SPREADSHEETS.md');
-    expect(paths).not.toContain('docs/analysis/notes.md');
-    expect(paths.filter((p) => p === 'core')).toHaveLength(1);
-    expect(paths.filter((p) => p === 'package.json')).toHaveLength(1);
-    expect(paths.some((p) => p.includes('*'))).toBe(false);
-  });
-
-  it('never archives uncommitted or traversal paths', async () => {
-    const paths = await archivePaths(fakeGit({ files: ['../secrets', '.env', 'docs/'] }, ['docs/SDK.md']), sha);
-    expect(paths).not.toContain('../secrets');
-    expect(paths).not.toContain('.env');
-    expect(paths).toContain('docs');
-  });
+const sha='f'.repeat(40);
+const git=(pkg:unknown,tree:string[])=>async(args:string[])=>args[0]==='show'?JSON.stringify(pkg):tree.map(p=>`${p.startsWith('link:')?'120000':'100644'} blob ${sha}\t${p.replace(/^link:/,'')}\0`).join('');
+it('resolves committed publication files, nested exports and globs',async()=>{
+ const paths=await archivePaths(git({files:['specs/**/*.json'],exports:{'.':{import:'./extra.mjs'}}},['package.json','core/index.ts','specs/demo/bar.json','extra.mjs','docs/SDK.md','docs/analysis/private.md']),sha);
+ expect(paths).toEqual(['core/index.ts','docs/SDK.md','extra.mjs','package.json','specs/demo/bar.json']);
+});
+it('candidate declarations cannot include secrets, nested local files or symlinks',async()=>{
+ const forbidden=['.env','core/.env.local','core/a.key','core/cache.sqlite','core/.local/state.json','.npmrc','credentials.json'];
+ const paths=await archivePaths(git({files:['**','../outside']},[...forbidden,'core/safe.ts','link:core/linked']),sha);
+ expect(paths).toEqual(['core/safe.ts']);
 });

@@ -33,7 +33,7 @@ describe('sqlite migrations', () => {
     const store = new ControllerStore(path);
     store.close();
     const db = new DatabaseSync(path);
-    expect(versions(db)).toEqual([{ version: 1, name: 'baseline' }, { version: 2, name: 'owner_decisions' }]);
+    expect(versions(db)).toEqual([{ version: 1, name: 'baseline' }, { version: 2, name: 'owner_decisions' }, {version:3,name:'exploratory_tests'}]);
     expect(db.prepare('SELECT count(*) AS n FROM service_state').get()).toEqual({ n: 1 });
     expect(db.prepare('SELECT count(*) AS n FROM owner_decisions').get()).toEqual({ n: 0 });
     db.close();

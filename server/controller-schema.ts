@@ -53,4 +53,5 @@ export const CONTROLLER_MIGRATIONS = [
       ) STRICT;
     `,
   },
+  {version:3,name:'exploratory_tests',sql:`CREATE TABLE IF NOT EXISTS explorations (id TEXT PRIMARY KEY, state TEXT NOT NULL, record TEXT NOT NULL) STRICT;`},
 ] as const;

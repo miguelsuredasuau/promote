@@ -20,23 +20,31 @@ const ARCHIVE_BASE = ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '
  * archive must carry them too; committed paths only. */
 export async function archivePaths(git: (args: string[]) => Promise<string>, sha: string) {
   const pkg = JSON.parse(await git(['show', `${sha}:package.json`])) as { files?: unknown; exports?: unknown };
-  const declared = new Set<string>();
-  if (Array.isArray(pkg.files)) for (const f of pkg.files) if (typeof f === 'string' && !f.startsWith('!')) declared.add(f);
-  if (pkg.exports && typeof pkg.exports === 'object') for (const target of Object.values(pkg.exports)) if (typeof target === 'string') declared.add(target);
-  const tracked = new Set<string>();
-  for (const file of (await git(['ls-tree', '-r', '--name-only', sha])).split('\n')) {
-    if (!file) continue;
-    if (/^docs\/[^/]+\.md$/.test(file)) declared.add(file);
-    tracked.add(file);
-    for (let i = file.indexOf('/'); i !== -1; i = file.indexOf('/', i + 1)) tracked.add(file.slice(0, i));
-  }
-  const paths = [...ARCHIVE_BASE];
-  for (const raw of declared) {
-    const path = raw.replace(/^\.\//, '').replace(/\/$/, '');
-    if (!path || path.includes('*') || path.startsWith('..') || paths.includes(path)) continue;
-    if (tracked.has(path)) paths.push(path);
-  }
-  return paths;
+  const declared = [...ARCHIVE_BASE];
+  if (Array.isArray(pkg.files)) for (const path of pkg.files) if (typeof path === 'string' && !path.startsWith('!')) declared.push(path);
+  const exports = (value: unknown): void => {
+    if (typeof value === 'string') declared.push(value);
+    else if (value && typeof value === 'object') Object.values(value).forEach(exports);
+  };
+  exports(pkg.exports);
+  const patterns = declared.map(p => p.replace(/^\.\//, '').replace(/\/$/, ''))
+    .filter(p => p && !p.split('/').includes('..') && !p.startsWith('/'));
+  // Enumerate files, never directories: a declared directory must not smuggle
+  // a nested credential, local database or symlink into the build context.
+  const sensitive = /(^|\/)(?:\.env(?:[.-][^/]*)?|\.git|\.local|node_modules|\.npmrc|\.pnpmfile\.[^/]+|id_rsa|id_ed25519|credentials(?:\.[^/]+)?)(\/|$)|\.(?:pem|key|p12|sqlite|sqlite3|db)$/i;
+  const matches = (file: string, pattern: string) => {
+    if (!pattern.includes('*')) return file === pattern || file.startsWith(pattern + '/');
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\u0000/g, '.*');
+    return new RegExp('^' + escaped + '$').test(file);
+  };
+  const entries = (await git(['ls-tree', '-rz', sha])).split('\0').filter(Boolean);
+  return entries.flatMap(entry => {
+    const match = /^(\d+) \w+ [a-f0-9]+\t([\s\S]+)$/.exec(entry);
+    if (!match || !['100644','100755'].includes(match[1])) return [];
+    const file = match[2];
+    if (sensitive.test(file)) return [];
+    return /^docs\/[^/]+\.md$/.test(file) || patterns.some(p => matches(file, p)) ? [file] : [];
+  }).sort();
 }
 
 export async function prepareXartsImage(checkout: string, sha: string, root: string) {

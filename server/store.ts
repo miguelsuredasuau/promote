@@ -438,6 +438,32 @@ export class ControllerStore {
     return this.db.prepare('SELECT run_id, MAX(ordinal) AS events FROM chat_progress GROUP BY run_id ORDER BY run_id DESC LIMIT 30').all();
   }
 
+  explorations(): any[] {
+    return this.db.prepare('SELECT record FROM explorations ORDER BY rowid DESC LIMIT 100').all().map(r=>JSON.parse(String(r.record)));
+  }
+  reserveExploration(spec: import('../contracts/exploration').ExplorationSpec) {
+    return this.transaction(()=>{
+      const prior=this.db.prepare('SELECT record FROM explorations WHERE id=?').get(spec.id);
+      if(prior) { const record=JSON.parse(String(prior.record)); if(canonicalJson(record.spec)!==canonicalJson(spec)) throw new StoreConflictError('Test request changed');return {claimed:false,record}; }
+      if(this.db.prepare("SELECT id FROM explorations WHERE state NOT IN ('stopped','rejected') LIMIT 1").get() || this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Devin capacity occupied or unresolved');
+      const record={spec,state:'dispatching',remoteId:null,usageAcu:null,report:null,reason:null};
+      this.db.prepare('INSERT INTO explorations VALUES (?,?,?)').run(spec.id,record.state,canonicalJson(record));
+      this.recordActivity('provider','Exploratory test budget reserved',{id:spec.id,maxAcu:spec.maxAcu,repository:spec.repository,baseSha:spec.baseSha});
+      return {claimed:true,record};
+    });
+  }
+  updateExploration(id:string,patch:Record<string,unknown>) {
+    return this.transaction(()=>{
+      const row=this.db.prepare('SELECT record FROM explorations WHERE id=?').get(id);if(!row)throw new StoreConflictError('Unknown test');
+      const prior=JSON.parse(String(row.record));const record={...prior,...patch};
+      if(typeof patch.usageAcu==='number' && Number.isFinite(patch.usageAcu) && patch.usageAcu>=0) record.usageAcu=Math.max(prior.usageAcu??0,patch.usageAcu);
+      else record.usageAcu=prior.usageAcu;
+      this.db.prepare('UPDATE explorations SET state=?,record=? WHERE id=?').run(record.state,canonicalJson(record),id);
+      if(record.state!==prior.state || record.reason!==prior.reason)this.recordActivity('provider','Exploratory test status',{id,state:record.state,reason:record.reason});
+      return record;
+    });
+  }
+
   reserveEngineering(mandateInput: unknown, taskInput: unknown) {
     const { mandate, task } = authorizeEngineering(mandateInput, taskInput);
     return this.transaction(() => {
@@ -448,7 +474,7 @@ export class ControllerStore {
       if (prior) { if (prior.taskHash !== taskHash || prior.mandateId !== mandate.id) throw new StoreConflictError('Reservation scope changed'); return prior; }
       const oldMandate = this.db.prepare('SELECT record FROM engineering_mandates WHERE id = ?').get(mandate.id);
       if (oldMandate && oldMandate.record !== canonicalJson(mandate)) throw new StoreConflictError('Mandate revision changed');
-      if (this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Engineering slot occupied or unresolved');
+      if (this.db.prepare("SELECT id FROM explorations WHERE state NOT IN ('stopped','rejected') LIMIT 1").get() || this.db.prepare("SELECT incident_id FROM engineering_reservations WHERE state != 'stopped' LIMIT 1").get()) throw new StoreConflictError('Engineering slot occupied or unresolved');
       const committed = Number(this.db.prepare('SELECT COALESCE(SUM(max_acu), 0) AS n FROM engineering_reservations WHERE mandate_id = ?').get(mandate.id)!.n);
       if (committed + mandate.maxSessionAcu > mandate.totalAcu) throw new StoreConflictError('Mandate budget exhausted');
       this.db.prepare('INSERT OR IGNORE INTO engineering_mandates VALUES (?, ?)').run(mandate.id, canonicalJson(mandate));

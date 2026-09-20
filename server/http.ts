@@ -4,10 +4,14 @@ import { join } from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
 import { ControllerStore, StoreConflictError } from './store';
 import { ZodError } from 'zod';
+import { explorationTarget, launchExploration } from './exploration';
 import { overview } from './overview';
 import { GateResult } from '../contracts/records';
 
 const assets: Record<string, { file: string; mime: string }> = {
+  '/testing': {file:'testing.html',mime:'text/html; charset=utf-8'},
+  '/testing.js': {file:'testing.js',mime:'text/javascript; charset=utf-8'},
+  '/testing.css': {file:'testing.css',mime:'text/css; charset=utf-8'},
   '/activity': { file: 'activity.html', mime: 'text/html; charset=utf-8' },
   '/activity.js': { file: 'activity.js', mime: 'text/javascript; charset=utf-8' },
   '/operations-model.js': { file: 'operations-model.js', mime: 'text/javascript; charset=utf-8' },
@@ -26,7 +30,7 @@ const assets: Record<string, { file: string; mime: string }> = {
   '/app.js': { file: 'app.js', mime: 'text/javascript; charset=utf-8' },
   '/styles.css': { file: 'styles.css', mime: 'text/css; charset=utf-8' },
 };
-export function createOperatorServer(options: { root: string; store: ControllerStore; checkout?: string }) {
+export function createOperatorServer(options: { root: string; store: ControllerStore; checkout?: string; testCheckout?:string }) {
   const ownerToken = randomBytes(32).toString('hex');
   return createServer(async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -39,6 +43,17 @@ export function createOperatorServer(options: { root: string; store: ControllerS
     const origin = req.headers.origin;
     if (!allowedHost || (origin && origin !== `http://${host}`)) {
       res.writeHead(403).end('Forbidden'); return;
+    }
+    if(req.method==='POST' && req.url==='/api/explorations') {
+      if(origin!==`http://${host}` || req.headers['x-owner-token']!==ownerToken){res.writeHead(403).end('Owner session required');return;}
+      if(req.headers['content-type']!=='application/json'){res.writeHead(415).end('JSON required');return;}
+      try {
+        if(!options.testCheckout)throw Error('Test checkout is not configured');
+        let body='';for await(const chunk of req){body+=chunk.toString();if(Buffer.byteLength(body)>12000){res.writeHead(413).end('Request too large');return;}}
+        const record=await launchExploration(options.store,options.root,options.testCheckout,JSON.parse(body));
+        res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(record));
+      }catch(error){res.writeHead(error instanceof ZodError||error instanceof SyntaxError?400:409,{'Content-Type':'application/json'}).end(JSON.stringify({error:error instanceof Error?error.message:'Test unavailable'}));}
+      return;
     }
     if (req.method === 'POST' && req.url === '/api/owner-decisions') {
       if (origin !== `http://${host}` || req.headers['x-owner-token'] !== ownerToken) { res.writeHead(403).end('Owner session required'); return; }
@@ -67,6 +82,10 @@ export function createOperatorServer(options: { root: string; store: ControllerS
         const bytes=await readFile(join(options.root,'.local/xarts-validation',result.candidateSha,'artifacts',sha));
         if(bytes.length>4*1024*1024||createHash('sha256').update(bytes).digest('hex')!==sha){res.writeHead(409).end('Verification log failed its integrity check');return;}
         res.setHeader('Content-Type','text/plain; charset=utf-8');res.end(bytes);return;
+      }
+      if(url.pathname==='/api/explorations'){
+        let target=null;try{if(options.testCheckout)target=await explorationTarget(options.testCheckout);}catch{/* Show explicit unavailable target, retain history. */}
+        res.setHeader('Content-Type','application/json');res.end(JSON.stringify({target,runs:options.store.explorations()}));return;
       }
       if (url.pathname === '/api/owner-session') { res.setHeader('Content-Type','application/json'); res.end(JSON.stringify({token:ownerToken})); return; }
       if (url.pathname === '/api/overview') {

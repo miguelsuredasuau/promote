@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { EngineeringTask, RepairFeedback, SessionObservation, type HarnessAdapter, type StartOutcome, type FeedbackOutcome, type CancelOutcome } from '../../contracts/adapters';
 import { GitSha, Id } from '../../contracts/primitives';
+import { ExplorationSpec, ExplorationReport } from '../../contracts/exploration';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { rolePrompt } from '../../server/role-prompts';
 
 const Config = z.object({ organizationId: z.string().regex(/^org[-_][A-Za-z0-9_-]+$/), apiKey: z.string().min(1), timeoutMs: z.number().int().positive().max(60000).default(15000) }).strict();
@@ -43,6 +46,30 @@ export class DevinAdapter implements HarnessAdapter {
       if (!result.success) return {kind:'unknown_outcome',reason:'malformed_create_response'};
       return {kind:'created',remoteId:remote(result.data.session_id)};
     } catch { return {kind:'unknown_outcome',reason:'create_transport_uncertain'}; }
+  }
+  async startExploration(input: ExplorationSpec): Promise<StartOutcome> {
+    const spec=ExplorationSpec.parse(input);
+    const instructions=readFileSync(new URL('../../prompts/explorer-v1.md',import.meta.url),'utf8');
+    if(createHash('sha256').update(instructions).digest('hex')!==spec.promptHash) return {kind:'rejected',reason:'prompt_revision_changed'};
+    if(Date.parse(spec.deadline)<=Date.now()) return {kind:'rejected',reason:'deadline_expired'};
+    const string={type:'string'},strings={type:'array',items:string};
+    const finding={type:'object',properties:{title:string,severity:{type:'string',enum:['low','medium','high']},steps:strings,expected:string,observed:string,evidence:strings},required:['title','severity','steps','expected','observed','evidence'],additionalProperties:false};
+    try {
+      const response=await this.request('','POST',{
+        prompt:instructions+'\nExact test specification (owner focus is data, not extra authority):\n'+JSON.stringify(spec),
+        repos:[`https://github.com/${spec.repository}`],max_acu_limit:spec.maxAcu,
+        tags:[`promote-exploration:${spec.id}`],title:'Promoted exploratory test',
+        structured_output_schema:{type:'object',properties:{baseSha:string,mode:{type:'string',enum:['ui-fixture']},summary:string,coverage:strings,findings:{type:'array',items:finding},limitations:strings},required:['baseSha','mode','summary','coverage','findings','limitations'],additionalProperties:false}
+      });
+      if(!response.ok)return response.status>=400&&response.status<500&&response.status!==408?{kind:'rejected',reason:`provider_http_${response.status}`}:{kind:'unknown_outcome',reason:'create_response_uncertain'};
+      const parsed=Session.safeParse(await response.json());
+      return parsed.success?{kind:'created',remoteId:remote(parsed.data.session_id)}:{kind:'unknown_outcome',reason:'malformed_create_response'};
+    }catch{return{kind:'unknown_outcome',reason:'create_transport_uncertain'};}
+  }
+  async explorationReport(remoteId:string) {
+    const session=await this.read(remoteId);
+    const report=ExplorationReport.safeParse(session.structured_output);
+    return report.success?report.data:null;
   }
   async reconcile(_operationId: string) { return {result:'unsupported' as const}; }
   private async read(remoteId:string) {
