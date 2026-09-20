@@ -32,6 +32,17 @@ origin must match the configured repository. The task pins a full commit. An opt
 the fetched SHA into a new task; moving a branch never changes an in-flight candidate.
 Every new commit must still pass scope, ancestry and all independent gates.
 
+### Releasing the trunk
+
+When the owner has merged pull requests and wants the chat on the library's own
+`main`, add `"trunk": "main"` to the task with `candidateSha` set to that head.
+Promote asks the remote (`git ls-remote origin refs/heads/main`) and refuses with
+`trunk_head_mismatch` unless it serves exactly that commit, so a task never releases
+a local branch that GitHub does not have. Because the owner authorised the content
+by merging, `allowedPaths`/`protectedPaths` are recorded in the evidence as changed
+paths but not enforced; ancestry from `baseSha` (normally the previously released
+commit or its merge base) and every isolated gate still apply unchanged.
+
 The ten-minute review checks Docker availability and queues one durable QA job.
 The service starts serving Activity before lengthy verification begins. A running
 claim survives restart and requires reconciliation rather than duplicate execution.

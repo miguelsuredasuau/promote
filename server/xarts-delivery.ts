@@ -23,6 +23,10 @@ export const DeliveryTask = z.object({
   schemaVersion: z.literal(1), checkout: z.string().min(1), repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
   candidateSha: z.string().regex(/^[a-f0-9]{40}$/), baseSha: z.string().regex(/^[a-f0-9]{40}$/),
   sourceBranch: z.string().regex(/^promote[/-][A-Za-z0-9._/-]+$/).optional(),
+  /** Release the repository's own trunk: the candidate must be exactly what the remote serves
+   * for this branch. The owner already authorised its content by merging, so path scopes are
+   * recorded as evidence instead of enforced. */
+  trunk: z.string().regex(/^[A-Za-z0-9._/-]+$/).optional(),
   chatRoot: z.string().min(1), runId: z.string().regex(/^[\w-]+$/), chartId: z.string().regex(/^chart-\d+$/),
   registry: z.string().min(1), allowedPaths: z.array(z.string().min(1)).min(1), protectedPaths: z.array(z.string().min(1)),
 }).strict();
@@ -46,9 +50,13 @@ export async function runXartsDelivery(store: ControllerStore, controllerRoot: s
   const git = async (args: string[]) => (await exec('git', args, { cwd: task.checkout, timeout:30000,killSignal:'SIGKILL', maxBuffer: 1024*1024 })).stdout.trim();
   if (!await originMatchesRepo(git, task.repo)) throw Error('repository_identity_mismatch');
   await git(['merge-base','--is-ancestor',task.baseSha,task.candidateSha]);
+  if (task.trunk !== undefined) {
+    const served = (await git(['ls-remote','--exit-code','origin',`refs/heads/${task.trunk}`])).split(/\s+/)[0];
+    if (served !== task.candidateSha) throw Error('trunk_head_mismatch');
+  }
   const changed = (await exec('git',['diff','--name-only','--no-renames','-z',task.baseSha,task.candidateSha],{cwd:task.checkout,timeout:10000,killSignal:'SIGKILL'})).stdout.split('\0').filter(Boolean);
   const inside = (path: string, scopes: string[]) => scopes.some(scope => path===scope || path.startsWith(`${scope}/`));
-  if (changed.some(path => !inside(path,task.allowedPaths) || inside(path,task.protectedPaths))) throw Error('candidate_scope_violation');
+  if (task.trunk === undefined && changed.some(path => !inside(path,task.allowedPaths) || inside(path,task.protectedPaths))) throw Error('candidate_scope_violation');
   const run = join(task.chatRoot,'runs',task.runId);
   const spec = JSON.parse(await readFile(join(run,`${task.chartId}.spec.json`),'utf8'));
   const saved = JSON.parse(await readFile(join(run,`${task.chartId}.data.json`),'utf8'));
@@ -86,7 +94,7 @@ export async function runXartsDelivery(store: ControllerStore, controllerRoot: s
       runnerIdentity:evidence?.runnerIdentity??'protected-source-sql-v1',startedAt:evidence?.startedAt??now,finishedAt:evidence?.finishedAt??new Date().toISOString()});
     results.push(result);store.recordEvent(id,'gate.finished',{result});return result;
   };
-  record('protected.sourceAndSql','pass','source_scope_and_original_sql_verified',`log:${sourceHash}`);
+  record('protected.sourceAndSql','pass',task.trunk===undefined?'source_scope_and_original_sql_verified':'trunk_head_and_original_sql_verified',`log:${sourceHash}`);
   let activeGate: string | null = null;
   const stage = (gateId:string,summary:string) => {
     activeGate=gateId;
