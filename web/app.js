@@ -15,7 +15,7 @@ function heading(text){return node('h3',text,'mini-heading')}
 const nativeSurfaces={};
 for(const key of ['backlog','engineering','strategy','qa','finance','ticker']){const surface=node('section',undefined,'world-surface native-office-surface');surface.dataset.station=key;surface.setAttribute('aria-label',key+' workspace');surface.innerHTML=$('desk').innerHTML;surface.querySelectorAll('[id]').forEach(n=>{n.dataset.field=n.id;n.removeAttribute('id');});surface.querySelector('[data-field="close-desk"]').onclick=()=>closeOfficeDesk();surface.inert=true;$('scene-stage').append(surface);nativeSurfaces[key]=surface;}
 const pullRequests=createPullRequestDesk();
-const decisions=createDecisionDesk({onSaved:async()=>{const r=await fetch('/api/overview');if(r.ok){snapshot=await r.json();update(true);}}});
+const decisions=createDecisionDesk({pullRequests,onSaved:async()=>{const r=await fetch('/api/overview');if(r.ok){snapshot=await r.json();update(true);}}});
 let scene;
 try{scene=createOfficeScene($('scene-stage'),{onSelect:key=>openDesk(key),detailElement:$('desk'),nativeSurfaces})}catch(error){ console.error('Office initialization failed',error); $('scene-stage').append(empty('3D rendering is unavailable. All five workspaces are accessible through the dock below.')); }
 function allCards(){return model.kanban.columns.flatMap(c=>c.cards)}
@@ -105,7 +105,7 @@ function renderDesk(key=desk,shell=document.getElementById('desk')){
   const values=[['Usage',model.usage??'Not connected'],['Errors',model.errors??'Not connected'],['Backlog',allCards().filter(c=>!['completed','done'].includes(c.status)).length],['QA',human(model.qa.status)],['Spend',model.finance.spent==null?'Not reported':`${model.finance.currency??'?'} ${model.finance.spent.toFixed(2)}`],['Source',mode==='demo'?'Demo':'Live snapshot']];
   for(const [label,value] of values){const tile=node('section');tile.append(node('small',label),node('strong',String(value)));metrics.append(tile)}content.append(metrics);
  }
- if(desk==='briefing'){setText('desk-eyebrow','OWNER / DECISION DESK');setText('desk-title','The next move is yours.');setText('desk-subtitle','');const decisionRoot=node('div'),prRoot=node('div');content.append(decisionRoot);decisions.mount(decisionRoot,snapshot,mode);if(mode!=='demo'){content.append(prRoot);pullRequests.mount(prRoot);}}
+ if(desk==='briefing'){setText('desk-eyebrow','OWNER / DECISION DESK');setText('desk-title','The next move is yours.');setText('desk-subtitle','');decisions.mount(content,snapshot,mode);}
 
  setText('desk-footer',mode==='demo'?'Demo state is local to this page. Reset or reload clears it. No live approval or spending.':'Live records · read-only');
 }

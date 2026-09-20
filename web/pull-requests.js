@@ -26,7 +26,7 @@ export function createPullRequestDesk(){
   busy=null;await load();
  }
  function render(){
-  if(!root)return;root.replaceChildren();root.className='pr-desk';
+  if(!root)return;root.replaceChildren();root.classList.add('pr-desk');
   root.append(el('span','PULL REQUESTS / MERGE TO MAIN','decision-kicker'));
   if(!data&&loading){root.append(el('p','Asking GitHub…','decision-empty'));return;}
   if(data&&!data.configured){root.append(el('p','Add PROMOTE_GITHUB_TOKEN (a token that acts as you) and PROMOTE_MERGE_REPOS (owner/repo, comma-separated) to Promote’s .env to merge from the office.','decision-empty'));return;}
