@@ -38,7 +38,9 @@ for (const archive of ['source.tar', 'baseline-tests.tar']) {
 // Existing tests and configuration come from baseline; candidate-only tests remain available.
 const stages = [
   { name: 'typecheck', args: ['exec', 'tsc', '--noEmit'] },
-  { name: 'regressions', args: ['exec', 'vitest', 'run', ...plan.tests, '--maxWorkers=2'] },
+  // Protocol tests spawn Node/esbuild children. Run files serially so those
+  // children fit within the same 64-PID ceiling as Vitest and its helpers.
+  { name: 'regressions', args: ['exec', 'vitest', 'run', ...plan.tests, '--maxWorkers=1'] },
 ];
 for (const stage of stages) {
   console.log(`[maintenance] ${stage.name}`);

@@ -10,6 +10,7 @@ import { rolePrompt } from '../../server/role-prompts';
 const Config = z.object({ organizationId: z.string().regex(/^org[-_][A-Za-z0-9_-]+$/), apiKey: z.string().min(1), timeoutMs: z.number().int().positive().max(60000).default(15000) }).strict();
 const Extension = z.object({ maxAcu: z.number().int().positive(), branch: z.string().regex(/^promote\/[A-Za-z0-9._-]+$/) }).strict();
 const Session = z.object({ session_id: z.string().min(1), status: z.string(), status_detail: z.string().nullable().optional(),
+  is_archived: z.boolean().optional(),
   acus_consumed: z.number().finite().nonnegative().nullable().optional(), updated_at: z.number().finite().optional(),
   structured_output: z.unknown().optional() }).passthrough();
 const remote = (id: string) => { if (!/^(?:devin-)?[A-Za-z0-9_-]{1,160}$/.test(id)) throw new Error('invalid_remote_id'); return id.startsWith('devin-') ? id : `devin-${id}`; };
@@ -172,9 +173,20 @@ export class DevinAdapter implements HarnessAdapter {
     Id.parse(operationId);
     try{
       const response=await this.request(`/${remote(remoteId)}?archive=true`,'DELETE');
+      // Devin can acknowledge termination by archiving an already-suspended
+      // session without changing its status to exit. Require both a successful
+      // DELETE and identity-bound inactive evidence; suspension alone is resumable.
+      const archivedInactive=(s:z.infer<typeof Session>)=>s.is_archived===true&&['suspended','error'].includes(s.status);
+      if(response.ok){
+        const acknowledged=Session.safeParse(await response.json().catch(()=>null));
+        if(acknowledged.success){
+          if(remote(acknowledged.data.session_id)!==remote(remoteId))return{kind:'failed',reason:'termination_identity_mismatch'};
+          if(acknowledged.data.status==='exit'||archivedInactive(acknowledged.data))return{kind:'confirmed',confirmedAt:new Date().toISOString()};
+        }
+      }
       // Already-exited sessions may reject DELETE. The observed exit is authoritative.
       const observed=await this.read(remoteId);
-      if(observed.status==='exit')return{kind:'confirmed',confirmedAt:new Date().toISOString()};
+      if(observed.status==='exit'||(response.ok&&archivedInactive(observed)))return{kind:'confirmed',confirmedAt:new Date().toISOString()};
       return response.ok?{kind:'requested'}:{kind:'failed',reason:`provider_http_${response.status}`};
     }catch{return{kind:'failed',reason:'termination_unconfirmed'};}
   }

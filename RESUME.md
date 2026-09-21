@@ -1,8 +1,39 @@
-# Resume Promote after September 20, 2026
+# Resume Promote — updated September 21, 2026
 
-Start here when reopening this project. User is shutting down the Mac.
+Start here when reopening this project. The September 21 continuation is followed by the previous shutdown checkpoint for historical context.
 
-## Current authorization and runtime
+## Campaign closed by owner — September 21
+
+The owner ended the old maintenance plan and authorized consolidating good candidates into main, then removing campaign branches. Operating policy revision 4 is paused with approved repairs and proactive tests disabled. All 181 engineering reservations were confirmed stopped; no exploration remains active. The launchd service was stopped between QA jobs and disabled. Do not resume paid dispatch without a new instruction.
+
+The owner explicitly said Claude is still editing the visx-anlak census: preserve that local work, including its CI and package-script edits. Consolidation runs in a detached temporary worktree, never by cleaning or stashing Claude's checkout.
+
+Consolidated **101 verified candidates** into visx-anlak main, commit `5c7413ff9381be575688862d40a2992a8b648601`. The Hexbin candidate was excluded after an integration golden/parity regression; baseline references were not changed. All **165 remote Promote campaign branches were deleted** after archiving complete history in `.local/campaign-candidates-2026-09-21.bundle`. No local Promote candidate branches remain. Selection, exclusions, provenance and deletion evidence are in `.local/consolidation-*.json`.
+
+Validation: 375 test files, 7,770 passing tests and 23 existing skips, repeated with Madrid and New York timezones; typecheck, Vite build, 66 SDK tests and SDK build passed. Catalog checks: 35 pass, no failures, one external personal-catalog check skipped. Logs retained under `.local/consolidation-validation/`. GitHub Actions run 35573459479 could not start any job because GitHub reported failed account payments or a spending-limit issue; local validation passed, remote CI is not green. Do not change billing without authorization.
+
+Claude's checkout remains on `anatomia-y-gate-de-tintas`, with its ongoing local edits preserved. Local and remote library main both point to the consolidation; do not switch or clean Claude's working tree. The consolidation provenance is in `docs/analysis/promote-maintenance-consolidation-2026-09-21.md` in the library.
+
+The remaining sections are historical checkpoints, not instructions to restart this campaign.
+
+## September 21 continuation
+
+### Automatic session release repaired and activated
+
+- The owner explicitly authorized closing/archiving the 17 expired inactive Devin sessions and activating a permanent reconciliation fix. The local service was reloaded between QA jobs.
+- All 17 are now confirmed stopped with their candidate SHAs retained; proof: `.local/session-release-proof.json`. No direct database override was used: the regular observer reconciled them through the corrected adapter.
+- Root cause: Devin returns HTTP 200 with `is_archived: true` and `status: suspended` when terminating these inactive sessions. The old adapter required literal `exit` forever. It now accepts successful identity-bound termination with archived inactive evidence, while failed requests, active states and suspension alone retain the slot. Successful response evidence avoids an extra GET.
+- Expired engineering sessions now collect late candidates/usage before stopping. Failed reads do not block cancellation; failed stop requests expose their reason. Slot release does not refund ACU reservations.
+- Full Node 22 + Docker validation: **413 tests passed**, 38 files, zero skips. Log: `/tmp/promote-session-release-check.log`.
+
+- The host and `com.anlak.promote` service restarted successfully with commit `2004812`. Docker was stopped; it has now been started and local QA is progressing again.
+- The pending MCP startup failure was reproduced successfully with one Vitest worker: all nine tests pass under the original 64-PID, one-CPU, offline limits. `adapters/xarts/maintenance-worker.mjs` now uses `--maxWorkers=1`; baseline assertions and timeouts are unchanged. The worker is read per verification, so this change requires no service restart.
+- `pnpm check` on Node 22 with `PROMOTE_DOCKER_TEST=1` passed 398 tests in 38 files, zero skipped. Log: `/tmp/promote-resume-check.log`.
+- The original MCP candidate and five startup-blocked candidates were queued for same-candidate rechecks with prior evidence retained. Recovery script and snapshots are under `.local/`; no replacement paid sessions were created by these recovery scripts.
+- Both the direct full MCP recheck and the service-owned recheck passed; the journal marked attempt 1 verified at 05:41:39 UTC. Direct evidence: `.local/mcp-errors-recheck-2026-09-21.json`. Final snapshot: 30 verified attempts, one verifying, 29 awaiting QA; these are candidate attempts, not merged changes.
+- Saved policy remains active with the original 2,000-ACU total ceiling. A snapshot showed 890 ACU reserved (not billed spend), 63 stopped / 17 held / 3 running provider engineering sessions. Let the observer reconcile existing identities. These live counts change.
+
+## Previous shutdown checkpoint: authorization and runtime
 
 - Explicit user authorization: 2,000 ACU total campaign ceiling; saved daily ceiling also 2,000; concurrency 20; review every minute; expiry September 27, 2026. No additional funding top-ups authorized.
 - 200 approved maintenance profiles in `.local/maintenance-profiles.json`; 185 new profiles use 5/10 ACU session ceilings. Do not recreate existing sessions or reset reservations.

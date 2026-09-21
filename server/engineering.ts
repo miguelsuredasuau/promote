@@ -46,8 +46,15 @@ export async function observeEngineering(store:ControllerStore, adapter:HarnessA
       }
       const incident=store.getIncident(reservation.incidentId)!;
       if(incident.cancellation || Date.parse(reservation.task.deadline)<=now){
+        // Expiry forbids continuation, not collection. Preserve a candidate that
+        // arrived while the controller was offline before closing its session.
+        try {
+          const observation=await adapter.inspect(reservation.remoteId);
+          store.updateEngineering(reservation.incidentId,{usageAcu:observation.usage?.amount??null,usageObservedAt:observation.observedAt,
+            candidateSha:observation.candidateSha??reservation.candidateSha});
+        } catch { /* A failed result read must not prevent the stop request. */ }
         const result=await adapter.cancel(reservation.remoteId,`cancel:${reservation.incidentId}`);
-        store.updateEngineering(reservation.incidentId,{state:result.kind==='confirmed'?'stopped':'held',reason:result.kind==='confirmed'?'termination_confirmed':'termination_pending'});
+        store.updateEngineering(reservation.incidentId,{state:result.kind==='confirmed'?'stopped':'held',reason:result.kind==='confirmed'?'termination_confirmed':result.kind==='failed'?result.reason:'termination_pending'});
         return;
       }
       const observation=await adapter.inspect(reservation.remoteId);
@@ -59,7 +66,7 @@ export async function observeEngineering(store:ControllerStore, adapter:HarnessA
       const exhausted=Math.max(reservation.usageAcu??0,observation.usage?.amount??0)>=reservation.maxAcu;
       if(observation.candidateSha || reservation.candidateSha || expired || exhausted || ['finished','failed','cancelled'].includes(observation.state)){
         const termination=await adapter.cancel(reservation.remoteId,`stop:${reservation.incidentId}`);
-        store.updateEngineering(reservation.incidentId,{state:termination.kind==='confirmed'?'stopped':'held',reason:observation.candidateSha||reservation.candidateSha?'candidate_awaiting_independent_evaluation':expired?'deadline_reached':exhausted?'acu_ceiling_reached':'session_ended_without_candidate'});
+        store.updateEngineering(reservation.incidentId,{state:termination.kind==='confirmed'?'stopped':'held',reason:termination.kind==='failed'?termination.reason:termination.kind!=='confirmed'?'termination_pending':observation.candidateSha||reservation.candidateSha?'candidate_awaiting_independent_evaluation':expired?'deadline_reached':exhausted?'acu_ceiling_reached':'session_ended_without_candidate'});
         // Stop spending while candidate transport/evaluation is pending. No success/release claim.
       } else if(observation.state==='waiting') {
         const hold=(reason:string)=>store.updateEngineering(reservation.incidentId,{state:'held',reason});

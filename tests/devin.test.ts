@@ -229,3 +229,64 @@ it.each(['policy','task'])('rechecks %s expiry after a slow provider observation
  expect(resume).not.toHaveBeenCalled();
  expect(s.store.engineeringReservation(s.task.incidentId)).toMatchObject(boundary==='task'?{state:'stopped',reason:'deadline_reached'}:{state:'held',reason:'continuation_not_authorized'});
 });
+
+it('collects late candidate and usage before closing an expired session without resuming it',async()=>{
+ const s=setup();s.store.reserveEngineering(s.mandate,s.task);s.store.updateEngineering(s.task.incidentId,{state:'held',remoteId:'devin-s',reason:'termination_pending'});
+ const candidateSha='c'.repeat(40);
+ const fetcher=vi.fn().mockResolvedValueOnce(response({session_id:'s',status:'suspended',status_detail:'inactivity',acus_consumed:1.5,structured_output:{candidateSha}}))
+  .mockResolvedValueOnce(response({})).mockResolvedValueOnce(response({session_id:'s',status:'exit'}));
+ await observeEngineering(s.store,adapter(fetcher),Date.parse(s.task.deadline)+1);
+ expect(s.store.engineeringReservation(s.task.incidentId)).toMatchObject({state:'stopped',candidateSha,usageAcu:1.5,reason:'termination_confirmed'});
+ expect(fetcher.mock.calls.map(([,o])=>o.method)).toEqual(['GET','DELETE','GET']);
+ expect(s.store.engineeringSpend().committedCeilings).toBe(2);
+});
+it('still requests termination when expired result collection fails and exposes refusal',async()=>{
+ const s=setup();s.store.reserveEngineering(s.mandate,s.task);s.store.updateEngineering(s.task.incidentId,{state:'held',remoteId:'devin-s',candidateSha:'a'.repeat(40)});
+ const fetcher=vi.fn().mockRejectedValueOnce(new Error('read unavailable'))
+  .mockResolvedValueOnce(response({},403)).mockResolvedValueOnce(response({session_id:'s',status:'running'}));
+ await observeEngineering(s.store,adapter(fetcher),Date.parse(s.task.deadline)+1);
+ expect(s.store.engineeringReservation(s.task.incidentId)).toMatchObject({state:'held',reason:'provider_http_403',candidateSha:'a'.repeat(40)});
+ expect(fetcher.mock.calls.map(([,o])=>o.method)).toEqual(['GET','DELETE','GET']);
+});
+
+it.each(['suspended','error','exit'])('accepts an identity-bound archived %s termination acknowledgement without another poll',async status=>{
+ const fetcher=vi.fn().mockResolvedValue(response({session_id:'s',status,is_archived:true}));
+ expect(await adapter(fetcher).cancel('devin-s','stop:test')).toMatchObject({kind:'confirmed'});
+ expect(fetcher).toHaveBeenCalledTimes(1);
+ expect(fetcher.mock.calls[0][0]).toContain('?archive=true');
+ expect(fetcher.mock.calls[0][1].method).toBe('DELETE');
+});
+it.each([
+ [200,'suspended',false,'requested'],[200,'running',true,'requested'],
+ [200,'resuming',true,'requested'],[200,'future',true,'requested'],
+ [403,'suspended',true,'failed'],[409,'suspended',true,'failed'],
+])('keeps the slot for DELETE %s and %s archived=%s',async(status,state,is_archived,expected)=>{
+ const fetcher=vi.fn().mockResolvedValueOnce(response({session_id:'s',status:state,is_archived},status))
+  .mockResolvedValueOnce(response({session_id:'s',status:state,is_archived}));
+ expect((await adapter(fetcher).cancel('devin-s','stop:test')).kind).toBe(expected);
+});
+it('holds a mismatched termination acknowledgement',async()=>{
+ const fetcher=vi.fn().mockResolvedValue(response({session_id:'another',status:'suspended',is_archived:true}));
+ expect(await adapter(fetcher).cancel('devin-s','stop:test')).toEqual({kind:'failed',reason:'termination_identity_mismatch'});
+});
+it('confirms a successful termination with a subsequent archived inactive observation',async()=>{
+ const fetcher=vi.fn().mockResolvedValueOnce(response({}))
+  .mockResolvedValueOnce(response({session_id:'s',status:'suspended',is_archived:true}));
+ expect((await adapter(fetcher).cancel('devin-s','stop:test')).kind).toBe('confirmed');
+});
+it('does not free a slot when termination transport is uncertain',async()=>{
+ const fetcher=vi.fn().mockRejectedValue(new Error('network failure'));
+ expect(await adapter(fetcher).cancel('devin-s','stop:test')).toEqual({kind:'failed',reason:'termination_unconfirmed'});
+});
+it('automatically releases an expired archived suspension, preserves its candidate, and stops deleting on later polls',async()=>{
+ const s=setup();s.store.reserveEngineering(s.mandate,s.task);s.store.updateEngineering(s.task.incidentId,{state:'held',remoteId:'devin-s',reason:'termination_pending'});
+ const candidateSha='d'.repeat(40);
+ const fetcher=vi.fn(async(_url:string,options:RequestInit)=>response({session_id:'s',status:'suspended',status_detail:'inactivity',is_archived:options.method==='DELETE',acus_consumed:1,structured_output:{candidateSha}}));
+ const a=adapter(fetcher),now=Date.parse(s.task.deadline)+1;
+ await observeEngineering(s.store,a,now);
+ expect(s.store.engineeringReservation(s.task.incidentId)).toMatchObject({state:'stopped',candidateSha,usageAcu:1});
+ expect(s.store.engineeringReservations().filter(r=>r.state!=='stopped')).toHaveLength(0);
+ await observeEngineering(s.store,a,now+61000);
+ expect(fetcher.mock.calls.filter(([,o])=>o.method==='DELETE')).toHaveLength(1);
+ expect(s.store.engineeringSpend().committedCeilings).toBe(2);
+});
